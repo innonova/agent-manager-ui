@@ -94,6 +94,8 @@ export interface DirEntry {
   mtime: number
   /** git ignores it (or it is `.git`); shown greyed like in VS Code. */
   ignored: boolean
+  /** git status; a directory carries the most significant status of its contents. */
+  status: 'modified' | 'added' | 'deleted' | 'untracked' | 'conflict' | null
 }
 
 export interface FileContent {

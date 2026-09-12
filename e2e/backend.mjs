@@ -36,10 +36,18 @@ fs.writeFileSync(
 )
 fs.writeFileSync(path.join(E2E_ROOT, 'project', 'src', 'index.ts'), 'export const answer = 42\n')
 // A git repository with an ignored directory, for the tree's greying.
-execFileSync('git', ['init', '-q', path.join(E2E_ROOT, 'project')])
-fs.writeFileSync(path.join(E2E_ROOT, 'project', '.gitignore'), 'dist/\n')
-fs.mkdirSync(path.join(E2E_ROOT, 'project', 'dist'))
-fs.writeFileSync(path.join(E2E_ROOT, 'project', 'dist', 'bundle.js'), '')
+const PROJECT = path.join(E2E_ROOT, 'project')
+const git = (...args) =>
+  execFileSync('git', ['-c', 'user.name=e2e', '-c', 'user.email=e2e@test', ...args], { cwd: PROJECT })
+git('init', '-q')
+fs.writeFileSync(path.join(PROJECT, '.gitignore'), 'dist/\n')
+fs.mkdirSync(path.join(PROJECT, 'dist'))
+fs.writeFileSync(path.join(PROJECT, 'dist', 'bundle.js'), '')
+git('add', '-A')
+git('commit', '-q', '-m', 'init')
+// then a modification and an untracked file, for the status tints
+fs.appendFileSync(path.join(PROJECT, 'src', 'index.ts'), '// touched\n')
+fs.writeFileSync(path.join(PROJECT, 'TODO.md'), '- nothing\n')
 fs.writeFileSync(
   path.join(daemonConfig, 'profiles', 'fake.json'),
   JSON.stringify({ command: process.execPath, args: [FAKE_AGENT], description: 'fake agent' }),

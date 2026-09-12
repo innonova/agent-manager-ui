@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { reactive, ref } from 'vue'
+import { nextTick, reactive, ref } from 'vue'
 import { api } from '@/api/client'
 import { events } from '@/api/events'
 import type { DirEntry, FileContent } from '@/api/types'
@@ -46,7 +46,58 @@ export const useFilesStore = defineStore('files', () => {
   const open = ref<FileContent | null>(null)
   const openPath = ref<string | null>(null)
   const error = ref<string | null>(null)
+  /** Substring filter on names; matching directories are held open while it is set. */
+  const filter = ref('')
+  /** Keyboard cursor in the tree. */
+  const focused = ref<string | null>(null)
   let refreshTimer: number | null = null
+
+  const HIDDEN = new Set(['.git'])
+  const matches = (name: string) => name.toLowerCase().includes(filter.value.toLowerCase())
+
+  /** Whether any loaded entry below `dir` matches the filter. */
+  function hasMatch(dir: string): boolean {
+    for (const e of dirs.get(dir) ?? []) {
+      if (HIDDEN.has(e.name)) continue
+      if (matches(e.name)) return true
+      if (e.type === 'dir' && hasMatch(e.path)) return true
+    }
+    return false
+  }
+
+  /** The entries of `dir` as shown: `.git` hidden, and only matches while filtering. */
+  function children(dir: string): DirEntry[] {
+    const all = (dirs.get(dir) ?? []).filter((e) => !HIDDEN.has(e.name))
+    if (!filter.value) return all
+    return all.filter((e) => matches(e.name) || (e.type === 'dir' && hasMatch(e.path)))
+  }
+
+  function isOpen(dir: string): boolean {
+    return expanded.has(dir) || (Boolean(filter.value) && hasMatch(dir))
+  }
+
+  /** Every visible row, top to bottom, as the keyboard sees it. */
+  function rows(): DirEntry[] {
+    const out: DirEntry[] = []
+    const walk = (dir: string) => {
+      for (const e of children(dir)) {
+        out.push(e)
+        if (e.type === 'dir' && isOpen(e.path)) walk(e.path)
+      }
+    }
+    walk('')
+    return out
+  }
+
+  function focus(path: string | null): void {
+    focused.value = path
+    if (!path) return
+    void nextTick(() => {
+      document
+        .querySelector(`[data-test=file-tree] [data-path="${CSS.escape(path)}"]`)
+        ?.scrollIntoView({ block: 'nearest' })
+    })
+  }
 
   events.on((f) => {
     if (f.type !== 'agent.state' || f.projectId !== projectId.value) return
@@ -70,6 +121,8 @@ export const useFilesStore = defineStore('files', () => {
     expanded.clear()
     open.value = null
     openPath.value = null
+    filter.value = ''
+    focused.value = null
     const remembered = loadExpanded(id)
     await Promise.all(['', ...remembered].map((d) => loadDir(d)))
     expanded.add('')
@@ -150,6 +203,12 @@ export const useFilesStore = defineStore('files', () => {
     open,
     openPath,
     error,
+    filter,
+    focused,
+    children,
+    isOpen,
+    rows,
+    focus,
     select,
     toggle,
     reveal,

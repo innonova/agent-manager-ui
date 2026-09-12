@@ -4,10 +4,34 @@ import type { DirEntry } from '@/api/types'
 import FileIcon from '@/components/FileIcon.vue'
 import { useFilesStore } from '@/stores/files'
 
-const props = defineProps<{ entry: DirEntry; depth: number }>()
+const props = defineProps<{ entry: DirEntry; depth: number; treeFocused: boolean }>()
 const files = useFilesStore()
 const isDir = computed(() => props.entry.type === 'dir')
-const expanded = computed(() => isDir.value && files.expanded.has(props.entry.path))
+const expanded = computed(() => isDir.value && files.isOpen(props.entry.path))
+const focused = computed(() => files.focused === props.entry.path)
+
+/** VS Code's git decoration colours, light and dark. */
+const STATUS_CLASS: Record<NonNullable<DirEntry['status']>, string> = {
+  modified: 'text-[#895503] dark:text-[#e2c08d]',
+  added: 'text-[#587c0c] dark:text-[#81b88b]',
+  deleted: 'text-[#ad0707] dark:text-[#c74e39]',
+  untracked: 'text-[#007100] dark:text-[#73c991]',
+  conflict: 'text-[#ad0707] dark:text-[#e4676b]',
+}
+const STATUS_LETTER: Record<NonNullable<DirEntry['status']>, string> = {
+  modified: 'M',
+  added: 'A',
+  deleted: 'D',
+  untracked: 'U',
+  conflict: 'C',
+}
+const statusClass = computed(() => (props.entry.status ? STATUS_CLASS[props.entry.status] : ''))
+
+function activate(): void {
+  files.focus(props.entry.path)
+  if (isDir.value) void files.toggle(props.entry.path)
+  else void files.openFile(props.entry.path)
+}
 
 function formatSize(n: number): string {
   return n < 1024
@@ -22,6 +46,7 @@ const title = computed(() => {
   if (e.type !== 'dir') parts.push(formatSize(e.size))
   if (e.mtime) parts.push(new Date(e.mtime).toLocaleString())
   if (e.ignored) parts.push('ignored by git')
+  if (e.status) parts.push(`git: ${e.status}`)
   return parts.join(' · ')
 })
 </script>
@@ -33,14 +58,18 @@ const title = computed(() => {
       :class="[
         files.openPath === entry.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : '',
         entry.ignored ? 'opacity-50' : '',
+        focused && treeFocused ? 'ring-1 ring-blue-500 ring-inset' : '',
       ]"
       :style="{ paddingLeft: `${depth * 0.9 + 0.5}rem` }"
       :title="title"
+      tabindex="-1"
       :data-test="`tree-${entry.type}`"
       :data-path="entry.path"
       :data-ignored="entry.ignored ? 'true' : undefined"
+      :data-status="entry.status ?? undefined"
       :data-expanded="isDir ? String(expanded) : undefined"
-      @click="isDir ? files.toggle(entry.path) : files.openFile(entry.path)"
+      :data-focused="focused ? 'true' : undefined"
+      @click="activate"
     >
       <!-- chevron: points right when collapsed, down when expanded -->
       <svg
@@ -57,9 +86,19 @@ const title = computed(() => {
         <path d="M6 3.5L10.5 8 6 12.5" />
       </svg>
       <FileIcon :entry="entry" :expanded="expanded" />
-      <span class="truncate" :class="isDir ? '' : 'text-slate-700 dark:text-slate-300'">{{
-        entry.name
-      }}</span>
+      <span
+        class="truncate"
+        :class="statusClass || (isDir ? '' : 'text-slate-700 dark:text-slate-300')"
+        >{{ entry.name }}</span
+      >
+      <span class="grow" />
+      <span
+        v-if="entry.status"
+        class="shrink-0 text-xs"
+        :class="statusClass"
+        :title="`git: ${entry.status}`"
+        >{{ STATUS_LETTER[entry.status] }}</span
+      >
     </button>
     <!-- indent guide under the parent's chevron, as in VS Code -->
     <ul
@@ -68,10 +107,11 @@ const title = computed(() => {
       :style="{ '--guide': `${depth * 0.9 + 1}rem` }"
     >
       <FileTreeNode
-        v-for="child in files.dirs.get(entry.path) ?? []"
+        v-for="child in files.children(entry.path)"
         :key="child.path"
         :entry="child"
         :depth="depth + 1"
+        :tree-focused="treeFocused"
       />
     </ul>
   </li>

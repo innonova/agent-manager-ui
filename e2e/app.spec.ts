@@ -202,15 +202,26 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
     'data-ignored',
     'true',
   )
-  await expect(page.locator('[data-test=tree-dir][data-path="project/.git"]')).toHaveAttribute(
-    'data-ignored',
-    'true',
-  )
+  await expect(page.locator('[data-path="project/.git"]')).toHaveCount(0) // hidden, as in VS Code
   await expect(page.locator('[data-test=tree-dir][data-path="project/src"]')).not.toHaveAttribute(
     'data-ignored',
     /.*/,
   )
+  // git status tints: a modified file and its directory, an untracked file, a clean one
+  await expect(page.locator('[data-path="project/src"]')).toHaveAttribute('data-status', 'modified')
+  await expect(page.locator('[data-path="project/TODO.md"]')).toHaveAttribute(
+    'data-status',
+    'untracked',
+  )
+  await expect(page.locator('[data-path="project/README.md"]')).not.toHaveAttribute(
+    'data-status',
+    /.*/,
+  )
   await page.locator('[data-test=tree-dir][data-path="project/src"]').click()
+  await expect(page.locator('[data-path="project/src/index.ts"]')).toHaveAttribute(
+    'data-status',
+    'modified',
+  )
   await page.locator('[data-test=tree-file][data-path="project/src/index.ts"]').click()
   await expect(page.getByTestId('file-path')).toHaveText('project/src/index.ts')
   await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('answer = 42')
@@ -237,6 +248,45 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
     'false',
   )
   await expect(page.locator('[data-path="project/src"]')).toHaveCount(0)
+
+  // filter: loaded entries only, matching directories held open, others hidden
+  await page.getByTestId('files-filter').fill('util')
+  await expect(page.locator('[data-path="second/lib/util.ts"]')).toBeVisible()
+  await expect(page.locator('[data-path="project"]')).toHaveCount(0)
+  await page.getByTestId('files-filter').press('Escape')
+  await expect(page.locator('[data-path="project"]')).toBeVisible()
+  await expect(page.locator('[data-path="second/lib/util.ts"]')).toHaveCount(0)
+
+  // keyboard: down moves, right expands, Enter opens, left steps out
+  const tree = page.getByTestId('file-tree')
+  await tree.focus()
+  await tree.press('ArrowDown')
+  await expect(page.locator('[data-path="project"]')).toHaveAttribute('data-focused', 'true')
+  await tree.press('ArrowRight')
+  await expect(page.locator('[data-path="project"]')).toHaveAttribute('data-expanded', 'true')
+  await tree.press('ArrowRight') // into the first child
+  await expect(page.locator('[data-path="project/dist"]')).toHaveAttribute('data-focused', 'true')
+  await tree.press('ArrowDown')
+  await expect(page.locator('[data-path="project/src"]')).toHaveAttribute('data-focused', 'true')
+  await tree.press('ArrowRight')
+  await tree.press('ArrowRight')
+  await expect(page.locator('[data-path="project/src/index.ts"]')).toHaveAttribute(
+    'data-focused',
+    'true',
+  )
+  await page.locator('[data-test=tree-dir][data-path="second"]').click()
+  await page.locator('[data-test=tree-dir][data-path="second/lib"]').click()
+  await page.locator('[data-test=tree-file][data-path="second/lib/util.ts"]').click()
+  await tree.focus()
+  await expect(page.locator('[data-path="second/lib/util.ts"]')).toHaveAttribute(
+    'data-focused',
+    'true',
+  )
+  await tree.press('ArrowLeft')
+  await expect(page.locator('[data-path="second/lib"]')).toHaveAttribute('data-focused', 'true')
+  await tree.press('End')
+  await tree.press('Enter')
+  await expect(page.getByTestId('file-path')).toHaveText('second/lib/util.ts')
 })
 
 test('features view: create, queue on an agent, review, done', async ({ page }) => {

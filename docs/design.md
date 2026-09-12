@@ -65,12 +65,21 @@ instead of content.
 The tree looks like VS Code's: a chevron that turns when a directory
 opens, an inline SVG icon per entry (`FileIcon.vue`: folder open/closed,
 and a small set of file kinds by extension or well-known name, with muted
-colour accents), indent guides under each open directory, and entries the
-manager reports as `ignored` (git's verdict, plus `.git`) drawn at half
-opacity. Hovering shows path, size, modification time and the ignored
-flag. Which directories are expanded is remembered per project in
-localStorage; opening a file from the URL expands the directories above
-it; a "collapse" action folds everything back to the repositories.
+colour accents), indent guides under each open directory, entries the
+manager reports as `ignored` (git's verdict) drawn at half opacity, and
+`.git` itself hidden as VS Code does. Entries with a git `status` are
+tinted with VS Code's decoration colours and carry its letter (M, A, D,
+U, C) at the end of the row; a directory shows the most significant
+status of its contents. Hovering shows path, size, modification time and
+the git flags. Which directories are expanded is remembered per project
+in localStorage; opening a file from the URL expands the directories
+above it; a "collapse" action folds everything back to the repositories.
+
+A filter box narrows the tree to names containing the text (loaded
+entries only, since the tree is lazy); directories with matches are held
+open while it is set, Escape clears it. The tree takes keyboard focus:
+up/down move a cursor, right expands or steps into a directory, left
+collapses or steps out, Enter or Space opens or toggles, Home/End jump.
 
 ## Features view
 
@@ -151,5 +160,7 @@ notices.
 ## Milestones
 
 Matches the manager's: 1 login, project list, agent view; 2 files with
-Monaco; 3 features. Git and diff views are a later feature needing its own
-discussion.
+Monaco; 3 features. A diff view is a later feature needing its own
+discussion; "what did the last turn change" (highlighting entries whose
+mtime moved since the tree's previous refresh) belongs to that
+discussion rather than to the tree, see the manager's milestones.

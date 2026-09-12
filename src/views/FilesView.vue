@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
@@ -24,6 +24,53 @@ const size = computed(() => {
       ? `${(n / 1024).toFixed(1)} KB`
       : `${(n / 1024 / 1024).toFixed(1)} MB`
 })
+
+const treeFocused = ref(false)
+
+/**
+ * VS Code's tree keys: up/down move, right expands or steps in, left
+ * collapses or steps out, Enter or Space activates, Home/End jump.
+ */
+async function onTreeKey(e: KeyboardEvent): Promise<void> {
+  const rows = files.rows()
+  if (rows.length === 0) return
+  const i = rows.findIndex((r) => r.path === files.focused)
+  const cur = i >= 0 ? rows[i]! : null
+  const go = (n: number) => files.focus(rows[Math.max(0, Math.min(rows.length - 1, n))]!.path)
+  switch (e.key) {
+    case 'ArrowDown':
+      go(i + 1)
+      break
+    case 'ArrowUp':
+      go(i < 0 ? 0 : i - 1)
+      break
+    case 'Home':
+      go(0)
+      break
+    case 'End':
+      go(rows.length - 1)
+      break
+    case 'ArrowRight':
+      if (!cur) go(0)
+      else if (cur.type === 'dir' && !files.isOpen(cur.path)) await files.toggle(cur.path)
+      else if (cur.type === 'dir') go(i + 1)
+      break
+    case 'ArrowLeft':
+      if (!cur) go(0)
+      else if (cur.type === 'dir' && files.isOpen(cur.path)) await files.toggle(cur.path)
+      else if (cur.path.includes('/')) files.focus(cur.path.slice(0, cur.path.lastIndexOf('/')))
+      break
+    case 'Enter':
+    case ' ':
+      if (!cur) return
+      if (cur.type === 'dir') await files.toggle(cur.path)
+      else await files.openFile(cur.path)
+      break
+    default:
+      return
+  }
+  e.preventDefault()
+}
 
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
@@ -76,8 +123,29 @@ watch(
             refresh
           </button>
         </div>
-        <ul class="min-h-0 grow overflow-auto pb-4" data-test="file-tree">
-          <FileTreeNode v-for="e in files.dirs.get('') ?? []" :key="e.path" :entry="e" :depth="0" />
+        <input
+          v-model="files.filter"
+          type="search"
+          class="mx-3 mb-1 rounded border border-slate-300 px-2 py-0.5 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700"
+          placeholder="filter loaded entries"
+          data-test="files-filter"
+          @keydown.escape="files.filter = ''"
+        />
+        <ul
+          class="min-h-0 grow overflow-auto pb-4 outline-none"
+          tabindex="0"
+          data-test="file-tree"
+          @focus="treeFocused = true"
+          @blur="treeFocused = false"
+          @keydown="onTreeKey"
+        >
+          <FileTreeNode
+            v-for="e in files.children('')"
+            :key="e.path"
+            :entry="e"
+            :depth="0"
+            :tree-focused="treeFocused"
+          />
         </ul>
         <p
           v-if="files.error"
