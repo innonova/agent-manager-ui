@@ -23,7 +23,7 @@ async function logout() {
       <slot name="title" />
       <span class="grow" />
       <span
-        v-if="!session.connected"
+        v-if="session.offline"
         class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100"
         data-test="disconnected"
         >reconnecting…</span

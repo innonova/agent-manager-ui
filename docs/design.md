@@ -130,7 +130,10 @@ index). The websocket client updates the stores; components only read.
 
 Websocket client: connects to `/api/events` after login, reconnects with
 backoff, and on reconnect refetches projects and the open agent's items
-from the last known index so nothing is missed.
+from the last known index so nothing is missed. The header's
+"reconnecting…" badge appears only after two seconds without a
+connection: proxies and manager restarts drop the socket and it is back
+within a second, which is not worth a flash.
 
 ## Display preferences
 

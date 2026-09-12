@@ -8,9 +8,22 @@ export const useSessionStore = defineStore('session', () => {
   const user = ref<User | null>(null)
   const checked = ref(false)
   const connected = ref(false)
+  /**
+   * `connected` gone false for a couple of seconds. The events socket is
+   * dropped by proxies and by manager restarts and comes back within a
+   * second; the header badge follows this so it does not flash each time.
+   */
+  const offline = ref(false)
+  let offlineTimer: number | null = null
   const daemonConnected = ref(true)
 
-  events.onStatus = (c) => (connected.value = c)
+  events.onStatus = (c) => {
+    connected.value = c
+    if (offlineTimer) clearTimeout(offlineTimer)
+    offlineTimer = null
+    if (c) offline.value = false
+    else offlineTimer = window.setTimeout(() => (offline.value = !connected.value), 2000)
+  }
   events.on((f) => {
     if (f.type === 'hello') daemonConnected.value = f.daemon.connected
     if (f.type === 'daemon') daemonConnected.value = f.connected
@@ -42,5 +55,5 @@ export const useSessionStore = defineStore('session', () => {
     user.value = null
   }
 
-  return { user, checked, connected, daemonConnected, restore, login, logout }
+  return { user, checked, connected, offline, daemonConnected, restore, login, logout }
 })
