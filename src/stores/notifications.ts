@@ -76,10 +76,15 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function show(row: AgentRow, text: string): void {
+    // One notification per agent at a time: a new one replaces the old.
+    // Without `renotify` the replacement is silent when the old one is
+    // still sitting in the notification centre, which reads as "nothing
+    // happened". Chrome honours it; others ignore it.
     const n = new Notification(`${row.agent.name} ${text}`, {
       body: 'agent-manager',
-      tag: `agent-${row.agent.id}`, // one at a time per agent
-    })
+      tag: `agent-${row.agent.id}`,
+      renotify: true,
+    } as NotificationOptions & { renotify: boolean })
     n.onclick = () => {
       window.focus()
       void router.push({
