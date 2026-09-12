@@ -193,6 +193,15 @@ visible, and every ten minutes; a different id shows an "update
 available · reload" button in the header. Nothing reloads by itself,
 since a draft or a scroll position may be in play.
 
+## Attention badge
+
+The tab title gets a count and the favicon a red badge with it, for the
+tab that is open but not looked at: agents in error or waiting for input
+or a permission across all projects (from the project counts the manager
+broadcasts), plus agents that finished a turn while this tab was hidden,
+which clear when the tab is looked at again. The badge is drawn on a
+canvas over the SVG favicon; nothing else changes.
+
 ## Notifications
 
 Agent state changes to `error` raise a toast. With the "desktop

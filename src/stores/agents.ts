@@ -4,6 +4,7 @@ import { api } from '@/api/client'
 import { events } from '@/api/events'
 import type { Agent, AgentStatus, StoredItem } from '@/api/types'
 import { useNotificationsStore } from './notifications'
+import { useAttentionStore } from '@/stores/attention'
 
 export interface AgentRow {
   agent: Agent
@@ -34,6 +35,8 @@ export const useAgentsStore = defineStore('agents', () => {
           useNotificationsStore().push('error', `${row.agent.name}: ${f.status.error ?? 'error'}`)
         }
         if (was !== f.status.state) useNotificationsStore().agentChanged(row, was, f.status.state)
+        if (was === 'working' && f.status.state === 'idle' && !f.status.background)
+          useAttentionStore().finished(f.agentId)
       }
       return
     }

@@ -3,9 +3,14 @@ import { RouterLink, useRouter } from 'vue-router'
 import SettingsMenu from '@/components/SettingsMenu.vue'
 import { useSessionStore } from '@/stores/session'
 import { useUpdateStore } from '@/stores/update'
+import { useAttentionStore } from '@/stores/attention'
+import { useProjectsStore } from '@/stores/projects'
 
 const session = useSessionStore()
 const update = useUpdateStore()
+useAttentionStore() // keeps the title and favicon badge current on every page
+const projects = useProjectsStore()
+if (!projects.loaded) void projects.load()
 const router = useRouter()
 
 async function logout() {
