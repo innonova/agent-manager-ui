@@ -114,6 +114,12 @@ localStorage and applied to `<html>` before the first paint:
   `vs-dark` theme is the same palette.
 - **Font size**: a stepped base size from 12 to 20 px on the root element;
   everything is sized in rem, so the whole page scales.
+- **Enter key**: what a bare Enter does in the turn input. `send` (with
+  Shift+Enter for a newline), `newline` (the button or Ctrl+Enter sends),
+  or `auto`, the default, which is `send` unless the primary pointer is
+  coarse (`(pointer: coarse)`, tracked live): on-screen keyboards have no
+  usable Shift+Enter, so a tablet or a Surface without its keyboard gets
+  newline on Enter. Ctrl+Enter and Cmd+Enter always send.
 
 ## Notifications
 
