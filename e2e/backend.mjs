@@ -90,6 +90,7 @@ const manager = spawn(process.execPath, [MANAGER_MAIN], {
     AGENT_MANAGER_DAEMON_URL: `ws://127.0.0.1:${daemonPort}/`,
     AGENT_MANAGER_DATA_DIR: path.join(E2E_ROOT, 'manager-data'),
     AGENT_MANAGER_ADMIN_PASSWORD: ADMIN_PASSWORD,
+    AGENT_MANAGER_LOGIN_ATTEMPTS_PER_MINUTE: '1000', // every test logs in; the throttle is for the real thing
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })

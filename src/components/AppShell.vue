@@ -2,8 +2,10 @@
 import { RouterLink, useRouter } from 'vue-router'
 import SettingsMenu from '@/components/SettingsMenu.vue'
 import { useSessionStore } from '@/stores/session'
+import { useUpdateStore } from '@/stores/update'
 
 const session = useSessionStore()
+const update = useUpdateStore()
 const router = useRouter()
 
 async function logout() {
@@ -22,6 +24,15 @@ async function logout() {
       <RouterLink :to="{ name: 'projects' }" class="font-semibold">agent-manager</RouterLink>
       <slot name="title" />
       <span class="grow" />
+      <button
+        v-if="update.available"
+        class="rounded bg-blue-600 px-2 py-0.5 text-xs text-white hover:bg-blue-700"
+        title="A newer version of this page is available"
+        data-test="update-available"
+        @click="update.reload()"
+      >
+        update available · reload
+      </button>
       <span
         v-if="session.offline"
         class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100"

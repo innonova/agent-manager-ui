@@ -47,7 +47,14 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await page.getByTestId('send').click()
   await expect(page.locator('[data-item="user"]')).toHaveText('use a tool please')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
-  await expect(page.locator('[data-item="tool_use"]')).toContainText('Read')
+  // a tool call is one collapsed line with its result folded under it
+  const call = page.locator('[data-item="tool_use"]').first()
+  await expect(call).toContainText('Read')
+  await expect(call.getByTestId('tool-status')).toHaveText(/chars/)
+  await expect(call.locator('[data-item="tool_result"]')).toHaveCount(0)
+  await call.getByTestId('tool-toggle').click()
+  await expect(call.getByTestId('tool-input')).toContainText('example.txt')
+  await expect(call.locator('[data-item="tool_result"]')).toBeVisible()
   await expect(page.locator('[data-item="turn_end"]')).toHaveCount(1)
   await expect(page.locator('[data-item="text"]')).toContainText('You said: use a tool please')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
@@ -180,6 +187,19 @@ test('desktop notifications: opt in, then a finished turn notifies when the page
   await page.reload()
   await page.getByTestId('settings').click()
   await expect(page.getByTestId('notify-toggle')).toBeChecked() // persisted
+})
+
+test('a newer build on the server shows an update badge that reloads', async ({ page }) => {
+  await login(page)
+  await expect(page.getByTestId('update-available')).toHaveCount(0)
+  await page.route('**/build.json*', (route) =>
+    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ id: 'newer' }) }),
+  )
+  // a check runs when the tab becomes visible
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+  await expect(page.getByTestId('update-available')).toBeVisible()
+  await Promise.all([page.waitForLoadState('load'), page.getByTestId('update-available').click()])
+  await expect(page.getByTestId('login-name').or(page.getByTestId('new-project'))).toBeVisible()
 })
 
 test('a draft survives switching tabs and reloading', async ({ page }) => {

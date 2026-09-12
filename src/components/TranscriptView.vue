@@ -1,9 +1,41 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue'
-import type { StoredItem } from '@/api/types'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import type { Item, StoredItem } from '@/api/types'
+import ToolCallItem from './ToolCallItem.vue'
 import TranscriptItem from './TranscriptItem.vue'
 
 const props = defineProps<{ items: StoredItem[] }>()
+
+type ToolUse = Extract<Item, { kind: 'tool_use' }>
+type ToolResult = Extract<Item, { kind: 'tool_result' }>
+type Row =
+  | { key: number; kind: 'item'; item: Item }
+  | { key: number; kind: 'tool'; call: ToolUse; result: ToolResult | null }
+
+/**
+ * A tool call and its result render as one collapsed line, so the result
+ * is folded under the call that produced it rather than listed after it.
+ * Results whose call is not in the transcript stay as plain items.
+ */
+const rows = computed<Row[]>(() => {
+  const out: Row[] = []
+  const calls = new Map<string, Row & { kind: 'tool' }>()
+  for (const s of props.items) {
+    const it = s.item
+    if (it.kind === 'tool_use') {
+      const row: Row & { kind: 'tool' } = { key: s.index, kind: 'tool', call: it, result: null }
+      calls.set(it.id, row)
+      out.push(row)
+    } else if (it.kind === 'tool_result' && calls.has(it.toolUseId)) {
+      const row = calls.get(it.toolUseId)!
+      if (!row.result) row.result = it
+      else out.push({ key: s.index, kind: 'item', item: it }) // a second result for the same call
+    } else {
+      out.push({ key: s.index, kind: 'item', item: it })
+    }
+  }
+  return out
+})
 const el = ref<HTMLElement | null>(null)
 const following = ref(true)
 
@@ -28,7 +60,10 @@ onMounted(follow)
 <template>
   <div ref="el" class="h-full overflow-y-auto px-4 py-3" data-test="transcript" @scroll="onScroll">
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
-      <TranscriptItem v-for="it in items" :key="it.index" :item="it.item" />
+      <template v-for="r in rows" :key="r.key">
+        <ToolCallItem v-if="r.kind === 'tool'" :call="r.call" :result="r.result" />
+        <TranscriptItem v-else :item="r.item" />
+      </template>
       <p v-if="items.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
         No transcript yet.
       </p>

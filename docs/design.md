@@ -113,8 +113,7 @@ Items from the manager map onto components:
 | `user` | right-aligned bubble |
 | `text` | markdown, grows while `streaming` |
 | `thinking` | collapsed, expandable |
-| `tool_use` | one line: tool name and a compact input summary; expandable |
-| `tool_result` | collapsed under its tool_use; red when isError |
+| `tool_use` + its `tool_result` | one collapsed line: tool name, what the call is for (Claude's Bash `description`, a file tool's path, a search's pattern, else the command or a compact input), and the result's size or "error" or "running…"; unfolding shows the command (or the input as JSON) and the result. The pairing is by tool id, done in the view; a result whose call is missing renders on its own |
 | `error` | red banner with the vendor message verbatim |
 | `system` | grey note (session started, resumed, daemon notice) |
 | `turn_end` | thin rule with duration and cost when present |
@@ -169,6 +168,15 @@ one the dark theme uses, so it sits well in either theme's tab strip.
 `favicon.ico` (16, 32 and 48 px) and `apple-touch-icon.png` (180 px) are
 rendered from it with `scripts/favicon.mjs` and must be regenerated when
 the SVG changes.
+
+## Updates
+
+Each build carries an id (`__BUILD_ID__`, also written as `build.json`
+next to the bundle). The page fetches `build.json` when the events
+socket reconnects (a deploy restarts the manager), when the tab becomes
+visible, and every ten minutes; a different id shows an "update
+available · reload" button in the header. Nothing reloads by itself,
+since a draft or a scroll position may be in play.
 
 ## Notifications
 
