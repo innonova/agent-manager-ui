@@ -37,6 +37,7 @@ onMounted(async () => {
     (p) => p.supported,
   )
   form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
+  form.value.cwd = project.value?.repos[0]?.name ?? ''
   if (!props.agentId && rows.value[0])
     await router.replace({
       name: 'agent',
@@ -159,7 +160,9 @@ async function archive() {
             >{{ current.status.error }}</span
           >
           <span class="grow" />
-          <span class="font-mono text-xs text-slate-400 dark:text-slate-500"
+          <span
+            class="font-mono text-xs text-slate-400 dark:text-slate-500"
+            data-test="agent-cwd-label"
             >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
           >
           <button
@@ -221,16 +224,19 @@ async function archive() {
           </option>
         </select>
       </label>
-      <label class="text-sm">
+      <label v-if="(project?.repos.length ?? 0) > 1" class="text-sm">
         <span class="text-slate-600 dark:text-slate-300"
-          >Working directory (defaults to the project path)</span
+          >Working repository (the others are passed as extra directories)</span
         >
-        <input
+        <select
           v-model="form.cwd"
           class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
-          :placeholder="project?.path"
           data-test="agent-cwd"
-        />
+        >
+          <option v-for="r in project?.repos" :key="r.name" :value="r.name">
+            {{ r.name }} — {{ r.path }}
+          </option>
+        </select>
       </label>
     </ModalForm>
   </AppShell>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{ title: string; error?: string | null; busy?: boolean }>()
+defineProps<{ title: string; error?: string | null; busy?: boolean; submitLabel?: string }>()
 const emit = defineEmits<{ close: []; submit: [] }>()
 </script>
 
@@ -33,7 +33,7 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           :disabled="busy"
           data-test="form-submit"
         >
-          {{ busy ? '…' : 'create' }}
+          {{ busy ? '…' : (submitLabel ?? 'create') }}
         </button>
       </div>
     </form>

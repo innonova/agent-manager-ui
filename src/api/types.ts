@@ -4,10 +4,23 @@ export interface User {
   name: string
 }
 
+export interface Repo {
+  name: string
+  path: string
+}
+
+/** What a project takes on create/update; a missing name is derived from the directory name. */
+export interface RepoInput {
+  name?: string
+  path: string
+}
+
 export interface Project {
   id: string
   name: string
+  /** Path of the primary repository (repos[0]). */
   path: string
+  repos: Repo[]
   defaultProfile: string | null
   createdAt: number
 }
@@ -94,6 +107,8 @@ export type FeatureStatus = 'planned' | 'queued' | 'in-progress' | 'review' | 'b
 
 export interface Feature {
   slug: string
+  repo: string
+  /** <repo>/features/<slug>.md */
   path: string
   title: string
   status: FeatureStatus

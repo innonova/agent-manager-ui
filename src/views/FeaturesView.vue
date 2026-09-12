@@ -27,7 +27,8 @@ const agentName = (id: string | null) =>
 const open = ref<string | null>(null)
 const chosenAgent = ref<string>('')
 const showNew = ref(false)
-const form = ref({ title: '', slug: '', body: '', priority: 100 })
+const form = ref({ title: '', slug: '', body: '', priority: 100, repo: '' })
+const multiRepo = computed(() => (project.value?.repos.length ?? 0) > 1)
 const error = ref<string | null>(null)
 const busy = ref(false)
 
@@ -72,9 +73,10 @@ async function create() {
       title: form.value.title,
       body: form.value.body,
       priority: Number(form.value.priority),
+      repo: form.value.repo || undefined,
     })
     showNew.value = false
-    form.value = { title: '', slug: '', body: '', priority: 100 }
+    form.value = { title: '', slug: '', body: '', priority: 100, repo: '' }
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : String(e)
   } finally {
@@ -93,7 +95,7 @@ async function create() {
     <div class="mx-auto flex h-full max-w-5xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Features</h1>
-        <span class="text-xs text-slate-400">features/*.md in the repository</span>
+        <span class="text-xs text-slate-400">features/*.md in each repository</span>
         <span class="grow" />
         <label class="flex items-center gap-2 text-sm">
           <span class="text-slate-500 dark:text-slate-400">run on</span>
@@ -116,8 +118,9 @@ async function create() {
         </button>
       </div>
       <p v-if="list.length === 0" class="text-sm text-slate-500 dark:text-slate-400">
-        No features yet. Each feature is a markdown file under <code>features/</code> with a title,
-        a status and a description; the description is what the agent is asked to implement.
+        No features yet. Each feature is a markdown file under <code>features/</code> in one of the
+        project's repositories, with a title, a status and a description; the description is what
+        the agent is asked to implement.
       </p>
       <div class="min-h-0 grow overflow-y-auto">
         <section v-for="g in groups" :key="g.status" class="mb-6">
@@ -138,6 +141,12 @@ async function create() {
                   <span class="font-medium" data-test="feature-title">{{ f.title }}</span>
                   <span class="ml-2 font-mono text-xs text-slate-400"
                     >{{ f.slug }} · p{{ f.priority }}</span
+                  >
+                  <span
+                    v-if="multiRepo"
+                    class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    data-test="feature-repo"
+                    >{{ f.repo }}</span
                   >
                   <span v-if="f.dependsOn.length" class="ml-2 text-xs text-slate-400"
                     >after {{ f.dependsOn.join(', ') }}</span
@@ -225,6 +234,19 @@ async function create() {
           :placeholder="slugify(form.title) || 'derived from the title'"
           data-test="feature-slug-input"
         />
+      </label>
+      <label v-if="multiRepo" class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Repository</span>
+        <select
+          v-model="form.repo"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
+          data-test="feature-repo-input"
+        >
+          <option value="">{{ project?.repos[0]?.name }} (primary)</option>
+          <option v-for="r in project?.repos.slice(1)" :key="r.name" :value="r.name">
+            {{ r.name }}
+          </option>
+        </select>
       </label>
       <label class="text-sm">
         <span class="text-slate-600 dark:text-slate-300">Priority (lower runs first)</span>

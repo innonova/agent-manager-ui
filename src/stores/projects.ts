@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { api } from '@/api/client'
 import { events } from '@/api/events'
-import type { AgentCounts, Project } from '@/api/types'
+import type { AgentCounts, Project, RepoInput } from '@/api/types'
 
 export interface ProjectRow {
   project: Project
@@ -26,13 +26,25 @@ export const useProjectsStore = defineStore('projects', () => {
     loaded.value = true
   }
 
+  const sorted = (list: ProjectRow[]) =>
+    [...list].sort((a, b) => a.project.name.localeCompare(b.project.name))
+
   async function create(input: {
     name: string
-    path: string
+    repos: RepoInput[]
     defaultProfile?: string | null
   }): Promise<Project> {
     const row = await api.createProject(input)
-    rows.value = [...rows.value, row].sort((a, b) => a.project.name.localeCompare(b.project.name))
+    rows.value = sorted([...rows.value, row])
+    return row.project
+  }
+
+  async function update(
+    id: string,
+    input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
+  ): Promise<Project> {
+    const row = await api.updateProject(id, input)
+    rows.value = sorted(rows.value.map((r) => (r.project.id === id ? row : r)))
     return row.project
   }
 
@@ -41,5 +53,5 @@ export const useProjectsStore = defineStore('projects', () => {
     rows.value = rows.value.filter((r) => r.project.id !== id)
   }
 
-  return { rows, loaded, byId, load, create, remove }
+  return { rows, loaded, byId, load, create, update, remove }
 })

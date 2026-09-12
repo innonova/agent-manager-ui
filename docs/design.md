@@ -36,7 +36,7 @@ end-to-end against a manager running with the fake adapter.
 
 ```
 /login                          name + password
-/                               project list: name, path, agent counts by state, last activity
+/                               project list: name, repositories, agent counts by state; new/edit project form with repo rows
 /projects/:id                   project: agents sidebar + selected agent transcript   (milestone 1)
 /projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL (milestone 2, done)
 /projects/:id/features          features grouped by status, queue/dequeue/done/reopen, new feature form (milestone 3, done)
@@ -44,12 +44,16 @@ end-to-end against a manager running with the fake adapter.
 
 Project view layout: left column lists agents with a state badge; main
 column shows the selected agent's transcript with a turn input at the
-bottom; header shows project name and a "new agent" action.
+bottom; header shows project name and a "new agent" action. A project is
+an ordered set of repositories (the first is primary, see the manager's
+design doc); the project form edits them as rows of name + absolute path,
+and the new-agent form picks the working repository when there is more
+than one.
 
 ## Files view
 
-A lazily loaded tree on the left (directories expand on click, symlinks
-marked) and a read-only Monaco editor on the right, language chosen by
+A lazily loaded tree on the left (the root shows one folder per
+repository, directories expand on click, symlinks marked) and a read-only Monaco editor on the right, language chosen by
 extension, following the theme and font size preferences. Monaco is
 loaded only when the view is opened. Expanded directories and the open
 file are re-read whenever an agent in the project stops working (idle,
@@ -64,7 +68,8 @@ blocked, planned, done), each expandable to its markdown body and last
 run. A "run on" selector picks the agent; queue, dequeue, done and reopen
 act through the manager, and `feature.changed` events keep the list
 current. A form creates a new feature file with a slug derived from the
-title.
+title, in the primary repository or a chosen one; in multi-repo projects
+each row shows which repository the feature lives in.
 
 ## Transcript rendering
 

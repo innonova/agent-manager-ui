@@ -27,7 +27,7 @@ export const useFeaturesStore = defineStore('features', () => {
 
   async function create(
     projectId: string,
-    input: { slug: string; title: string; body?: string; priority?: number },
+    input: { slug: string; title: string; body?: string; priority?: number; repo?: string },
   ): Promise<Feature> {
     const { feature } = await api.createFeature(projectId, input)
     await load(projectId)

@@ -2,18 +2,24 @@
 import { onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { Profile } from '@/api/types'
+import type { Profile, Project } from '@/api/types'
 import AgentCountBadges from '@/components/AgentCountBadges.vue'
 import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
+import ProjectForm, { type ProjectFormValue } from '@/components/ProjectForm.vue'
 import { useProjectsStore } from '@/stores/projects'
 
 const projects = useProjectsStore()
-const showNew = ref(false)
-const form = ref({ name: '', path: '', defaultProfile: '' })
+const showForm = ref(false)
+const editing = ref<Project | null>(null)
+const form = ref<ProjectFormValue>(empty())
 const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
+
+function empty(): ProjectFormValue {
+  return { name: '', repos: [{ name: '', path: '' }], defaultProfile: '' }
+}
 
 onMounted(async () => {
   await projects.load()
@@ -22,17 +28,41 @@ onMounted(async () => {
   )
 })
 
-async function create() {
+function openNew() {
+  editing.value = null
+  form.value = empty()
+  error.value = null
+  showForm.value = true
+}
+
+function openEdit(p: Project) {
+  editing.value = p
+  form.value = {
+    name: p.name,
+    repos: p.repos.map((r) => ({ ...r })),
+    defaultProfile: p.defaultProfile ?? '',
+  }
+  error.value = null
+  showForm.value = true
+}
+
+async function submit() {
   error.value = null
   busy.value = true
   try {
-    await projects.create({
+    const input = {
       name: form.value.name,
-      path: form.value.path,
+      // an empty name lets the manager derive one from the directory name
+      repos: form.value.repos
+        .filter((r) => r.path.trim())
+        .map((r) =>
+          r.name.trim() ? { name: r.name.trim(), path: r.path.trim() } : { path: r.path.trim() },
+        ),
       defaultProfile: form.value.defaultProfile || null,
-    })
-    showNew.value = false
-    form.value = { name: '', path: '', defaultProfile: '' }
+    }
+    if (editing.value) await projects.update(editing.value.id, input)
+    else await projects.create(input)
+    showForm.value = false
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : String(e)
   } finally {
@@ -51,7 +81,7 @@ async function create() {
         <button
           class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
           data-test="new-project"
-          @click="showNew = true"
+          @click="openNew"
         >
           new project
         </button>
@@ -60,7 +90,8 @@ async function create() {
         v-if="projects.loaded && projects.rows.length === 0"
         class="text-sm text-slate-500 dark:text-slate-400"
       >
-        No projects yet. Register a repository on this machine by its absolute path.
+        No projects yet. A project is one or more repositories on this machine, registered by
+        absolute path.
       </p>
       <ul
         class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900"
@@ -72,55 +103,43 @@ async function create() {
           >
             <div class="min-w-0 grow">
               <div class="font-medium">{{ r.project.name }}</div>
-              <div class="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
-                {{ r.project.path }}
+              <div
+                v-for="repo in r.project.repos"
+                :key="repo.name"
+                class="truncate font-mono text-xs text-slate-500 dark:text-slate-400"
+                data-test="project-repo"
+              >
+                <span v-if="r.project.repos.length > 1" class="text-slate-700 dark:text-slate-300"
+                  >{{ repo.name }}:
+                </span>
+                {{ repo.path }}
               </div>
             </div>
             <AgentCountBadges :counts="r.agentCounts" />
+            <button
+              type="button"
+              class="text-xs text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-100"
+              data-test="edit-project"
+              title="Edit project"
+              @click.prevent="openEdit(r.project)"
+            >
+              edit
+            </button>
           </RouterLink>
         </li>
       </ul>
     </div>
 
     <ModalForm
-      v-if="showNew"
-      title="New project"
+      v-if="showForm"
+      :title="editing ? 'Edit project' : 'New project'"
       :error="error"
       :busy="busy"
-      @close="showNew = false"
-      @submit="create"
+      :submit-label="editing ? 'save' : 'create'"
+      @close="showForm = false"
+      @submit="submit"
     >
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Name</span>
-        <input
-          v-model="form.name"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
-          data-test="project-name"
-          required
-        />
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Path (absolute, on this machine)</span>
-        <input
-          v-model="form.path"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
-          data-test="project-path"
-          required
-        />
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Default agent profile</span>
-        <select
-          v-model="form.defaultProfile"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
-          data-test="project-profile"
-        >
-          <option value="">(none)</option>
-          <option v-for="p in profiles" :key="p.name" :value="p.name">
-            {{ p.name }}<template v-if="p.description"> — {{ p.description }}</template>
-          </option>
-        </select>
-      </label>
+      <ProjectForm v-model="form" :profiles="profiles" />
     </ModalForm>
   </AppShell>
 </template>

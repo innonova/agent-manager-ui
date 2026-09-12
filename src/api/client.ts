@@ -8,6 +8,7 @@ import type {
   FileContent,
   Profile,
   Project,
+  RepoInput,
   StoredItem,
   User,
 } from './types'
@@ -55,8 +56,12 @@ export const api = {
   projects: () => call<{ project: Project; agentCounts: AgentCounts }[]>('GET', '/api/projects'),
   project: (id: string) =>
     call<{ project: Project; agentCounts: AgentCounts }>('GET', `/api/projects/${id}`),
-  createProject: (input: { name: string; path: string; defaultProfile?: string | null }) =>
+  createProject: (input: { name: string; repos: RepoInput[]; defaultProfile?: string | null }) =>
     call<{ project: Project; agentCounts: AgentCounts }>('POST', '/api/projects', input),
+  updateProject: (
+    id: string,
+    input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
+  ) => call<{ project: Project; agentCounts: AgentCounts }>('PATCH', `/api/projects/${id}`, input),
   deleteProject: (id: string) => call<{ ok: true }>('DELETE', `/api/projects/${id}`),
 
   agents: (projectId: string) =>
@@ -86,7 +91,7 @@ export const api = {
     call<{ features: Feature[] }>('GET', `/api/projects/${projectId}/features`),
   createFeature: (
     projectId: string,
-    input: { slug: string; title: string; body?: string; priority?: number },
+    input: { slug: string; title: string; body?: string; priority?: number; repo?: string },
   ) => call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features`, input),
   setFeatureStatus: (projectId: string, slug: string, status: FeatureStatus) =>
     call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, { status }),
