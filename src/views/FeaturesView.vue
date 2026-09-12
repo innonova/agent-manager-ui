@@ -47,6 +47,33 @@ const form = computed({
   set: (v: typeof EMPTY_FORM) => drafts.set(formKey.value, JSON.stringify(v)),
 })
 const patchForm = (patch: Partial<typeof EMPTY_FORM>) => (form.value = { ...form.value, ...patch })
+
+// Editing a planned feature: title, body and priority, in the same kind of dialog.
+const editing = ref<Feature | null>(null)
+const edit = ref({ title: '', body: '', priority: 100 })
+const editError = ref<string | null>(null)
+function startEdit(f: Feature) {
+  editing.value = f
+  edit.value = { title: f.title, body: f.body, priority: f.priority }
+  editError.value = null
+}
+async function saveEdit() {
+  if (!editing.value) return
+  editError.value = null
+  busy.value = true
+  try {
+    await features.update(props.id, editing.value.slug, {
+      title: edit.value.title,
+      body: edit.value.body,
+      priority: Number(edit.value.priority),
+    })
+    editing.value = null
+  } catch (e) {
+    editError.value = e instanceof ApiError ? e.message : String(e)
+  } finally {
+    busy.value = false
+  }
+}
 /** Slug and priority are rarely needed; they hide behind a toggle. */
 const showMore = ref(false)
 const multiRepo = computed(() => (project.value?.repos.length ?? 0) > 1)
@@ -173,6 +200,14 @@ async function create() {
                 <FeatureStatusBadge :status="f.status" data-test="feature-status" />
                 <div class="flex gap-2 text-xs">
                   <button
+                    v-if="f.status === 'planned'"
+                    class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
+                    data-test="feature-edit"
+                    @click="startEdit(f)"
+                  >
+                    edit
+                  </button>
+                  <button
                     v-if="f.status === 'review' || f.status === 'blocked' || f.status === 'planned'"
                     class="rounded border border-emerald-500 px-2 py-0.5 text-emerald-800 dark:text-emerald-200"
                     data-test="feature-done"
@@ -290,6 +325,46 @@ async function create() {
           />
         </label>
       </template>
+    </ModalForm>
+
+    <ModalForm
+      v-if="editing"
+      title="Edit feature"
+      submit-label="save"
+      :error="editError"
+      :busy="busy"
+      @close="editing = null"
+      @submit="saveEdit"
+    >
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Title</span>
+        <input
+          v-model="edit.title"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          data-test="feature-edit-title"
+          required
+        />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300"
+          >Description (markdown; the whole file below the frontmatter)</span
+        >
+        <textarea
+          v-model="edit.body"
+          rows="10"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
+          data-test="feature-edit-body"
+        />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Priority (lower first)</span>
+        <input
+          v-model="edit.priority"
+          type="number"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          data-test="feature-edit-priority"
+        />
+      </label>
     </ModalForm>
   </AppShell>
 </template>

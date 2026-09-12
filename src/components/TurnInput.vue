@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import type { AgentState } from '@/api/types'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePreferencesStore } from '@/stores/preferences'
@@ -17,6 +17,18 @@ const text = computed({
   get: () => drafts.get(props.agentId),
   set: (v: string) => drafts.set(props.agentId, v),
 })
+
+// The box grows with its content (up to the CSS max-height, then scrolls),
+// so the line being typed never sits on the bottom edge.
+const box = ref<HTMLTextAreaElement | null>(null)
+function fit(): void {
+  const el = box.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+onMounted(fit)
+watch(text, () => void nextTick(fit))
 const enterSends = computed(() => prefs.enterSends())
 const hint = computed(() =>
   enterSends.value
@@ -50,9 +62,10 @@ function onKey(e: KeyboardEvent) {
     @submit.prevent="send"
   >
     <textarea
+      ref="box"
       v-model="text"
       rows="2"
-      class="grow resize-none rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
+      class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
       :placeholder="
         state === 'exited' ? 'Send a message to resume the agent…' : `Message the agent… (${hint})`
       "

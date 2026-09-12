@@ -17,6 +17,8 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const theme = ref<Theme>('system')
   const fontSize = ref<number>(14)
   const enterKey = ref<EnterKey>('auto')
+  /** Browser notifications when an agent is ready or needs input and the page is not focused. */
+  const desktopNotifications = ref(false)
 
   function load(): void {
     try {
@@ -26,7 +28,9 @@ export const usePreferencesStore = defineStore('preferences', () => {
         theme: Theme
         fontSize: number
         enterKey: EnterKey
+        desktopNotifications: boolean
       }>
+      if (saved.desktopNotifications === true) desktopNotifications.value = true
       if (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system')
         theme.value = saved.theme
       if (saved.enterKey === 'auto' || saved.enterKey === 'send' || saved.enterKey === 'newline')
@@ -45,7 +49,12 @@ export const usePreferencesStore = defineStore('preferences', () => {
     try {
       localStorage.setItem(
         KEY,
-        JSON.stringify({ theme: theme.value, fontSize: fontSize.value, enterKey: enterKey.value }),
+        JSON.stringify({
+          theme: theme.value,
+          fontSize: fontSize.value,
+          enterKey: enterKey.value,
+          desktopNotifications: desktopNotifications.value,
+        }),
       )
     } catch {
       /* ignore */
@@ -93,6 +102,23 @@ export const usePreferencesStore = defineStore('preferences', () => {
     enterKey.value = k
   }
 
+  /** The browser's permission state, or 'unsupported'. */
+  function notificationPermission(): NotificationPermission | 'unsupported' {
+    return typeof Notification === 'undefined' ? 'unsupported' : Notification.permission
+  }
+
+  /** Turning it on asks the browser for permission (must run from a click); stays off if refused. */
+  async function setDesktopNotifications(on: boolean): Promise<void> {
+    if (!on) {
+      desktopNotifications.value = false
+      return
+    }
+    if (typeof Notification === 'undefined') return
+    const p =
+      Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
+    desktopNotifications.value = p === 'granted'
+  }
+
   function stepFontSize(delta: 1 | -1): void {
     const i = FONT_SIZES.indexOf(fontSize.value as (typeof FONT_SIZES)[number])
     const next = FONT_SIZES[Math.min(FONT_SIZES.length - 1, Math.max(0, (i < 0 ? 2 : i) + delta))]
@@ -101,11 +127,23 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   load()
   apply()
-  watch([theme, fontSize, enterKey], () => {
+  watch([theme, fontSize, enterKey, desktopNotifications], () => {
     apply()
     save()
   })
   media?.addEventListener('change', apply)
 
-  return { theme, fontSize, enterKey, isDark, enterSends, setTheme, setEnterKey, stepFontSize }
+  return {
+    theme,
+    fontSize,
+    enterKey,
+    desktopNotifications,
+    isDark,
+    enterSends,
+    setTheme,
+    setEnterKey,
+    stepFontSize,
+    notificationPermission,
+    setDesktopNotifications,
+  }
 })

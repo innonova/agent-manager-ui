@@ -38,6 +38,11 @@ export const useFeaturesStore = defineStore('features', () => {
     api.setFeatureStatus(projectId, slug, status)
   const respond = (projectId: string, slug: string, text: string) =>
     api.respondFeature(projectId, slug, text)
+  const update = (
+    projectId: string,
+    slug: string,
+    patch: { title?: string; body?: string; priority?: number },
+  ) => api.updateFeature(projectId, slug, patch)
 
-  return { byProject, load, create, setStatus, respond }
+  return { byProject, load, create, setStatus, respond, update }
 })

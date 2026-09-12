@@ -91,7 +91,8 @@ agent in its conversation, and the manager's `feature.changed` events,
 fed by its poll of the files, show the feature going in progress and
 landing in review. Under an expanded feature a response box appends a
 dated `## Response` and sends it back to planned; rows offer done and
-reopen. The response text and the new-feature form are kept in the
+reopen, and planned features an edit dialog for title, body and
+priority. The response text and the new-feature form are kept in the
 drafts store (see Display preferences, Drafts), so switching tab or
 reloading does not lose them.
 
@@ -168,9 +169,13 @@ the SVG changes.
 
 ## Notifications
 
-Agent state changes to `error`, and later to `waiting-permission`, raise a
-toast and update the document title with a count, so a user on another tab
-notices.
+Agent state changes to `error` raise a toast. With the "desktop
+notifications" preference on (a per-browser setting; turning it on asks
+the browser for permission, from the click), a browser notification is
+shown when an agent finishes working, needs input or a permission, or
+fails, but only while the page is not focused: someone looking at the
+page sees the state badge. One notification per agent at a time;
+clicking it brings the window up on that agent.
 
 ## Testing
 

@@ -144,11 +144,52 @@ test('enter key preference: newline mode, Ctrl+Enter sends, send mode', async ({
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 })
 
+test('desktop notifications: opt in, then a finished turn notifies when the page is not in front', async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(['notifications'])
+  await page.addInitScript(() => {
+    const shown: { title: string; tag?: string }[] = []
+    class FakeNotification {
+      static permission: NotificationPermission = 'granted'
+      static requestPermission = async () => 'granted' as NotificationPermission
+      onclick: (() => void) | null = null
+      constructor(title: string, opts?: NotificationOptions) {
+        shown.push({ title, tag: opts?.tag })
+      }
+      close() {}
+    }
+    ;(window as unknown as { Notification: unknown }).Notification = FakeNotification
+    ;(window as unknown as { __shown: unknown }).__shown = shown
+    document.hasFocus = () => false // the user is elsewhere
+  })
+  await login(page)
+  await page.getByTestId('settings').click()
+  await page.getByTestId('notify-toggle').check()
+  await expect(page.getByTestId('notify-toggle')).toBeChecked()
+  await page.getByTestId('settings').click()
+  await page.getByTestId('project-row').first().click()
+  await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
+  await page.getByTestId('turn-input').fill('quick one')
+  await page.getByTestId('send').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect
+    .poll(() => page.evaluate(() => (window as unknown as { __shown: unknown[] }).__shown))
+    .toEqual([{ title: 'worker is ready for more', tag: expect.stringMatching(/^agent-/) }])
+  await page.reload()
+  await page.getByTestId('settings').click()
+  await expect(page.getByTestId('notify-toggle')).toBeChecked() // persisted
+})
+
 test('a draft survives switching tabs and reloading', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').first().click()
   await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
   const input = page.getByTestId('turn-input')
+  const twoRows = await input.evaluate((el) => el.clientHeight)
+  await input.fill('one\ntwo\nthree\nfour\nfive')
+  expect(await input.evaluate((el) => el.clientHeight)).toBeGreaterThan(twoRows) // grows with content
   await input.fill('half a thought')
   await page.getByTestId('tab-files').click()
   await expect(page.getByTestId('turn-input')).toHaveCount(0)
@@ -318,10 +359,17 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await expect(row.getByTestId('feature-repo')).toHaveText('project')
 
+  // a planned feature can be edited
+  await row.getByTestId('feature-edit').click()
+  await page.getByTestId('feature-edit-title').fill('Hello feature!')
+  await page.getByTestId('feature-edit-body').fill('Say hello, then use a tool.')
+  await page.getByTestId('form-submit').click()
+  await expect(row.getByTestId('feature-title')).toHaveText('Hello feature!')
+
   // An agent, asked in its conversation, edits the file itself; the manager's poll shows it.
   const file = path.join(PROJECT_DIR, 'features', 'hello-feature.md')
   const front = (status: string) =>
-    `---\ntitle: Hello feature\nstatus: ${status}\npriority: 100\n---\n\nSay hello, then use a tool.\n`
+    `---\ntitle: Hello feature!\nstatus: ${status}\npriority: 100\n---\n\nSay hello, then use a tool.\n`
   fs.writeFileSync(file, front('in-progress'))
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'in-progress', {
     timeout: 10000,

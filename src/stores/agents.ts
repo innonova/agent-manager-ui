@@ -30,6 +30,7 @@ export const useAgentsStore = defineStore('agents', () => {
         if (f.status.state === 'error' && was !== 'error') {
           useNotificationsStore().push('error', `${row.agent.name}: ${f.status.error ?? 'error'}`)
         }
+        if (was !== f.status.state) useNotificationsStore().agentChanged(row, was, f.status.state)
       }
       return
     }

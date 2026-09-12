@@ -95,6 +95,11 @@ export const api = {
   ) => call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features`, input),
   setFeatureStatus: (projectId: string, slug: string, status: FeatureStatus) =>
     call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, { status }),
+  updateFeature: (
+    projectId: string,
+    slug: string,
+    patch: { title?: string; body?: string; priority?: number },
+  ) => call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, patch),
   respondFeature: (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
     call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/respond`, {
       text,

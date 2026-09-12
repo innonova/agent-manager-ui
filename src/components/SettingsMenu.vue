@@ -111,6 +111,28 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         </button>
       </div>
       <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Ctrl+Enter always sends.</p>
+      <div
+        class="mt-3 mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+      >
+        Notifications
+      </div>
+      <label class="flex items-center gap-2">
+        <input
+          type="checkbox"
+          :checked="prefs.desktopNotifications"
+          :disabled="prefs.notificationPermission() === 'unsupported'"
+          data-test="notify-toggle"
+          @change="prefs.setDesktopNotifications(($event.target as HTMLInputElement).checked)"
+        />
+        <span>Desktop notifications</span>
+      </label>
+      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-test="notify-hint">
+        {{
+          prefs.notificationPermission() === 'denied'
+            ? 'Blocked by the browser; allow notifications for this site first.'
+            : 'When an agent is ready or needs input and this page is not in front.'
+        }}
+      </p>
     </div>
   </div>
 </template>
