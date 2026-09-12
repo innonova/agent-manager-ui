@@ -107,7 +107,7 @@ export interface FileContent {
   truncated: boolean
 }
 
-export type FeatureStatus = 'planned' | 'queued' | 'in-progress' | 'review' | 'blocked' | 'done'
+export type FeatureStatus = 'planned' | 'in-progress' | 'review' | 'blocked' | 'done'
 
 export interface Feature {
   slug: string
@@ -117,17 +117,8 @@ export interface Feature {
   title: string
   status: FeatureStatus
   priority: number
-  profile: string | null
   dependsOn: string[]
+  /** The spec, followed by `## Report` (agent) and `## Response` (human) sections. */
   body: string
   mtime: number
-  agentId: string | null
-  queuedAt: number | null
-  lastRun: {
-    id: string
-    agentId: string
-    startedAt: number
-    endedAt: number | null
-    outcome: string | null
-  } | null
 }

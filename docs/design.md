@@ -83,11 +83,17 @@ collapses or steps out, Enter or Space opens or toggles, Home/End jump.
 
 ## Features view
 
-Features grouped by status in working order (in progress, queued, review,
-blocked, planned, done), each expandable to its markdown body and last
-run. A "run on" selector picks the agent; queue, dequeue, done and reopen
-act through the manager, and `feature.changed` events keep the list
-current. A form creates a new feature file from a title and a markdown
+Features grouped by status in working order (in progress, review,
+blocked, planned, done), each expandable to its markdown body, which is
+the spec followed by the agent's `## Report` sections and the human's
+`## Response` sections. Nothing here starts work: the human asks an
+agent in its conversation, and the manager's `feature.changed` events,
+fed by its poll of the files, show the feature going in progress and
+landing in review. Under an expanded feature a response box appends a
+dated `## Response` and sends it back to planned ("respond and reopen")
+or closes it ("respond and close"); rows also offer done and reopen.
+
+A form creates a new feature file from a title and a markdown
 description; the slug is derived from the title and the file goes to the
 primary repository (which repository a feature "belongs to" is rarely
 obvious up front, and the agent works across the project anyway). Slug

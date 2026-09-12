@@ -8,24 +8,20 @@ import AppShell from '@/components/AppShell.vue'
 import FeatureStatusBadge from '@/components/FeatureStatusBadge.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
-import { useAgentsStore } from '@/stores/agents'
 import { useFeaturesStore } from '@/stores/features'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string }>()
 const projects = useProjectsStore()
-const agents = useAgentsStore()
 const features = useFeaturesStore()
 const notifications = useNotificationsStore()
 
 const project = computed(() => projects.byId.get(props.id)?.project)
 const list = computed(() => features.byProject.get(props.id) ?? [])
-const agentRows = computed(() => agents.byProject.get(props.id) ?? [])
-const agentName = (id: string | null) =>
-  id ? (agents.byId.get(id)?.agent.name ?? id.slice(0, 8)) : ''
 const open = ref<string | null>(null)
-const chosenAgent = ref<string>('')
+/** The human's answer to a report, per open feature. */
+const response = ref('')
 const showNew = ref(false)
 const form = ref({ title: '', slug: '', body: '', priority: 100 })
 /** Slug and priority are rarely needed; they hide behind a toggle. */
@@ -35,7 +31,7 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 
 const groups = computed(() => {
-  const order: FeatureStatus[] = ['in-progress', 'queued', 'review', 'blocked', 'planned', 'done']
+  const order: FeatureStatus[] = ['in-progress', 'review', 'blocked', 'planned', 'done']
   return order
     .map((status) => ({ status, items: list.value.filter((f) => f.status === status) }))
     .filter((g) => g.items.length)
@@ -43,12 +39,22 @@ const groups = computed(() => {
 
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
-  await Promise.all([features.load(props.id), agents.load(props.id)])
-  chosenAgent.value =
-    agentRows.value.find((a) => a.status.state !== 'working')?.agent.id ??
-    agentRows.value[0]?.agent.id ??
-    ''
+  await features.load(props.id)
 })
+
+function toggle(slug: string) {
+  open.value = open.value === slug ? null : slug
+  response.value = ''
+}
+
+async function respond(slug: string, status?: FeatureStatus) {
+  const text = response.value.trim()
+  if (!text) return
+  await act(async () => {
+    await features.respond(props.id, slug, text, status)
+    response.value = ''
+  })
+}
 
 const html = (f: Feature) => DOMPurify.sanitize(marked.parse(f.body, { async: false }) as string)
 const slugify = (t: string) =>
@@ -97,20 +103,11 @@ async function create() {
     <div class="mx-auto flex h-full max-w-5xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Features</h1>
-        <span class="text-xs text-slate-400">features/*.md in each repository</span>
+        <span class="text-xs text-slate-400"
+          >features/*.md in each repository · ask an agent in its conversation to work on them; it
+          reports here</span
+        >
         <span class="grow" />
-        <label class="flex items-center gap-2 text-sm">
-          <span class="text-slate-500 dark:text-slate-400">run on</span>
-          <select
-            v-model="chosenAgent"
-            class="rounded border border-slate-300 px-2 py-1 dark:border-slate-700"
-            data-test="feature-agent"
-          >
-            <option v-for="a in agentRows" :key="a.agent.id" :value="a.agent.id">
-              {{ a.agent.name }} ({{ a.status.state }})
-            </option>
-          </select>
-        </label>
         <button
           class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
           data-test="new-feature"
@@ -121,8 +118,8 @@ async function create() {
       </div>
       <p v-if="list.length === 0" class="text-sm text-slate-500 dark:text-slate-400">
         No features yet. Each feature is a markdown file under <code>features/</code> in one of the
-        project's repositories, with a title, a status and a description; the description is what
-        the agent is asked to implement.
+        project's repositories: a title, a status and a description. Ask an agent, in its
+        conversation, to work on one; it appends its report to the file and puts it in review.
       </p>
       <div class="min-h-0 grow overflow-y-auto">
         <section v-for="g in groups" :key="g.status" class="mb-6">
@@ -136,10 +133,7 @@ async function create() {
           >
             <li v-for="f in g.items" :key="f.slug" data-test="feature-row" :data-slug="f.slug">
               <div class="flex items-center gap-3 px-4 py-2">
-                <button
-                  class="min-w-0 grow text-left"
-                  @click="open = open === f.slug ? null : f.slug"
-                >
+                <button class="min-w-0 grow text-left" @click="toggle(f.slug)">
                   <span class="font-medium" data-test="feature-title">{{ f.title }}</span>
                   <span class="ml-2 font-mono text-xs text-slate-400"
                     >{{ f.slug }} · p{{ f.priority }}</span
@@ -154,30 +148,10 @@ async function create() {
                     >after {{ f.dependsOn.join(', ') }}</span
                   >
                 </button>
-                <span v-if="f.agentId" class="text-xs text-slate-500 dark:text-slate-400">{{
-                  agentName(f.agentId)
-                }}</span>
                 <FeatureStatusBadge :status="f.status" data-test="feature-status" />
                 <div class="flex gap-2 text-xs">
                   <button
-                    v-if="['planned', 'review', 'blocked'].includes(f.status)"
-                    class="rounded border border-blue-500 px-2 py-0.5 text-blue-700 hover:bg-blue-50 disabled:opacity-40 dark:text-blue-300 dark:hover:bg-blue-950"
-                    :disabled="!chosenAgent"
-                    data-test="feature-queue"
-                    @click="act(() => features.queue(id, f.slug, chosenAgent))"
-                  >
-                    queue
-                  </button>
-                  <button
-                    v-if="f.status === 'queued'"
-                    class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
-                    data-test="feature-dequeue"
-                    @click="act(() => features.dequeue(id, f.slug))"
-                  >
-                    dequeue
-                  </button>
-                  <button
-                    v-if="f.status === 'review'"
+                    v-if="f.status === 'review' || f.status === 'blocked' || f.status === 'planned'"
                     class="rounded border border-emerald-500 px-2 py-0.5 text-emerald-800 dark:text-emerald-200"
                     data-test="feature-done"
                     @click="act(() => features.setStatus(id, f.slug, 'done'))"
@@ -185,7 +159,7 @@ async function create() {
                     done
                   </button>
                   <button
-                    v-if="f.status === 'done' || f.status === 'blocked'"
+                    v-if="f.status === 'done' || f.status === 'blocked' || f.status === 'review'"
                     class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
                     data-test="feature-reopen"
                     @click="act(() => features.setStatus(id, f.slug, 'planned'))"
@@ -200,10 +174,36 @@ async function create() {
                 data-test="feature-body"
               >
                 <div class="prose prose-sm dark:prose-invert max-w-none" v-html="html(f)" />
-                <p v-if="f.lastRun" class="mt-3 text-xs text-slate-400">
-                  last run on {{ agentName(f.lastRun.agentId) }} ·
-                  {{ f.lastRun.outcome ?? 'running' }}
-                </p>
+                <div v-if="f.status !== 'in-progress'" class="mt-4">
+                  <textarea
+                    v-model="response"
+                    rows="3"
+                    class="w-full rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+                    placeholder="Respond to the report… (appended to the file as a dated Response section)"
+                    data-test="feature-response-input"
+                  />
+                  <div class="mt-2 flex items-center gap-2 text-xs">
+                    <button
+                      class="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
+                      :disabled="!response.trim()"
+                      data-test="feature-respond"
+                      @click="respond(f.slug)"
+                    >
+                      respond and reopen
+                    </button>
+                    <button
+                      class="rounded border border-emerald-500 px-3 py-1 text-emerald-800 disabled:opacity-50 dark:text-emerald-200"
+                      :disabled="!response.trim()"
+                      data-test="feature-respond-done"
+                      @click="respond(f.slug, 'done')"
+                    >
+                      respond and close
+                    </button>
+                    <span class="text-slate-400"
+                      >Then ask an agent to work on it again, with whatever caveats you like.</span
+                    >
+                  </div>
+                </div>
               </div>
             </li>
           </ul>

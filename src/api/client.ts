@@ -95,10 +95,9 @@ export const api = {
   ) => call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features`, input),
   setFeatureStatus: (projectId: string, slug: string, status: FeatureStatus) =>
     call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, { status }),
-  queueFeature: (projectId: string, slug: string, agentId: string) =>
-    call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/queue`, {
-      agentId,
+  respondFeature: (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
+    call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/respond`, {
+      text,
+      status,
     }),
-  dequeueFeature: (projectId: string, slug: string) =>
-    call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/dequeue`, {}),
 }

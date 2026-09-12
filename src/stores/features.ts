@@ -4,7 +4,7 @@ import { api } from '@/api/client'
 import { events } from '@/api/events'
 import type { Feature, FeatureStatus } from '@/api/types'
 
-/** Features per project, kept current by feature.changed events. */
+/** Features per project, kept current by feature.changed events (the manager polls the files, so an agent's own edits arrive too). */
 export const useFeaturesStore = defineStore('features', () => {
   const byProject = reactive(new Map<string, Feature[]>())
 
@@ -34,11 +34,10 @@ export const useFeaturesStore = defineStore('features', () => {
     return feature
   }
 
-  const queue = (projectId: string, slug: string, agentId: string) =>
-    api.queueFeature(projectId, slug, agentId)
-  const dequeue = (projectId: string, slug: string) => api.dequeueFeature(projectId, slug)
   const setStatus = (projectId: string, slug: string, status: FeatureStatus) =>
     api.setFeatureStatus(projectId, slug, status)
+  const respond = (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
+    api.respondFeature(projectId, slug, text, status)
 
-  return { byProject, load, create, queue, dequeue, setStatus }
+  return { byProject, load, create, setStatus, respond }
 })

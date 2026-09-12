@@ -1,3 +1,5 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { ADMIN_PASSWORD, PROJECT_DIR, SECOND_DIR } from './constants'
 
@@ -289,7 +291,7 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
   await expect(page.getByTestId('file-path')).toHaveText('second/lib/util.ts')
 })
 
-test('features view: create, queue on an agent, review, done', async ({ page }) => {
+test('features view: create, watch the agent work the file, respond, done', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()
   await page.getByTestId('new-agent').click()
@@ -308,18 +310,28 @@ test('features view: create, queue on an agent, review, done', async ({ page }) 
   const row = page.locator('[data-test=feature-row][data-slug="hello-feature"]')
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await expect(row.getByTestId('feature-repo')).toHaveText('project')
-  const builderOption = page.getByTestId('feature-agent').locator('option', { hasText: 'builder' })
-  await page.getByTestId('feature-agent').selectOption(await builderOption.getAttribute('value'))
-  await row.getByTestId('feature-queue').click()
-  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'review', {
-    timeout: 15000,
+
+  // An agent, asked in its conversation, edits the file itself; the manager's poll shows it.
+  const file = path.join(PROJECT_DIR, 'features', 'hello-feature.md')
+  const front = (status: string) =>
+    `---\ntitle: Hello feature\nstatus: ${status}\npriority: 100\n---\n\nSay hello, then use a tool.\n`
+  fs.writeFileSync(file, front('in-progress'))
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'in-progress', {
+    timeout: 10000,
   })
+  fs.writeFileSync(file, front('review') + '\n## Report (2026-09-12)\n\nSaid hello. Left open: nothing.\n')
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'review', {
+    timeout: 10000,
+  })
+  await row.getByTestId('feature-title').click()
+  await expect(row.getByTestId('feature-body')).toContainText('Said hello')
+
+  // The human answers; the answer lands in the file and the feature goes back to planned.
+  await row.getByTestId('feature-response-input').fill('Also wave.')
+  await row.getByTestId('feature-respond').click()
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
+  await expect(row.getByTestId('feature-body')).toContainText('Also wave.')
+  expect(fs.readFileSync(file, 'utf8')).toMatch(/## Response \(\d{4}-\d{2}-\d{2}\)\n\nAlso wave\./)
   await row.getByTestId('feature-done').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
-  // the agent's transcript shows the spec was sent
-  await page.getByTestId('tab-agents').click()
-  await page.locator('[data-test=agent-row]').filter({ hasText: 'builder' }).click()
-  await expect(page.locator('[data-item=user]').first()).toContainText(
-    'Implement the feature "Hello feature"',
-  )
 })
