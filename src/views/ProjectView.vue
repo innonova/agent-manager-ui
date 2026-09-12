@@ -27,7 +27,7 @@ const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) :
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 
 const showNew = ref(false)
-const form = ref({ name: '', profile: '', cwd: '' })
+const form = ref({ name: '', profile: '', cwd: '', permissions: 'bypass' as 'bypass' | 'ask' })
 const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
@@ -64,6 +64,7 @@ async function create() {
       name: form.value.name,
       profile: form.value.profile || undefined,
       cwd: form.value.cwd || undefined,
+      permissions: form.value.permissions,
     })
     showNew.value = false
     form.value.name = ''
@@ -72,6 +73,15 @@ async function create() {
     error.value = e instanceof ApiError ? e.message : String(e)
   } finally {
     busy.value = false
+  }
+}
+
+async function decide(requestId: string, option: string) {
+  if (!props.agentId) return
+  try {
+    await agents.decide(props.agentId, requestId, option)
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
   }
 }
 
@@ -200,7 +210,7 @@ async function archive() {
           </button>
         </div>
         <div class="relative min-h-0 grow">
-          <TranscriptView :items="items" />
+          <TranscriptView :items="items" @decide="decide" />
         </div>
         <TurnInput
           :agent-id="current.agent.id"
@@ -245,6 +255,17 @@ async function archive() {
           <option v-for="p in profiles" :key="p.name" :value="p.name">
             {{ p.name }}<template v-if="p.description"> — {{ p.description }}</template>
           </option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600 dark:text-slate-300">Permissions</span>
+        <select
+          v-model="form.permissions"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          data-test="agent-permissions"
+        >
+          <option value="bypass">bypass — the agent acts without asking</option>
+          <option value="ask">ask — gated tools wait for your answer here</option>
         </select>
       </label>
       <label v-if="(project?.repos.length ?? 0) > 1" class="text-sm">

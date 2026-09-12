@@ -82,13 +82,16 @@ export const useAgentsStore = defineStore('agents', () => {
 
   async function create(
     projectId: string,
-    input: { name: string; profile?: string; cwd?: string },
+    input: { name: string; profile?: string; cwd?: string; permissions?: 'bypass' | 'ask' },
   ): Promise<Agent> {
     const row = await api.createAgent(projectId, input)
     byId.set(row.agent.id, row)
     byProject.set(projectId, [...(byProject.get(projectId) ?? []), row])
     return row.agent
   }
+
+  const decide = (agentId: string, requestId: string, option: string) =>
+    api.decide(agentId, requestId, option)
 
   async function archive(agentId: string): Promise<void> {
     await api.archive(agentId)
@@ -101,5 +104,5 @@ export const useAgentsStore = defineStore('agents', () => {
     byId.delete(agentId)
   }
 
-  return { byProject, byId, items, load, loadItems, create, archive }
+  return { byProject, byId, items, load, loadItems, create, archive, decide }
 })

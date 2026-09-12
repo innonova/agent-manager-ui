@@ -7,7 +7,11 @@ import { usePreferencesStore } from '@/stores/preferences'
 const props = defineProps<{ agentId: string; state: AgentState; disabled?: boolean }>()
 /** The manager refuses overlapping turns, so sending is only offered while the agent can take one. */
 const busy = computed(
-  () => props.disabled || props.state === 'working' || props.state === 'starting',
+  () =>
+    props.disabled ||
+    props.state === 'working' ||
+    props.state === 'starting' ||
+    props.state === 'waiting-permission',
 )
 const emit = defineEmits<{ send: [text: string]; interrupt: [] }>()
 const prefs = usePreferencesStore()
@@ -67,7 +71,11 @@ function onKey(e: KeyboardEvent) {
       rows="2"
       class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
       :placeholder="
-        state === 'exited' ? 'Send a message to resume the agent…' : `Message the agent… (${hint})`
+        state === 'exited'
+          ? 'Send a message to resume the agent…'
+          : state === 'waiting-permission'
+            ? 'The agent is waiting for your answer above.'
+            : `Message the agent… (${hint})`
       "
       :disabled="disabled"
       spellcheck="true"

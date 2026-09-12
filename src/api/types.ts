@@ -40,6 +40,14 @@ export interface Agent {
   currentSessionId: string | null
   createdAt: number
   archivedAt: number | null
+  /** `ask`: gated tools wait for the human; `bypass`: the agent acts freely. */
+  permissions: 'bypass' | 'ask'
+}
+
+export interface PermissionOption {
+  id: string
+  kind: 'allow' | 'allow-always' | 'deny'
+  label: string
 }
 
 export interface AgentStatus {
@@ -54,6 +62,15 @@ export type Item =
   | { kind: 'user'; text: string }
   | { kind: 'text'; text: string; streaming: boolean }
   | { kind: 'thinking'; text: string }
+  | {
+      kind: 'permission'
+      requestId: string
+      tool: string
+      title: string
+      input: unknown
+      options: PermissionOption[]
+      decision: string | null
+    }
   | { kind: 'tool_use'; id: string; name: string; input: unknown }
   | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
   | { kind: 'error'; message: string }

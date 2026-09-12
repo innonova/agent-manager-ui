@@ -68,8 +68,13 @@ export const api = {
 
   agents: (projectId: string) =>
     call<{ agent: Agent; status: AgentStatus }[]>('GET', `/api/projects/${projectId}/agents`),
-  createAgent: (projectId: string, input: { name: string; profile?: string; cwd?: string }) =>
+  createAgent: (
+    projectId: string,
+    input: { name: string; profile?: string; cwd?: string; permissions?: 'bypass' | 'ask' },
+  ) =>
     call<{ agent: Agent; status: AgentStatus }>('POST', `/api/projects/${projectId}/agents`, input),
+  decide: (id: string, requestId: string, option: string) =>
+    call<{ ok: true }>('POST', `/api/agents/${id}/permission`, { requestId, option }),
   agent: (id: string) => call<{ agent: Agent; status: AgentStatus }>('GET', `/api/agents/${id}`),
   items: (id: string, from = 0) =>
     call<{ items: StoredItem[] }>('GET', `/api/agents/${id}/items?from=${from}`),

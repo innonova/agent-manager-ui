@@ -119,6 +119,13 @@ and priority can be overridden behind a "more options" toggle. In
 multi-repo projects each row shows which repository the feature lives
 in, since files can also be written by hand in any of them.
 
+## Agents and permissions
+
+The new-agent form has a permissions choice: `bypass` (default, the agent
+acts without asking) or `ask` (the vendor's gated tools wait for the
+human). It is fixed at creation and applied when the agent's session
+starts.
+
 ## Transcript rendering
 
 Items from the manager map onto components:
@@ -128,6 +135,7 @@ Items from the manager map onto components:
 | `user` | right-aligned bubble |
 | `text` | markdown, grows while `streaming` |
 | `thinking` | collapsed, expandable |
+| `permission` | an amber card while undecided: tool, what the agent wants, the command or input, and a button per option the vendor offers (Allow, Always allow, Deny); once decided, a plain card noting the choice. The turn input is disabled meanwhile. Only agents created with `permissions: ask` produce these |
 | `tool_use` + its `tool_result` | one collapsed line: tool name, what the call is for (Claude's Bash `description`, a file tool's path, a search's pattern, else the command or a compact input), and the result's size or "error" or "running…"; unfolding shows the command (or the input as JSON) and the result. The pairing is by tool id, done in the view; a result whose call is missing renders on its own |
 | `error` | red banner with the vendor message verbatim |
 | `system` | grey note (session started, resumed, daemon notice) |

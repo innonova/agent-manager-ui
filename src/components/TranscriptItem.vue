@@ -5,7 +5,27 @@ import DOMPurify from 'dompurify'
 import type { Item } from '@/api/types'
 
 const props = defineProps<{ item: Item }>()
+const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 const open = ref(false)
+const permissionInput = computed(() =>
+  props.item.kind === 'permission'
+    ? typeof (props.item.input as { command?: unknown })?.command === 'string'
+      ? String((props.item.input as { command: string }).command)
+      : JSON.stringify(props.item.input, null, 2)
+    : '',
+)
+const decidedLabel = computed(() => {
+  if (props.item.kind !== 'permission' || !props.item.decision) return ''
+  const d = props.item.decision
+  return props.item.options.find((o) => o.id === d)?.label ?? d
+})
+const OPTION_CLASS: Record<string, string> = {
+  allow:
+    'border-emerald-500 text-emerald-800 hover:bg-emerald-50 dark:text-emerald-200 dark:hover:bg-emerald-950',
+  'allow-always':
+    'border-emerald-500 text-emerald-800 hover:bg-emerald-50 dark:text-emerald-200 dark:hover:bg-emerald-950',
+  deny: 'border-red-400 text-red-800 hover:bg-red-50 dark:border-red-700 dark:text-red-200 dark:hover:bg-red-950',
+}
 
 const html = computed(() =>
   props.item.kind === 'text'
@@ -46,6 +66,46 @@ const cost = computed(() =>
       v-if="item.streaming"
       class="inline-block h-4 w-2 animate-pulse bg-slate-400 align-text-bottom dark:bg-slate-500"
     />
+  </div>
+
+  <div
+    v-else-if="item.kind === 'permission'"
+    class="rounded border px-3 py-2 text-sm"
+    :class="
+      item.decision
+        ? 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+        : 'border-amber-400 bg-amber-50 dark:border-amber-600 dark:bg-amber-950'
+    "
+    data-item="permission"
+    :data-decision="item.decision ?? undefined"
+  >
+    <div class="flex items-center gap-2">
+      <span class="font-mono text-xs font-semibold">{{ item.tool }}</span>
+      <span class="truncate">{{ item.title }}</span>
+      <span class="grow" />
+      <span v-if="item.decision" class="text-xs text-slate-500 dark:text-slate-400">{{
+        decidedLabel
+      }}</span>
+      <span v-else class="animate-pulse text-xs text-amber-800 dark:text-amber-200"
+        >waiting for you</span
+      >
+    </div>
+    <pre
+      v-if="permissionInput"
+      class="mt-1 overflow-x-auto font-mono text-xs whitespace-pre-wrap text-slate-700 dark:text-slate-300"
+      >{{ permissionInput }}</pre>
+    <div v-if="!item.decision" class="mt-2 flex gap-2 text-xs">
+      <button
+        v-for="o in item.options"
+        :key="o.id"
+        class="rounded border px-3 py-1"
+        :class="OPTION_CLASS[o.kind]"
+        :data-test="`permission-${o.kind}`"
+        @click="emit('decide', item.requestId, o.id)"
+      >
+        {{ o.label }}
+      </button>
+    </div>
   </div>
 
   <details

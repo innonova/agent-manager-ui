@@ -5,6 +5,7 @@ import ToolCallItem from './ToolCallItem.vue'
 import TranscriptItem from './TranscriptItem.vue'
 
 const props = defineProps<{ items: StoredItem[] }>()
+const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 
 type ToolUse = Extract<Item, { kind: 'tool_use' }>
 type ToolResult = Extract<Item, { kind: 'tool_result' }>
@@ -62,7 +63,7 @@ onMounted(follow)
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
       <template v-for="r in rows" :key="r.key">
         <ToolCallItem v-if="r.kind === 'tool'" :call="r.call" :result="r.result" />
-        <TranscriptItem v-else :item="r.item" />
+        <TranscriptItem v-else :item="r.item" @decide="(id, o) => emit('decide', id, o)" />
       </template>
       <p v-if="items.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
         No transcript yet.
