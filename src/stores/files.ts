@@ -4,10 +4,39 @@ import { api } from '@/api/client'
 import { events } from '@/api/events'
 import type { DirEntry, FileContent } from '@/api/types'
 
+const EXPANDED_KEY = 'agent-manager-ui.files.expanded'
+
+function loadExpanded(projectId: string): string[] {
+  try {
+    const all = JSON.parse(localStorage.getItem(EXPANDED_KEY) ?? '{}') as Record<string, unknown>
+    const v = all[projectId]
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function saveExpanded(projectId: string, paths: string[]): void {
+  try {
+    const all = JSON.parse(localStorage.getItem(EXPANDED_KEY) ?? '{}') as Record<string, unknown>
+    all[projectId] = paths
+    localStorage.setItem(EXPANDED_KEY, JSON.stringify(all))
+  } catch {
+    /* ignore */
+  }
+}
+
+/** The directories above `path`, outermost first, excluding the root. */
+function ancestors(path: string): string[] {
+  const parts = path.split('/')
+  return parts.slice(0, -1).map((_, i) => parts.slice(0, i + 1).join('/'))
+}
+
 /**
  * A project's tree as the user has explored it, plus the open file. Loaded
  * directories and the open file are refreshed whenever an agent in the
- * project stops working, since that is when files change.
+ * project stops working, since that is when files change. Which
+ * directories are expanded is remembered per project in localStorage.
  */
 export const useFilesStore = defineStore('files', () => {
   const projectId = ref<string | null>(null)
@@ -41,8 +70,33 @@ export const useFilesStore = defineStore('files', () => {
     expanded.clear()
     open.value = null
     openPath.value = null
-    await loadDir('')
+    const remembered = loadExpanded(id)
+    await Promise.all(['', ...remembered].map((d) => loadDir(d)))
     expanded.add('')
+    for (const d of remembered) if (dirs.has(d)) expanded.add(d)
+  }
+
+  function remember(): void {
+    if (projectId.value)
+      saveExpanded(
+        projectId.value,
+        [...expanded].filter((d) => d !== ''),
+      )
+  }
+
+  /** Expands every directory above `path` so the entry is visible in the tree. */
+  async function reveal(path: string): Promise<void> {
+    for (const d of ancestors(path)) {
+      if (!dirs.has(d)) await loadDir(d)
+      expanded.add(d)
+    }
+    remember()
+  }
+
+  function collapseAll(): void {
+    expanded.clear()
+    expanded.add('')
+    remember()
   }
 
   async function loadDir(path: string): Promise<void> {
@@ -59,10 +113,11 @@ export const useFilesStore = defineStore('files', () => {
   async function toggle(path: string): Promise<void> {
     if (expanded.has(path)) {
       expanded.delete(path)
-      return
+    } else {
+      if (!dirs.has(path)) await loadDir(path)
+      expanded.add(path)
     }
-    if (!dirs.has(path)) await loadDir(path)
-    expanded.add(path)
+    remember()
   }
 
   async function openFile(path: string): Promise<void> {
@@ -88,5 +143,18 @@ export const useFilesStore = defineStore('files', () => {
     }
   }
 
-  return { projectId, dirs, expanded, open, openPath, error, select, toggle, openFile, refresh }
+  return {
+    projectId,
+    dirs,
+    expanded,
+    open,
+    openPath,
+    error,
+    select,
+    toggle,
+    reveal,
+    collapseAll,
+    openFile,
+    refresh,
+  }
 })

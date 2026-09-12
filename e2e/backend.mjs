@@ -2,7 +2,7 @@
 // Starts a real agent-daemon (fake profile only) and a real agent-manager on
 // a fixed port for the Playwright suite. Run by playwright.config.ts as the
 // first webServer; Vite's /api proxy targets the fixed port. No tokens.
-import { spawn } from 'node:child_process'
+import { execFileSync, spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
@@ -35,6 +35,11 @@ fs.writeFileSync(
   'export const twice = (n: number) => n * 2\n',
 )
 fs.writeFileSync(path.join(E2E_ROOT, 'project', 'src', 'index.ts'), 'export const answer = 42\n')
+// A git repository with an ignored directory, for the tree's greying.
+execFileSync('git', ['init', '-q', path.join(E2E_ROOT, 'project')])
+fs.writeFileSync(path.join(E2E_ROOT, 'project', '.gitignore'), 'dist/\n')
+fs.mkdirSync(path.join(E2E_ROOT, 'project', 'dist'))
+fs.writeFileSync(path.join(E2E_ROOT, 'project', 'dist', 'bundle.js'), '')
 fs.writeFileSync(
   path.join(daemonConfig, 'profiles', 'fake.json'),
   JSON.stringify({ command: process.execPath, args: [FAKE_AGENT], description: 'fake agent' }),

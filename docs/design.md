@@ -53,13 +53,24 @@ than one.
 ## Files view
 
 A lazily loaded tree on the left (the root shows one folder per
-repository, directories expand on click, symlinks marked) and a read-only Monaco editor on the right, language chosen by
-extension, following the theme and font size preferences. Monaco is
-loaded only when the view is opened. Expanded directories and the open
-file are re-read whenever an agent in the project stops working (idle,
-error or exited), and on a manual refresh; the open file is replaced only
-if its mtime changed, so the scroll position survives. Binary and
-oversized files show a notice instead of content.
+repository, directories expand on click, symlinks marked) and a read-only
+Monaco editor on the right, language chosen by extension, following the
+theme and font size preferences. Monaco is loaded only when the view is
+opened. Expanded directories and the open file are re-read whenever an
+agent in the project stops working (idle, error or exited), and on a
+manual refresh; the open file is replaced only if its mtime changed, so
+the scroll position survives. Binary and oversized files show a notice
+instead of content.
+
+The tree looks like VS Code's: a chevron that turns when a directory
+opens, an inline SVG icon per entry (`FileIcon.vue`: folder open/closed,
+and a small set of file kinds by extension or well-known name, with muted
+colour accents), indent guides under each open directory, and entries the
+manager reports as `ignored` (git's verdict, plus `.git`) drawn at half
+opacity. Hovering shows path, size, modification time and the ignored
+flag. Which directories are expanded is remembered per project in
+localStorage; opening a file from the URL expands the directories above
+it; a "collapse" action folds everything back to the repositories.
 
 ## Features view
 

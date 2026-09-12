@@ -193,7 +193,23 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
   // the root shows one folder per repository
   await expect(page.locator('[data-test=tree-dir][data-path="project"]')).toBeVisible()
   await expect(page.locator('[data-test=tree-dir][data-path="second"]')).toBeVisible()
-  await page.locator('[data-test=tree-dir][data-path="project"]').click()
+  const projectDir = page.locator('[data-test=tree-dir][data-path="project"]')
+  await expect(projectDir).toHaveAttribute('data-expanded', 'false')
+  await projectDir.click()
+  await expect(projectDir).toHaveAttribute('data-expanded', 'true')
+  // git-ignored entries and .git itself are greyed; tracked ones are not
+  await expect(page.locator('[data-test=tree-dir][data-path="project/dist"]')).toHaveAttribute(
+    'data-ignored',
+    'true',
+  )
+  await expect(page.locator('[data-test=tree-dir][data-path="project/.git"]')).toHaveAttribute(
+    'data-ignored',
+    'true',
+  )
+  await expect(page.locator('[data-test=tree-dir][data-path="project/src"]')).not.toHaveAttribute(
+    'data-ignored',
+    /.*/,
+  )
   await page.locator('[data-test=tree-dir][data-path="project/src"]').click()
   await page.locator('[data-test=tree-file][data-path="project/src/index.ts"]').click()
   await expect(page.getByTestId('file-path')).toHaveText('project/src/index.ts')
@@ -204,9 +220,23 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
   await page.locator('[data-test=tree-file][data-path="second/lib/util.ts"]').click()
   await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('twice')
   await page.locator('[data-test=tree-file][data-path="project/src/index.ts"]').click()
-  // a reload restores the open file from the URL
+  // a reload restores the open file from the URL and the expanded directories
   await page.reload()
   await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('answer = 42')
+  await expect(page.locator('[data-test=tree-dir][data-path="project/src"]')).toHaveAttribute(
+    'data-expanded',
+    'true',
+  )
+  await expect(page.locator('[data-test=tree-dir][data-path="second/lib"]')).toHaveAttribute(
+    'data-expanded',
+    'true',
+  )
+  await page.getByTestId('files-collapse').click()
+  await expect(page.locator('[data-test=tree-dir][data-path="project"]')).toHaveAttribute(
+    'data-expanded',
+    'false',
+  )
+  await expect(page.locator('[data-path="project/src"]')).toHaveCount(0)
 })
 
 test('features view: create, queue on an agent, review, done', async ({ page }) => {

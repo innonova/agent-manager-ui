@@ -92,6 +92,8 @@ export interface DirEntry {
   type: 'file' | 'dir' | 'symlink' | 'other'
   size: number
   mtime: number
+  /** git ignores it (or it is `.git`); shown greyed like in VS Code. */
+  ignored: boolean
 }
 
 export interface FileContent {

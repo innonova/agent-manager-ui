@@ -29,7 +29,10 @@ onMounted(async () => {
   if (!projects.loaded) await projects.load()
   await files.select(props.id)
   const p = route.query.path
-  if (typeof p === 'string' && p) await files.openFile(p)
+  if (typeof p === 'string' && p) {
+    await files.reveal(p)
+    await files.openFile(p)
+  }
 })
 
 watch(
@@ -58,6 +61,13 @@ watch(
             >Files</span
           >
           <span class="grow" />
+          <button
+            class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
+            data-test="files-collapse"
+            @click="files.collapseAll()"
+          >
+            collapse
+          </button>
           <button
             class="text-xs text-blue-700 hover:underline dark:text-blue-300"
             data-test="files-refresh"
