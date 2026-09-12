@@ -8,6 +8,7 @@ import AppShell from '@/components/AppShell.vue'
 import FeatureStatusBadge from '@/components/FeatureStatusBadge.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
+import { useDraftsStore } from '@/stores/drafts'
 import { useFeaturesStore } from '@/stores/features'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
@@ -16,14 +17,36 @@ const props = defineProps<{ id: string }>()
 const projects = useProjectsStore()
 const features = useFeaturesStore()
 const notifications = useNotificationsStore()
+const drafts = useDraftsStore()
 
 const project = computed(() => projects.byId.get(props.id)?.project)
 const list = computed(() => features.byProject.get(props.id) ?? [])
 const open = ref<string | null>(null)
-/** The human's answer to a report, per open feature. */
-const response = ref('')
 const showNew = ref(false)
-const form = ref({ title: '', slug: '', body: '', priority: 100 })
+
+// Unsent text lives in the drafts store, like the turn input's, so switching
+// tab or reloading does not lose it: a response per feature, one new-feature
+// form per project.
+const responseKey = (slug: string) => `feature-response:${props.id}/${slug}`
+const response = computed({
+  get: () => (open.value ? drafts.get(responseKey(open.value)) : ''),
+  set: (v: string) => {
+    if (open.value) drafts.set(responseKey(open.value), v)
+  },
+})
+const EMPTY_FORM = { title: '', slug: '', body: '', priority: 100 }
+const formKey = computed(() => `feature-new:${props.id}`)
+const form = computed({
+  get: () => {
+    try {
+      return { ...EMPTY_FORM, ...(JSON.parse(drafts.get(formKey.value) || '{}') as object) }
+    } catch {
+      return { ...EMPTY_FORM }
+    }
+  },
+  set: (v: typeof EMPTY_FORM) => drafts.set(formKey.value, JSON.stringify(v)),
+})
+const patchForm = (patch: Partial<typeof EMPTY_FORM>) => (form.value = { ...form.value, ...patch })
 /** Slug and priority are rarely needed; they hide behind a toggle. */
 const showMore = ref(false)
 const multiRepo = computed(() => (project.value?.repos.length ?? 0) > 1)
@@ -44,15 +67,14 @@ onMounted(async () => {
 
 function toggle(slug: string) {
   open.value = open.value === slug ? null : slug
-  response.value = ''
 }
 
-async function respond(slug: string, status?: FeatureStatus) {
+async function respond(slug: string) {
   const text = response.value.trim()
   if (!text) return
   await act(async () => {
-    await features.respond(props.id, slug, text, status)
-    response.value = ''
+    await features.respond(props.id, slug, text)
+    drafts.set(responseKey(slug), '')
   })
 }
 
@@ -84,7 +106,7 @@ async function create() {
     })
     showNew.value = false
     showMore.value = false
-    form.value = { title: '', slug: '', body: '', priority: 100 }
+    drafts.set(formKey.value, '')
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : String(e)
   } finally {
@@ -189,18 +211,11 @@ async function create() {
                       data-test="feature-respond"
                       @click="respond(f.slug)"
                     >
-                      respond and reopen
-                    </button>
-                    <button
-                      class="rounded border border-emerald-500 px-3 py-1 text-emerald-800 disabled:opacity-50 dark:text-emerald-200"
-                      :disabled="!response.trim()"
-                      data-test="feature-respond-done"
-                      @click="respond(f.slug, 'done')"
-                    >
-                      respond and close
+                      respond
                     </button>
                     <span class="text-slate-400"
-                      >Then ask an agent to work on it again, with whatever caveats you like.</span
+                      >Sets it back to planned; then ask an agent to work on it again, with whatever
+                      caveats you like. Use "done" on the row to close it.</span
                     >
                   </div>
                 </div>
@@ -222,7 +237,8 @@ async function create() {
       <label class="text-sm">
         <span class="text-slate-600 dark:text-slate-300">Title</span>
         <input
-          v-model="form.title"
+          :value="form.title"
+          @input="patchForm({ title: ($event.target as HTMLInputElement).value })"
           class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
           data-test="feature-title-input"
           required
@@ -233,7 +249,8 @@ async function create() {
           >Description (markdown; this is what the agent is asked to do)</span
         >
         <textarea
-          v-model="form.body"
+          :value="form.body"
+          @input="patchForm({ body: ($event.target as HTMLTextAreaElement).value })"
           rows="8"
           class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
           data-test="feature-body-input"
@@ -255,7 +272,8 @@ async function create() {
         <label class="text-sm">
           <span class="text-slate-600 dark:text-slate-300">File name (slug)</span>
           <input
-            v-model="form.slug"
+            :value="form.slug"
+            @input="patchForm({ slug: ($event.target as HTMLInputElement).value })"
             class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
             :placeholder="slugify(form.title) || 'derived from the title'"
             data-test="feature-slug-input"
@@ -264,7 +282,8 @@ async function create() {
         <label class="text-sm">
           <span class="text-slate-600 dark:text-slate-300">Priority (lower runs first)</span>
           <input
-            v-model="form.priority"
+            :value="form.priority"
+            @input="patchForm({ priority: Number(($event.target as HTMLInputElement).value) })"
             type="number"
             class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
             data-test="feature-priority-input"

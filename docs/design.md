@@ -90,8 +90,10 @@ the spec followed by the agent's `## Report` sections and the human's
 agent in its conversation, and the manager's `feature.changed` events,
 fed by its poll of the files, show the feature going in progress and
 landing in review. Under an expanded feature a response box appends a
-dated `## Response` and sends it back to planned ("respond and reopen")
-or closes it ("respond and close"); rows also offer done and reopen.
+dated `## Response` and sends it back to planned; rows offer done and
+reopen. The response text and the new-feature form are kept in the
+drafts store (see Display preferences, Drafts), so switching tab or
+reloading does not lose them.
 
 A form creates a new feature file from a title and a markdown
 description; the slug is derived from the title and the file goes to the

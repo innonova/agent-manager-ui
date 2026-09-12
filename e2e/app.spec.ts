@@ -306,6 +306,13 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await page.getByTestId('new-feature').click()
   await page.getByTestId('feature-title-input').fill('Hello feature')
   await page.getByTestId('feature-body-input').fill('Say hello, then use a tool.')
+  // the form draft survives closing the dialog and switching tabs
+  await page.getByRole('button', { name: 'cancel' }).click()
+  await page.getByTestId('tab-files').click()
+  await page.getByTestId('tab-features').click()
+  await page.getByTestId('new-feature').click()
+  await expect(page.getByTestId('feature-title-input')).toHaveValue('Hello feature')
+  await expect(page.getByTestId('feature-body-input')).toHaveValue('Say hello, then use a tool.')
   await page.getByTestId('form-submit').click()
   const row = page.locator('[data-test=feature-row][data-slug="hello-feature"]')
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
@@ -326,8 +333,13 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await row.getByTestId('feature-title').click()
   await expect(row.getByTestId('feature-body')).toContainText('Said hello')
 
-  // The human answers; the answer lands in the file and the feature goes back to planned.
+  // The human answers; the draft survives a tab switch; the answer lands in the file
+  // and the feature goes back to planned.
   await row.getByTestId('feature-response-input').fill('Also wave.')
+  await page.getByTestId('tab-files').click()
+  await page.getByTestId('tab-features').click()
+  await row.getByTestId('feature-title').click()
+  await expect(row.getByTestId('feature-response-input')).toHaveValue('Also wave.')
   await row.getByTestId('feature-respond').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await expect(row.getByTestId('feature-body')).toContainText('Also wave.')

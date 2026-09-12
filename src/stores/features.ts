@@ -36,8 +36,8 @@ export const useFeaturesStore = defineStore('features', () => {
 
   const setStatus = (projectId: string, slug: string, status: FeatureStatus) =>
     api.setFeatureStatus(projectId, slug, status)
-  const respond = (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
-    api.respondFeature(projectId, slug, text, status)
+  const respond = (projectId: string, slug: string, text: string) =>
+    api.respondFeature(projectId, slug, text)
 
   return { byProject, load, create, setStatus, respond }
 })
