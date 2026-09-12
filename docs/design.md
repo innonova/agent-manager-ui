@@ -178,8 +178,12 @@ the browser for permission, from the click), a browser notification is
 shown when an agent finishes working, needs input or a permission, or
 fails, but only while the page is not focused: someone looking at the
 page sees the state badge. An agent that goes idle with background jobs
-pending (the badge shows "idle · 1 bg") is not "ready": it will start a
-turn by itself when they finish, and the notification comes then. One notification per agent at a time;
+pending (the badge shows "idle · 1 bg") is not "ready". When the jobs
+finish, Claude starts a turn by itself and the "ready" notification
+comes at its end; Codex and Copilot just deliver the output, so a
+"finished its background work" notification is sent instead, a few
+seconds after the count drops to zero and only if no turn started
+meanwhile. One notification per agent at a time;
 clicking it brings the window up on that agent.
 
 ## Testing

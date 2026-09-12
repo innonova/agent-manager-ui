@@ -34,6 +34,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
    */
   function agentChanged(row: AgentRow, was: AgentState, now: AgentState): void {
     const prefs = usePreferencesStore()
+    if (now === 'working' && pendingDone.has(row.agent.id)) {
+      clearTimeout(pendingDone.get(row.agent.id)) // Claude resumes by itself; "ready" follows
+      pendingDone.delete(row.agent.id)
+    }
     if (!prefs.desktopNotifications || prefs.notificationPermission() !== 'granted') return
     if (document.hasFocus()) return
     const text =
@@ -45,6 +49,33 @@ export const useNotificationsStore = defineStore('notifications', () => {
             ? `failed: ${row.status.error ?? 'error'}`
             : null
     if (!text) return
+    show(row, text)
+  }
+
+  /**
+   * Background jobs all finished while the agent is idle. Vendors differ in
+   * what follows: Claude starts a turn by itself (so this is deferred and
+   * cancelled if it goes working), Codex and Copilot just deliver the
+   * output. Either way, the user was waiting for this.
+   */
+  const pendingDone = new Map<string, number>()
+  function backgroundChanged(row: AgentRow, was: number, now: number): void {
+    const prefs = usePreferencesStore()
+    if (!prefs.desktopNotifications || prefs.notificationPermission() !== 'granted') return
+    if (!(was > 0 && now === 0 && row.status.state === 'idle')) return
+    const id = row.agent.id
+    if (pendingDone.has(id)) clearTimeout(pendingDone.get(id))
+    pendingDone.set(
+      id,
+      window.setTimeout(() => {
+        pendingDone.delete(id)
+        if (document.hasFocus() || row.status.state !== 'idle') return
+        show(row, 'finished its background work')
+      }, 3000),
+    )
+  }
+
+  function show(row: AgentRow, text: string): void {
     const n = new Notification(`${row.agent.name} ${text}`, {
       body: 'agent-manager',
       tag: `agent-${row.agent.id}`, // one at a time per agent
@@ -59,5 +90,5 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
-  return { toasts, push, dismiss, agentChanged }
+  return { toasts, push, dismiss, agentChanged, backgroundChanged }
 })

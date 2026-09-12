@@ -26,7 +26,10 @@ export const useAgentsStore = defineStore('agents', () => {
       const row = byId.get(f.agentId)
       if (row) {
         const was = row.status.state
+        const wasBackground = row.status.background
         row.status = f.status
+        if (wasBackground !== f.status.background)
+          useNotificationsStore().backgroundChanged(row, wasBackground, f.status.background)
         if (f.status.state === 'error' && was !== 'error') {
           useNotificationsStore().push('error', `${row.agent.name}: ${f.status.error ?? 'error'}`)
         }
