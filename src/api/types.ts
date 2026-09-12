@@ -65,6 +65,7 @@ export type EventFrame =
   | { type: 'project.counts'; projectId: string; counts: AgentCounts }
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }
   | { type: 'agent.item'; agentId: string; item: StoredItem }
+  | { type: 'agent.reset'; agentId: string }
   | {
       type: 'agent.session'
       agentId: string

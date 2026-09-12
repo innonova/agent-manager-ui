@@ -33,6 +33,13 @@ export const useAgentsStore = defineStore('agents', () => {
       }
       return
     }
+    if (f.type === 'agent.reset') {
+      // the manager rebuilt this transcript from scratch; start over
+      items.set(f.agentId, [])
+      loaded.delete(f.agentId)
+      void loadItems(f.agentId)
+      return
+    }
     if (f.type === 'agent.item') {
       const list = items.get(f.agentId)
       if (!list) return
