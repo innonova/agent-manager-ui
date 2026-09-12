@@ -1,4 +1,14 @@
-import type { Agent, AgentCounts, AgentStatus, Profile, Project, StoredItem, User } from './types'
+import type {
+  Agent,
+  AgentCounts,
+  AgentStatus,
+  DirEntry,
+  FileContent,
+  Profile,
+  Project,
+  StoredItem,
+  User,
+} from './types'
 
 export class ApiError extends Error {
   constructor(
@@ -61,4 +71,12 @@ export const api = {
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
+
+  files: (projectId: string, path = '') =>
+    call<{ path: string; entries: DirEntry[] }>(
+      'GET',
+      `/api/projects/${projectId}/files?path=${encodeURIComponent(path)}`,
+    ),
+  file: (projectId: string, path: string) =>
+    call<FileContent>('GET', `/api/projects/${projectId}/file?path=${encodeURIComponent(path)}`),
 }

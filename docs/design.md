@@ -38,13 +38,24 @@ end-to-end against a manager running with the fake adapter.
 /login                          name + password
 /                               project list: name, path, agent counts by state, last activity
 /projects/:id                   project: agents sidebar + selected agent transcript   (milestone 1)
-/projects/:id/files             file tree + Monaco, read-only                        (milestone 2)
+/projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL (milestone 2, done)
 /projects/:id/features          feature list from features/*.md, queue button        (milestone 3)
 ```
 
 Project view layout: left column lists agents with a state badge; main
 column shows the selected agent's transcript with a turn input at the
 bottom; header shows project name and a "new agent" action.
+
+## Files view
+
+A lazily loaded tree on the left (directories expand on click, symlinks
+marked) and a read-only Monaco editor on the right, language chosen by
+extension, following the theme and font size preferences. Monaco is
+loaded only when the view is opened. Expanded directories and the open
+file are re-read whenever an agent in the project stops working (idle,
+error or exited), and on a manual refresh; the open file is replaced only
+if its mtime changed, so the scroll position survives. Binary and
+oversized files show a notice instead of content.
 
 ## Transcript rendering
 

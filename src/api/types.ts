@@ -71,3 +71,20 @@ export type EventFrame =
       agentId: string
       session: { daemonSessionId: string; startedAt: number; endedAt: number | null }
     }
+
+export interface DirEntry {
+  name: string
+  path: string
+  type: 'file' | 'dir' | 'symlink' | 'other'
+  size: number
+  mtime: number
+}
+
+export interface FileContent {
+  path: string
+  size: number
+  mtime: number
+  content: string
+  binary: boolean
+  truncated: boolean
+}

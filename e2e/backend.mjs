@@ -27,7 +27,9 @@ for (const f of [DAEMON_MAIN, MANAGER_MAIN]) {
 fs.rmSync(E2E_ROOT, { recursive: true, force: true })
 const daemonConfig = path.join(E2E_ROOT, 'daemon-config')
 fs.mkdirSync(path.join(daemonConfig, 'profiles'), { recursive: true })
-fs.mkdirSync(path.join(E2E_ROOT, 'project'), { recursive: true })
+fs.mkdirSync(path.join(E2E_ROOT, 'project', 'src'), { recursive: true })
+fs.writeFileSync(path.join(E2E_ROOT, 'project', 'README.md'), '# demo project\n')
+fs.writeFileSync(path.join(E2E_ROOT, 'project', 'src', 'index.ts'), 'export const answer = 42\n')
 fs.writeFileSync(
   path.join(daemonConfig, 'profiles', 'fake.json'),
   JSON.stringify({ command: process.execPath, args: [FAKE_AGENT], description: 'fake agent' }),

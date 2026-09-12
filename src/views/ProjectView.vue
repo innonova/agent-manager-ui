@@ -5,6 +5,7 @@ import { ApiError, api } from '@/api/client'
 import type { Profile } from '@/api/types'
 import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
+import ProjectTabs from '@/components/ProjectTabs.vue'
 import StateBadge from '@/components/StateBadge.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
@@ -107,6 +108,7 @@ async function archive() {
     <template #title>
       <span class="text-slate-400 dark:text-slate-500">/</span>
       <span data-test="project-title">{{ project?.name ?? '…' }}</span>
+      <ProjectTabs :id="id" />
     </template>
     <div class="flex h-full">
       <aside
