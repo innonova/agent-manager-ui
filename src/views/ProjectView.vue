@@ -1,0 +1,220 @@
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue'
+import { RouterLink, useRouter } from 'vue-router'
+import { ApiError, api } from '@/api/client'
+import type { Profile } from '@/api/types'
+import AppShell from '@/components/AppShell.vue'
+import ModalForm from '@/components/ModalForm.vue'
+import StateBadge from '@/components/StateBadge.vue'
+import TranscriptView from '@/components/TranscriptView.vue'
+import TurnInput from '@/components/TurnInput.vue'
+import { useAgentsStore } from '@/stores/agents'
+import { useNotificationsStore } from '@/stores/notifications'
+import { useProjectsStore } from '@/stores/projects'
+
+const props = defineProps<{ id: string; agentId?: string }>()
+const router = useRouter()
+const projects = useProjectsStore()
+const agents = useAgentsStore()
+const notifications = useNotificationsStore()
+
+const project = computed(() => projects.byId.get(props.id)?.project)
+const rows = computed(() => agents.byProject.get(props.id) ?? [])
+const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
+const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
+
+const showNew = ref(false)
+const form = ref({ name: '', profile: '', cwd: '' })
+const error = ref<string | null>(null)
+const busy = ref(false)
+const profiles = ref<Profile[]>([])
+
+onMounted(async () => {
+  if (!projects.loaded) await projects.load()
+  await agents.load(props.id)
+  profiles.value = (await api.profiles().catch(() => ({ profiles: [] }))).profiles.filter(
+    (p) => p.supported,
+  )
+  form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
+  if (!props.agentId && rows.value[0])
+    await router.replace({
+      name: 'agent',
+      params: { id: props.id, agentId: rows.value[0].agent.id },
+    })
+})
+
+watch(
+  () => props.agentId,
+  async (id) => {
+    if (id) await agents.loadItems(id)
+  },
+  { immediate: true },
+)
+
+async function create() {
+  error.value = null
+  busy.value = true
+  try {
+    const agent = await agents.create(props.id, {
+      name: form.value.name,
+      profile: form.value.profile || undefined,
+      cwd: form.value.cwd || undefined,
+    })
+    showNew.value = false
+    form.value.name = ''
+    await router.push({ name: 'agent', params: { id: props.id, agentId: agent.id } })
+  } catch (e) {
+    error.value = e instanceof ApiError ? e.message : String(e)
+  } finally {
+    busy.value = false
+  }
+}
+
+async function send(text: string) {
+  if (!props.agentId) return
+  try {
+    await api.turn(props.agentId, text)
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
+
+async function interrupt() {
+  if (props.agentId)
+    await api
+      .interrupt(props.agentId)
+      .catch((e) => notifications.push('error', String(e.message ?? e)))
+}
+
+async function stop() {
+  if (props.agentId)
+    await api.stop(props.agentId).catch((e) => notifications.push('error', String(e.message ?? e)))
+}
+
+async function archive() {
+  if (
+    !props.agentId ||
+    !confirm('Archive this agent? Its session ends; the transcript stays in the daemon log.')
+  )
+    return
+  await agents.archive(props.agentId)
+  await router.replace({ name: 'project', params: { id: props.id } })
+}
+</script>
+
+<template>
+  <AppShell>
+    <template #title>
+      <span class="text-slate-400">/</span>
+      <span data-test="project-title">{{ project?.name ?? '…' }}</span>
+    </template>
+    <div class="flex h-full">
+      <aside class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+        <div class="flex items-center px-3 py-2">
+          <span class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Agents</span>
+          <span class="grow" />
+          <button
+            class="text-xs text-blue-700 hover:underline"
+            data-test="new-agent"
+            @click="showNew = true"
+          >
+            + new
+          </button>
+        </div>
+        <ul class="min-h-0 grow overflow-y-auto">
+          <li v-for="r in rows" :key="r.agent.id" data-test="agent-row">
+            <RouterLink
+              :to="{ name: 'agent', params: { id, agentId: r.agent.id } }"
+              class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50"
+              :class="r.agent.id === agentId ? 'bg-slate-100 font-medium' : ''"
+            >
+              <span class="truncate">{{ r.agent.name }}</span>
+              <span class="grow" />
+              <StateBadge :state="r.status.state" :title="r.status.error ?? undefined" />
+            </RouterLink>
+          </li>
+        </ul>
+        <p v-if="rows.length === 0" class="px-3 py-2 text-xs text-slate-400">
+          No agents. Create one to start a conversation.
+        </p>
+      </aside>
+
+      <section v-if="current" class="relative flex min-w-0 grow flex-col">
+        <div class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm">
+          <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
+          <StateBadge :state="current.status.state" data-test="agent-state" />
+          <span v-if="current.status.error" class="truncate text-red-700" data-test="agent-error">{{
+            current.status.error
+          }}</span>
+          <span class="grow" />
+          <span class="font-mono text-xs text-slate-400"
+            >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
+          >
+          <button
+            v-if="current.status.state !== 'exited'"
+            class="text-xs text-slate-500 hover:text-slate-900"
+            data-test="stop"
+            @click="stop"
+          >
+            stop
+          </button>
+          <button
+            class="text-xs text-slate-500 hover:text-red-700"
+            data-test="archive"
+            @click="archive"
+          >
+            archive
+          </button>
+        </div>
+        <div class="relative min-h-0 grow">
+          <TranscriptView :items="items" />
+        </div>
+        <TurnInput :state="current.status.state" @send="send" @interrupt="interrupt" />
+      </section>
+      <section v-else class="flex grow items-center justify-center text-sm text-slate-400">
+        Select or create an agent.
+      </section>
+    </div>
+
+    <ModalForm
+      v-if="showNew"
+      title="New agent"
+      :error="error"
+      :busy="busy"
+      @close="showNew = false"
+      @submit="create"
+    >
+      <label class="text-sm">
+        <span class="text-slate-600">Name</span>
+        <input
+          v-model="form.name"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          data-test="agent-name-input"
+          required
+        />
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600">Profile</span>
+        <select
+          v-model="form.profile"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          data-test="agent-profile"
+          required
+        >
+          <option v-for="p in profiles" :key="p.name" :value="p.name">
+            {{ p.name }}<template v-if="p.description"> — {{ p.description }}</template>
+          </option>
+        </select>
+      </label>
+      <label class="text-sm">
+        <span class="text-slate-600">Working directory (defaults to the project path)</span>
+        <input
+          v-model="form.cwd"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono"
+          :placeholder="project?.path"
+          data-test="agent-cwd"
+        />
+      </label>
+    </ModalForm>
+  </AppShell>
+</template>
