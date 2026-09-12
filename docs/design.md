@@ -144,6 +144,16 @@ localStorage and applied to `<html>` before the first paint:
   usable Shift+Enter, so a tablet or a Surface without its keyboard gets
   newline on Enter. Ctrl+Enter and Cmd+Enter always send.
 
+## Icon
+
+A bespoke favicon in `public/`: a rounded dark square with a blue prompt
+chevron driving a column of three dots, the agents. Palette is the Dark+
+one the dark theme uses, so it sits well in either theme's tab strip.
+`favicon.svg` is the source and the icon modern browsers use;
+`favicon.ico` (16, 32 and 48 px) and `apple-touch-icon.png` (180 px) are
+rendered from it with `scripts/favicon.mjs` and must be regenerated when
+the SVG changes.
+
 ## Notifications
 
 Agent state changes to `error`, and later to `waiting-permission`, raise a

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- agent-manager: a prompt chevron driving a column of agents -->
+  <rect width="32" height="32" rx="7" fill="#252526"/>
+  <path d="M6.5 9.5 L13 16 L6.5 22.5" fill="none" stroke="#3794ff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="23" cy="9" r="2.8" fill="#d4d4d4"/>
+  <circle cx="23" cy="16" r="2.8" fill="#d4d4d4"/>
+  <circle cx="23" cy="23" r="2.8" fill="#d4d4d4"/>
+</svg>
