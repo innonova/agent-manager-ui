@@ -46,6 +46,8 @@ export interface AgentStatus {
   state: AgentState
   error: string | null
   lastActivityAt: number
+  /** Background jobs the agent left running; it will start a turn by itself when they finish. */
+  background: number
 }
 
 export type Item =

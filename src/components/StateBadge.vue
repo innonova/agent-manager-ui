@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AgentState } from '@/api/types'
 
-defineProps<{ state: AgentState; title?: string }>()
+defineProps<{ state: AgentState; title?: string; background?: number }>()
 
 const styles: Record<AgentState, string> = {
   starting: 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
@@ -18,8 +18,9 @@ const styles: Record<AgentState, string> = {
   <span
     class="rounded px-1.5 py-0.5 text-xs font-medium"
     :class="styles[state]"
-    :title="title"
+    :title="title ?? (background ? `${background} background job(s) pending` : undefined)"
     :data-state="state"
-    >{{ state }}</span
+    :data-background="background || undefined"
+    >{{ state }}<template v-if="background"> · {{ background }} bg</template></span
   >
 </template>

@@ -37,7 +37,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     if (!prefs.desktopNotifications || prefs.notificationPermission() !== 'granted') return
     if (document.hasFocus()) return
     const text =
-      now === 'idle' && was === 'working'
+      now === 'idle' && was === 'working' && !row.status.background
         ? 'is ready for more'
         : now === 'waiting-input' || now === 'waiting-permission'
           ? 'needs your input'

@@ -138,7 +138,11 @@ async function archive() {
             >
               <span class="truncate">{{ r.agent.name }}</span>
               <span class="grow" />
-              <StateBadge :state="r.status.state" :title="r.status.error ?? undefined" />
+              <StateBadge
+                :state="r.status.state"
+                :background="r.status.background"
+                :title="r.status.error ?? undefined"
+              />
             </RouterLink>
           </li>
         </ul>
@@ -152,7 +156,11 @@ async function archive() {
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
         >
           <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
-          <StateBadge :state="current.status.state" data-test="agent-state" />
+          <StateBadge
+            :state="current.status.state"
+            :background="current.status.background"
+            data-test="agent-state"
+          />
           <span
             v-if="current.status.error"
             class="truncate text-red-700 dark:text-red-300"

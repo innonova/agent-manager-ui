@@ -177,7 +177,9 @@ notifications" preference on (a per-browser setting; turning it on asks
 the browser for permission, from the click), a browser notification is
 shown when an agent finishes working, needs input or a permission, or
 fails, but only while the page is not focused: someone looking at the
-page sees the state badge. One notification per agent at a time;
+page sees the state badge. An agent that goes idle with background jobs
+pending (the badge shows "idle · 1 bg") is not "ready": it will start a
+turn by itself when they finish, and the notification comes then. One notification per agent at a time;
 clicking it brings the window up on that agent.
 
 ## Testing
