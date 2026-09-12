@@ -86,9 +86,16 @@ const status = computed(() => {
       >
         <path d="M6 3.5L10.5 8 6 12.5" />
       </svg>
-      <span class="shrink-0 font-mono font-semibold">{{ call.name }}</span>
-      <span class="truncate text-slate-600 dark:text-slate-300">{{ summary }}</span>
+      <!-- The description leads and the tool name sits on the right: a column of
+           lines all starting with "Bash" is hard to skim; their purpose is not. -->
+      <span class="truncate text-slate-700 dark:text-slate-200">{{ summary || call.name }}</span>
       <span class="grow" />
+      <span
+        v-if="summary"
+        class="shrink-0 font-mono text-slate-400 dark:text-slate-500"
+        data-test="tool-name"
+        >{{ call.name }}</span
+      >
       <span
         class="shrink-0"
         :class="
