@@ -27,6 +27,23 @@ install chromium` once). It costs no tokens: every agent is the fake one.
 
 ## Deploying
 
-The manager serves the built UI. Build here, then run
-`npm run install:service` in `../agent-manager`; it copies `dist/` and
-restarts the manager, which does not affect running agents.
+The manager serves the built UI from its own install directory, so a UI
+change reaches the browser only through the manager's install script.
+There is no separate UI service.
+
+```
+cd ../agent-manager-ui && npm run build          # type-check + vite build -> dist/
+cd ../agent-manager   && npm run install:service # rebuilds the manager, copies dist/ to ~/.local/lib/agent-manager/ui, restarts the manager
+```
+
+- Build the UI first. The install script copies whatever is in `dist/`;
+  a stale build ships silently.
+- Restarting the manager is safe at any time: agents live in the daemon
+  and are re-adopted on start. The daemon is never touched.
+- The install does not touch the manager's database or its
+  `systemd` drop-ins (`admin.conf`, `proxy.conf`); it rewrites only the
+  unit file, the code, the UI and the daemon's `fake` profile.
+- Check: `curl -s http://127.0.0.1:4268/ | grep -o '/assets/index-[^"]*\.css'`
+  should name a new hash, and `journalctl --user -u agent-manager -n 5`
+  should show it connected to the daemon and resynced its agents. Browsers
+  pick the new build up on the next page load.

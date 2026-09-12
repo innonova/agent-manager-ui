@@ -106,7 +106,12 @@ localStorage and applied to `<html>` before the first paint:
 
 - **Theme**: system, light or dark. Dark is a manual choice (a `dark`
   class on the root, Tailwind's `dark:` variants follow it), not only the
-  OS setting, because some people want it for some apps only.
+  OS setting, because some people want it for some apps only. The dark
+  palette is VS Code's Dark+ rather than Tailwind's blue-tinted slate:
+  `src/assets/main.css` remaps the `slate-*` and `blue-*` colour
+  variables inside `.dark`, so components keep using the same utility
+  classes in both modes and one table restyles everything. Monaco's
+  `vs-dark` theme is the same palette.
 - **Font size**: a stepped base size from 12 to 20 px on the root element;
   everything is sized in rem, so the whole page scales.
 

@@ -27,11 +27,36 @@ npm run test:e2e     # Playwright against a manager running with the fake adapte
 npm run lint && npm run format
 ```
 
+Deploying: `npm run build` here, then `npm run install:service` in
+`../agent-manager` (it copies `dist/` and restarts the manager; agents
+are unaffected). Details in `README.md` (Deploying).
+
 ## Working here
 
 - Sibling repositories: `../agent-manager` and `../agent-daemon`.
 - Develop against the fake adapter; real agents cost tokens.
 - Review loop as in `../agent-daemon/docs/reviewing.md`.
+
+## Finishing work
+
+Completed work is committed, pushed and deployed without asking first.
+None of those needs approval; they need judgement. A change is complete
+when it does what was asked, tests and lint pass, and the docs that
+describe the behaviour are updated (`docs/design.md` for a behaviour
+change, `README.md` for an operator-facing one). Then:
+
+- commit on the branch you are on (these repositories work on `main`)
+  with a message that says what changed and why;
+- push;
+- deploy: `npm run build` here, then `npm run install:service` in
+  `../agent-manager` (`README.md`, Deploying). Safe at any time.
+- say in the summary what was committed, pushed and deployed.
+
+Still ask first for force-pushes, history rewrites, deleting branches,
+anything that ends daemon sessions, and work beyond what was asked. When
+the work is a feature from `features/`, the manager moves its status when
+your turn ends; commit and push before the turn ends, never edit the
+status yourself.
 
 ## You may be running inside this system
 

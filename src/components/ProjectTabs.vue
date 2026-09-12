@@ -5,7 +5,7 @@ defineProps<{ id: string }>()
 const route = useRoute()
 const tab = (name: string) =>
   route.name === name || (name === 'project' && route.name === 'agent')
-    ? 'border-blue-600 text-slate-900 dark:text-slate-100'
+    ? 'border-blue-600 text-slate-900 dark:border-blue-500 dark:text-slate-100'
     : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
 </script>
 

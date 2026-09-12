@@ -5,9 +5,38 @@
    the class on <html>, so `dark:` variants follow it rather than the OS. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Dark palette: VS Code's Dark+ rather than Tailwind's blue-tinted slate.
+   Components keep using slate-* and blue-* classes; in dark mode those
+   utilities resolve to these variables instead, so one table restyles the
+   whole app. Luminance order is preserved (50 light … 950 dark) except
+   blue-700, which is the Dark+ button hover and is lighter than blue-600
+   as it is in VS Code. Names on the right are the VS Code theme keys. */
+.dark {
+  --color-slate-950: #1e1e1e; /* editor.background: the page */
+  --color-slate-900: #252526; /* sideBar / editorWidget.background: header, panels, dialogs */
+  --color-slate-800: #2d2d30; /* tab.inactiveBackground: hover rows, faint dividers */
+  --color-slate-700: #3c3c3c; /* input.background, dropdown.border: borders and fields */
+  --color-slate-600: #5a5a5a;
+  --color-slate-500: #808080; /* disabledForeground: muted text */
+  --color-slate-400: #9d9d9d; /* descriptionForeground: secondary text */
+  --color-slate-300: #cccccc; /* foreground: UI text */
+  --color-slate-200: #d0d0d0;
+  --color-slate-100: #d4d4d4; /* editor.foreground: body text */
+  --color-slate-50: #ffffff;
+
+  --color-blue-100: #d6e9ff;
+  --color-blue-200: #a9d1ff;
+  --color-blue-300: #3794ff; /* textLink.foreground */
+  --color-blue-500: #007fd4; /* focusBorder */
+  --color-blue-600: #0e639c; /* button.background */
+  --color-blue-700: #1177bb; /* button.hoverBackground */
+  --color-blue-900: #094771; /* list.activeSelectionBackground */
+  --color-blue-950: #04395e;
+}
+
 .dark input,
 .dark select,
 .dark textarea {
-  background-color: var(--color-slate-800);
+  background-color: var(--color-slate-700);
   color: var(--color-slate-100);
 }
