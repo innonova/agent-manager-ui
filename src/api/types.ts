@@ -66,6 +66,7 @@ export type EventFrame =
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }
   | { type: 'agent.item'; agentId: string; item: StoredItem }
   | { type: 'agent.reset'; agentId: string }
+  | { type: 'feature.changed'; projectId: string; feature: Feature }
   | {
       type: 'agent.session'
       agentId: string
@@ -87,4 +88,27 @@ export interface FileContent {
   content: string
   binary: boolean
   truncated: boolean
+}
+
+export type FeatureStatus = 'planned' | 'queued' | 'in-progress' | 'review' | 'blocked' | 'done'
+
+export interface Feature {
+  slug: string
+  path: string
+  title: string
+  status: FeatureStatus
+  priority: number
+  profile: string | null
+  dependsOn: string[]
+  body: string
+  mtime: number
+  agentId: string | null
+  queuedAt: number | null
+  lastRun: {
+    id: string
+    agentId: string
+    startedAt: number
+    endedAt: number | null
+    outcome: string | null
+  } | null
 }

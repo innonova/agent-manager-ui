@@ -130,3 +130,34 @@ test('files view: tree, Monaco, refresh after an agent turn', async ({ page }) =
   await page.reload()
   await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('answer = 42')
 })
+
+test('features view: create, queue on an agent, review, done', async ({ page }) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('builder')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await page.getByTestId('tab-features').click()
+  await expect(page).toHaveURL(/\/features$/)
+  await page.getByTestId('new-feature').click()
+  await page.getByTestId('feature-title-input').fill('Hello feature')
+  await page.getByTestId('feature-body-input').fill('Say hello, then use a tool.')
+  await page.getByTestId('form-submit').click()
+  const row = page.locator('[data-test=feature-row][data-slug="hello-feature"]')
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
+  const builderOption = page.getByTestId('feature-agent').locator('option', { hasText: 'builder' })
+  await page.getByTestId('feature-agent').selectOption(await builderOption.getAttribute('value'))
+  await row.getByTestId('feature-queue').click()
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'review', {
+    timeout: 15000,
+  })
+  await row.getByTestId('feature-done').click()
+  await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
+  // the agent's transcript shows the spec was sent
+  await page.getByTestId('tab-agents').click()
+  await page.locator('[data-test=agent-row]').filter({ hasText: 'builder' }).click()
+  await expect(page.locator('[data-item=user]').first()).toContainText(
+    'Implement the feature "Hello feature"',
+  )
+})

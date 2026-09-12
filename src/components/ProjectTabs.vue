@@ -25,5 +25,12 @@ const tab = (name: string) =>
       data-test="tab-files"
       >files</RouterLink
     >
+    <RouterLink
+      :to="{ name: 'features', params: { id } }"
+      class="border-b-2 py-1"
+      :class="tab('features')"
+      data-test="tab-features"
+      >features</RouterLink
+    >
   </nav>
 </template>

@@ -39,7 +39,7 @@ end-to-end against a manager running with the fake adapter.
 /                               project list: name, path, agent counts by state, last activity
 /projects/:id                   project: agents sidebar + selected agent transcript   (milestone 1)
 /projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL (milestone 2, done)
-/projects/:id/features          feature list from features/*.md, queue button        (milestone 3)
+/projects/:id/features          features grouped by status, queue/dequeue/done/reopen, new feature form (milestone 3, done)
 ```
 
 Project view layout: left column lists agents with a state badge; main
@@ -56,6 +56,15 @@ file are re-read whenever an agent in the project stops working (idle,
 error or exited), and on a manual refresh; the open file is replaced only
 if its mtime changed, so the scroll position survives. Binary and
 oversized files show a notice instead of content.
+
+## Features view
+
+Features grouped by status in working order (in progress, queued, review,
+blocked, planned, done), each expandable to its markdown body and last
+run. A "run on" selector picks the agent; queue, dequeue, done and reopen
+act through the manager, and `feature.changed` events keep the list
+current. A form creates a new feature file with a slug derived from the
+title.
 
 ## Transcript rendering
 

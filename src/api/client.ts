@@ -3,6 +3,8 @@ import type {
   AgentCounts,
   AgentStatus,
   DirEntry,
+  Feature,
+  FeatureStatus,
   FileContent,
   Profile,
   Project,
@@ -79,4 +81,19 @@ export const api = {
     ),
   file: (projectId: string, path: string) =>
     call<FileContent>('GET', `/api/projects/${projectId}/file?path=${encodeURIComponent(path)}`),
+
+  features: (projectId: string) =>
+    call<{ features: Feature[] }>('GET', `/api/projects/${projectId}/features`),
+  createFeature: (
+    projectId: string,
+    input: { slug: string; title: string; body?: string; priority?: number },
+  ) => call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features`, input),
+  setFeatureStatus: (projectId: string, slug: string, status: FeatureStatus) =>
+    call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, { status }),
+  queueFeature: (projectId: string, slug: string, agentId: string) =>
+    call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/queue`, {
+      agentId,
+    }),
+  dequeueFeature: (projectId: string, slug: string) =>
+    call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/dequeue`, {}),
 }

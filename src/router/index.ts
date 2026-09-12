@@ -29,6 +29,18 @@ const router = createRouter({
       component: () => import('@/views/FilesView.vue'),
       props: true,
     },
+    {
+      path: '/projects/:id/features',
+      name: 'features',
+      component: () => import('@/views/FeaturesView.vue'),
+      props: true,
+    },
+    {
+      path: '/projects/:id/features',
+      name: 'features',
+      component: () => import('@/views/FeaturesView.vue'),
+      props: true,
+    },
   ],
 })
 
