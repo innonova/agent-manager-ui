@@ -4,13 +4,13 @@ import type { AgentState } from '@/api/types'
 defineProps<{ state: AgentState; title?: string }>()
 
 const styles: Record<AgentState, string> = {
-  starting: 'bg-slate-200 text-slate-700',
-  idle: 'bg-emerald-100 text-emerald-800',
-  working: 'bg-blue-100 text-blue-800 animate-pulse',
-  'waiting-input': 'bg-amber-100 text-amber-900',
-  'waiting-permission': 'bg-amber-100 text-amber-900',
-  error: 'bg-red-100 text-red-900',
-  exited: 'bg-slate-100 text-slate-500',
+  starting: 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
+  idle: 'bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200',
+  working: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 animate-pulse',
+  'waiting-input': 'bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100',
+  'waiting-permission': 'bg-amber-100 dark:bg-amber-900 text-amber-900 dark:text-amber-100',
+  error: 'bg-red-100 dark:bg-red-900 text-red-900 dark:text-red-100',
+  exited: 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400',
 }
 </script>
 

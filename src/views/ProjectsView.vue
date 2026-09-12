@@ -43,7 +43,7 @@ async function create() {
 
 <template>
   <AppShell>
-    <template #title><span class="text-slate-400">/ projects</span></template>
+    <template #title><span class="text-slate-400 dark:text-slate-500">/ projects</span></template>
     <div class="mx-auto max-w-4xl p-6">
       <div class="mb-4 flex items-center">
         <h1 class="text-xl font-semibold">Projects</h1>
@@ -56,18 +56,25 @@ async function create() {
           new project
         </button>
       </div>
-      <p v-if="projects.loaded && projects.rows.length === 0" class="text-sm text-slate-500">
+      <p
+        v-if="projects.loaded && projects.rows.length === 0"
+        class="text-sm text-slate-500 dark:text-slate-400"
+      >
         No projects yet. Register a repository on this machine by its absolute path.
       </p>
-      <ul class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+      <ul
+        class="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white dark:divide-slate-800 dark:border-slate-800 dark:bg-slate-900"
+      >
         <li v-for="r in projects.rows" :key="r.project.id" data-test="project-row">
           <RouterLink
             :to="{ name: 'project', params: { id: r.project.id } }"
-            class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50"
+            class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <div class="min-w-0 grow">
               <div class="font-medium">{{ r.project.name }}</div>
-              <div class="truncate font-mono text-xs text-slate-500">{{ r.project.path }}</div>
+              <div class="truncate font-mono text-xs text-slate-500 dark:text-slate-400">
+                {{ r.project.path }}
+              </div>
             </div>
             <AgentCountBadges :counts="r.agentCounts" />
           </RouterLink>
@@ -84,28 +91,28 @@ async function create() {
       @submit="create"
     >
       <label class="text-sm">
-        <span class="text-slate-600">Name</span>
+        <span class="text-slate-600 dark:text-slate-300">Name</span>
         <input
           v-model="form.name"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
           data-test="project-name"
           required
         />
       </label>
       <label class="text-sm">
-        <span class="text-slate-600">Path (absolute, on this machine)</span>
+        <span class="text-slate-600 dark:text-slate-300">Path (absolute, on this machine)</span>
         <input
           v-model="form.path"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
           data-test="project-path"
           required
         />
       </label>
       <label class="text-sm">
-        <span class="text-slate-600">Default agent profile</span>
+        <span class="text-slate-600 dark:text-slate-300">Default agent profile</span>
         <select
           v-model="form.defaultProfile"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
           data-test="project-profile"
         >
           <option value="">(none)</option>

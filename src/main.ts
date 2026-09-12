@@ -5,9 +5,11 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { unauthorized } from './api/client'
+import { usePreferencesStore } from './stores/preferences'
 
 const app = createApp(App)
 app.use(createPinia())
+usePreferencesStore() // applies theme and font size to <html> before the first paint
 app.use(router)
 app.mount('#app')
 

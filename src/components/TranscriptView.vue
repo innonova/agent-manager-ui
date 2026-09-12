@@ -29,7 +29,9 @@ onMounted(follow)
   <div ref="el" class="h-full overflow-y-auto px-4 py-3" data-test="transcript" @scroll="onScroll">
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
       <TranscriptItem v-for="it in items" :key="it.index" :item="it.item" />
-      <p v-if="items.length === 0" class="text-sm text-slate-400">No transcript yet.</p>
+      <p v-if="items.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
+        No transcript yet.
+      </p>
     </div>
   </div>
   <button

@@ -22,6 +22,10 @@ const order: AgentState[] = [
         <StateBadge :state="s" />
       </span>
     </template>
-    <span v-if="order.every((s) => counts[s] === 0)" class="text-xs text-slate-400">no agents</span>
+    <span
+      v-if="order.every((s) => counts[s] === 0)"
+      class="text-xs text-slate-400 dark:text-slate-500"
+      >no agents</span
+    >
   </span>
 </template>

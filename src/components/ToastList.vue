@@ -11,8 +11,8 @@ const notifications = useNotificationsStore()
       class="pointer-events-auto rounded-md border px-4 py-3 text-sm shadow-lg"
       :class="
         t.level === 'error'
-          ? 'border-red-300 bg-red-50 text-red-900'
-          : 'border-slate-300 bg-white text-slate-900'
+          ? 'border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
+          : 'border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100'
       "
       role="status"
       @click="notifications.dismiss(t.id)"

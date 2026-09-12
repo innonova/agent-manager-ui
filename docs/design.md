@@ -74,6 +74,17 @@ Websocket client: connects to `/api/events` after login, reconnects with
 backoff, and on reconnect refetches projects and the open agent's items
 from the last known index so nothing is missed.
 
+## Display preferences
+
+A settings menu in the header holds per-browser preferences, persisted in
+localStorage and applied to `<html>` before the first paint:
+
+- **Theme**: system, light or dark. Dark is a manual choice (a `dark`
+  class on the root, Tailwind's `dark:` variants follow it), not only the
+  OS setting, because some people want it for some apps only.
+- **Font size**: a stepped base size from 12 to 20 px on the root element;
+  everything is sized in rem, so the whole page scales.
+
 ## Notifications
 
 Agent state changes to `error`, and later to `waiting-permission`, raise a

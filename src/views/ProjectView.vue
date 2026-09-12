@@ -105,16 +105,21 @@ async function archive() {
 <template>
   <AppShell>
     <template #title>
-      <span class="text-slate-400">/</span>
+      <span class="text-slate-400 dark:text-slate-500">/</span>
       <span data-test="project-title">{{ project?.name ?? '…' }}</span>
     </template>
     <div class="flex h-full">
-      <aside class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
+      <aside
+        class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+      >
         <div class="flex items-center px-3 py-2">
-          <span class="text-xs font-semibold tracking-wide text-slate-500 uppercase">Agents</span>
+          <span
+            class="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+            >Agents</span
+          >
           <span class="grow" />
           <button
-            class="text-xs text-blue-700 hover:underline"
+            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
             data-test="new-agent"
             @click="showNew = true"
           >
@@ -125,8 +130,8 @@ async function archive() {
           <li v-for="r in rows" :key="r.agent.id" data-test="agent-row">
             <RouterLink
               :to="{ name: 'agent', params: { id, agentId: r.agent.id } }"
-              class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50"
-              :class="r.agent.id === agentId ? 'bg-slate-100 font-medium' : ''"
+              class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+              :class="r.agent.id === agentId ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''"
             >
               <span class="truncate">{{ r.agent.name }}</span>
               <span class="grow" />
@@ -134,32 +139,37 @@ async function archive() {
             </RouterLink>
           </li>
         </ul>
-        <p v-if="rows.length === 0" class="px-3 py-2 text-xs text-slate-400">
+        <p v-if="rows.length === 0" class="px-3 py-2 text-xs text-slate-400 dark:text-slate-500">
           No agents. Create one to start a conversation.
         </p>
       </aside>
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">
-        <div class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm">
+        <div
+          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+        >
           <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
           <StateBadge :state="current.status.state" data-test="agent-state" />
-          <span v-if="current.status.error" class="truncate text-red-700" data-test="agent-error">{{
-            current.status.error
-          }}</span>
+          <span
+            v-if="current.status.error"
+            class="truncate text-red-700 dark:text-red-300"
+            data-test="agent-error"
+            >{{ current.status.error }}</span
+          >
           <span class="grow" />
-          <span class="font-mono text-xs text-slate-400"
+          <span class="font-mono text-xs text-slate-400 dark:text-slate-500"
             >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
           >
           <button
             v-if="current.status.state !== 'exited'"
-            class="text-xs text-slate-500 hover:text-slate-900"
+            class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
             data-test="stop"
             @click="stop"
           >
             stop
           </button>
           <button
-            class="text-xs text-slate-500 hover:text-red-700"
+            class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
             data-test="archive"
             @click="archive"
           >
@@ -171,7 +181,10 @@ async function archive() {
         </div>
         <TurnInput :state="current.status.state" @send="send" @interrupt="interrupt" />
       </section>
-      <section v-else class="flex grow items-center justify-center text-sm text-slate-400">
+      <section
+        v-else
+        class="flex grow items-center justify-center text-sm text-slate-400 dark:text-slate-500"
+      >
         Select or create an agent.
       </section>
     </div>
@@ -185,19 +198,19 @@ async function archive() {
       @submit="create"
     >
       <label class="text-sm">
-        <span class="text-slate-600">Name</span>
+        <span class="text-slate-600 dark:text-slate-300">Name</span>
         <input
           v-model="form.name"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
           data-test="agent-name-input"
           required
         />
       </label>
       <label class="text-sm">
-        <span class="text-slate-600">Profile</span>
+        <span class="text-slate-600 dark:text-slate-300">Profile</span>
         <select
           v-model="form.profile"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
           data-test="agent-profile"
           required
         >
@@ -207,10 +220,12 @@ async function archive() {
         </select>
       </label>
       <label class="text-sm">
-        <span class="text-slate-600">Working directory (defaults to the project path)</span>
+        <span class="text-slate-600 dark:text-slate-300"
+          >Working directory (defaults to the project path)</span
+        >
         <input
           v-model="form.cwd"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
           :placeholder="project?.path"
           data-test="agent-cwd"
         />

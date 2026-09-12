@@ -1,2 +1,13 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/typography';
+
+/* Dark mode is a manual choice (or "system"); the preferences store puts
+   the class on <html>, so `dark:` variants follow it rather than the OS. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+.dark input,
+.dark select,
+.dark textarea {
+  background-color: var(--color-slate-800);
+  color: var(--color-slate-100);
+}

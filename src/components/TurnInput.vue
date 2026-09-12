@@ -26,11 +26,14 @@ function onKey(e: KeyboardEvent) {
 </script>
 
 <template>
-  <form class="flex items-end gap-2 border-t border-slate-200 bg-white p-3" @submit.prevent="send">
+  <form
+    class="flex items-end gap-2 border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+    @submit.prevent="send"
+  >
     <textarea
       v-model="text"
       rows="2"
-      class="grow resize-none rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+      class="grow resize-none rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
       :placeholder="
         state === 'exited'
           ? 'Send a message to resume the agent…'
@@ -43,7 +46,7 @@ function onKey(e: KeyboardEvent) {
     <button
       v-if="state === 'working'"
       type="button"
-      class="rounded border border-amber-400 px-3 py-2 text-sm text-amber-900 hover:bg-amber-50"
+      class="rounded border border-amber-400 px-3 py-2 text-sm text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
       data-test="interrupt"
       @click="emit('interrupt')"
     >

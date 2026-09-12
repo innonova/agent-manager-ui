@@ -9,18 +9,20 @@ const emit = defineEmits<{ close: []; submit: [] }>()
     @click.self="emit('close')"
   >
     <form
-      class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl"
+      class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900"
       @submit.prevent="emit('submit')"
     >
       <h2 class="mb-4 text-lg font-semibold">{{ title }}</h2>
       <div class="flex flex-col gap-3">
         <slot />
       </div>
-      <p v-if="error" class="mt-3 text-sm text-red-700" data-test="form-error">{{ error }}</p>
+      <p v-if="error" class="mt-3 text-sm text-red-700 dark:text-red-300" data-test="form-error">
+        {{ error }}
+      </p>
       <div class="mt-5 flex justify-end gap-2">
         <button
           type="button"
-          class="rounded px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+          class="rounded px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           @click="emit('close')"
         >
           cancel
