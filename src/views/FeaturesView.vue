@@ -27,7 +27,9 @@ const agentName = (id: string | null) =>
 const open = ref<string | null>(null)
 const chosenAgent = ref<string>('')
 const showNew = ref(false)
-const form = ref({ title: '', slug: '', body: '', priority: 100, repo: '' })
+const form = ref({ title: '', slug: '', body: '', priority: 100 })
+/** Slug and priority are rarely needed; they hide behind a toggle. */
+const showMore = ref(false)
 const multiRepo = computed(() => (project.value?.repos.length ?? 0) > 1)
 const error = ref<string | null>(null)
 const busy = ref(false)
@@ -73,10 +75,10 @@ async function create() {
       title: form.value.title,
       body: form.value.body,
       priority: Number(form.value.priority),
-      repo: form.value.repo || undefined,
     })
     showNew.value = false
-    form.value = { title: '', slug: '', body: '', priority: 100, repo: '' }
+    showMore.value = false
+    form.value = { title: '', slug: '', body: '', priority: 100 }
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : String(e)
   } finally {
@@ -227,47 +229,48 @@ async function create() {
         />
       </label>
       <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">File name (slug)</span>
-        <input
-          v-model="form.slug"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
-          :placeholder="slugify(form.title) || 'derived from the title'"
-          data-test="feature-slug-input"
-        />
-      </label>
-      <label v-if="multiRepo" class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Repository</span>
-        <select
-          v-model="form.repo"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
-          data-test="feature-repo-input"
-        >
-          <option value="">{{ project?.repos[0]?.name }} (primary)</option>
-          <option v-for="r in project?.repos.slice(1)" :key="r.name" :value="r.name">
-            {{ r.name }}
-          </option>
-        </select>
-      </label>
-      <label class="text-sm">
-        <span class="text-slate-600 dark:text-slate-300">Priority (lower runs first)</span>
-        <input
-          v-model="form.priority"
-          type="number"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
-          data-test="feature-priority-input"
-        />
-      </label>
-      <label class="text-sm">
         <span class="text-slate-600 dark:text-slate-300"
           >Description (markdown; this is what the agent is asked to do)</span
         >
         <textarea
           v-model="form.body"
-          rows="6"
+          rows="8"
           class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
           data-test="feature-body-input"
         />
       </label>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Saved as <code>features/{{ form.slug || slugify(form.title) || '…' }}.md</code> in
+        {{ project?.repos[0]?.name ?? 'the primary repository' }}.
+        <button
+          type="button"
+          class="ml-1 text-blue-700 hover:underline dark:text-blue-300"
+          data-test="feature-more"
+          @click="showMore = !showMore"
+        >
+          {{ showMore ? 'fewer options' : 'more options' }}
+        </button>
+      </p>
+      <template v-if="showMore">
+        <label class="text-sm">
+          <span class="text-slate-600 dark:text-slate-300">File name (slug)</span>
+          <input
+            v-model="form.slug"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
+            :placeholder="slugify(form.title) || 'derived from the title'"
+            data-test="feature-slug-input"
+          />
+        </label>
+        <label class="text-sm">
+          <span class="text-slate-600 dark:text-slate-300">Priority (lower runs first)</span>
+          <input
+            v-model="form.priority"
+            type="number"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+            data-test="feature-priority-input"
+          />
+        </label>
+      </template>
     </ModalForm>
   </AppShell>
 </template>

@@ -87,9 +87,13 @@ Features grouped by status in working order (in progress, queued, review,
 blocked, planned, done), each expandable to its markdown body and last
 run. A "run on" selector picks the agent; queue, dequeue, done and reopen
 act through the manager, and `feature.changed` events keep the list
-current. A form creates a new feature file with a slug derived from the
-title, in the primary repository or a chosen one; in multi-repo projects
-each row shows which repository the feature lives in.
+current. A form creates a new feature file from a title and a markdown
+description; the slug is derived from the title and the file goes to the
+primary repository (which repository a feature "belongs to" is rarely
+obvious up front, and the agent works across the project anyway). Slug
+and priority can be overridden behind a "more options" toggle. In
+multi-repo projects each row shows which repository the feature lives
+in, since files can also be written by hand in any of them.
 
 ## Transcript rendering
 
