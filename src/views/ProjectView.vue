@@ -10,10 +10,12 @@ import StateBadge from '@/components/StateBadge.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
+import { useChangesStore } from '@/stores/changes'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
+const changes = useChangesStore()
 const router = useRouter()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
@@ -30,6 +32,7 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
 
+onMounted(() => void changes.countUnread(props.id))
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
   await agents.load(props.id)
@@ -172,6 +175,13 @@ async function archive() {
             class="font-mono text-xs text-slate-400 dark:text-slate-500"
             data-test="agent-cwd-label"
             >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
+          >
+          <RouterLink
+            v-if="changes.unread.get(id)"
+            :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
+            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            data-test="unread-link"
+            >{{ changes.unread.get(id) }} changed since you last looked</RouterLink
           >
           <button
             v-if="current.status.state !== 'exited'"

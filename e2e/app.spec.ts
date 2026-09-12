@@ -352,6 +352,35 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
   await expect(page.getByTestId('file-path')).toHaveText('second/lib/util.ts')
 })
 
+test('changes view: unread files since the cursor, a diff, mark as read', async ({ page }) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('reviewer')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  // the agent page links to the changes since the cursor (the fixture has a modified and an untracked file)
+  await expect(page.getByTestId('unread-link')).toContainText('changed since you last looked')
+  await page.getByTestId('unread-link').click()
+  await expect(page).toHaveURL(/mode=changes/)
+  const notes = page.getByTestId('changes-note')
+  await expect(notes.filter({ hasText: 'nothing marked read yet' })).toHaveCount(1)
+  await expect(notes.filter({ hasText: 'not a git repository' })).toHaveCount(1) // the second repo
+  const files = page.getByTestId('changed-file')
+  await expect(files.filter({ hasText: 'src/index.ts' })).toHaveAttribute('data-status', 'modified')
+  await expect(files.filter({ hasText: 'TODO.md' })).toHaveAttribute('data-status', 'untracked')
+  await files.filter({ hasText: 'src/index.ts' }).click()
+  await expect(page.getByTestId('diff-path')).toHaveText('project/src/index.ts')
+  await expect(page.getByTestId('diff-editor')).toBeVisible()
+  await expect(page.getByTestId('diff-editor')).toContainText('touched')
+  await page.getByTestId('mark-read').click()
+  // uncommitted work still shows after marking read; nothing is lost
+  await expect(files.filter({ hasText: 'src/index.ts' })).toHaveAttribute('data-status', 'modified')
+  await expect(notes.filter({ hasText: 'nothing marked read yet' })).toHaveCount(0)
+  await page.getByTestId('mode-tree').click()
+  await expect(page.getByTestId('file-tree')).toBeVisible()
+})
+
 test('features view: create, watch the agent work the file, respond, done', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()

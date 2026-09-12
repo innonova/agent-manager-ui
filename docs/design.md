@@ -81,6 +81,21 @@ open while it is set, Escape clears it. The tree takes keyboard focus:
 up/down move a cursor, right expands or steps into a directory, left
 collapses or steps out, Enter or Space opens or toggles, Home/End jump.
 
+## Changes view
+
+The files tab has a second mode, "Changes": what differs between a base
+and the working tree, per repository, as a list of files with the tree's
+status letters and colours, and a Monaco diff editor (side by side or
+inline) for the selected file. The base is the user's read cursor by
+default ("since you last looked"; "mark as read" moves it to the current
+commit), a feature's recorded range ("changes" on a feature row), or a
+commit. The manager's `note` for a base that fell back to HEAD (nothing
+read yet, history rewritten, no range) shows above the list. The list
+reloads when an agent in the project stops working, like the tree. The
+agent page shows "N changed since you last looked" linking here, and the
+mode switch carries the same count. Uncommitted work always shows; the
+view never writes to the tree.
+
 ## Features view
 
 Features grouped by status in working order (in progress, review,

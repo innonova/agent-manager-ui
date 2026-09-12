@@ -123,4 +123,29 @@ export interface Feature {
   /** The spec, followed by `## Report` (agent) and `## Response` (human) sections. */
   body: string
   mtime: number
+  /** Per repository, the commits the work spans; recorded at in-progress and done. */
+  range: Record<string, { base: string; end: string | null }> | null
+}
+
+export type ChangeStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked'
+export interface ChangedFile {
+  /** <repo>/path */
+  path: string
+  status: ChangeStatus
+  oldPath?: string
+}
+export interface RepoChanges {
+  repo: string
+  base: string | null
+  head: string | null
+  note: string | null
+  files: ChangedFile[]
+}
+export interface FileDiff {
+  path: string
+  base: string | null
+  before: string | null
+  after: string | null
+  binary: boolean
+  truncated: boolean
 }

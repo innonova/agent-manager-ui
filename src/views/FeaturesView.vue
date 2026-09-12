@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { ApiError } from '@/api/client'
@@ -197,6 +198,17 @@ async function create() {
                     >after {{ f.dependsOn.join(', ') }}</span
                   >
                 </button>
+                <RouterLink
+                  v-if="f.range"
+                  :to="{
+                    name: 'files',
+                    params: { id },
+                    query: { mode: 'changes', base: `feature:${f.slug}` },
+                  }"
+                  class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+                  data-test="feature-changes"
+                  >changes</RouterLink
+                >
                 <FeatureStatusBadge :status="f.status" data-test="feature-status" />
                 <div class="flex gap-2 text-xs">
                   <button

@@ -4,17 +4,64 @@ import { useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
+import { useChangesStore } from '@/stores/changes'
+import { useFeaturesStore } from '@/stores/features'
 import { useFilesStore } from '@/stores/files'
 import { useProjectsStore } from '@/stores/projects'
 
 // Monaco is several megabytes; it loads only when a file is opened.
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
+const DiffViewer = defineAsyncComponent(() => import('@/components/DiffViewer.vue'))
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
 const router = useRouter()
 const projects = useProjectsStore()
 const files = useFilesStore()
+const changes = useChangesStore()
+const features = useFeaturesStore()
+/** "tree" or "changes"; changes take a base: "read", "feature:<slug>" or a commit. */
+const mode = computed(() => (route.query.mode === 'changes' ? 'changes' : 'tree'))
+const base = computed(() => (typeof route.query.base === 'string' && route.query.base) || 'read')
+const inline = ref(false)
+const baseLabel = computed(() => {
+  if (base.value === 'read') return 'since you last looked'
+  if (base.value.startsWith('feature:')) {
+    const slug = base.value.slice(8)
+    const f = (features.byProject.get(props.id) ?? []).find((x) => x.slug === slug)
+    return `feature: ${f?.title ?? slug}`
+  }
+  return `since ${base.value.slice(0, 8)}`
+})
+const changedCount = computed(() => changes.repos.reduce((n, r) => n + r.files.length, 0))
+const STATUS_LETTER: Record<string, string> = {
+  modified: 'M',
+  added: 'A',
+  deleted: 'D',
+  renamed: 'R',
+  untracked: 'U',
+}
+const STATUS_CLASS: Record<string, string> = {
+  modified: 'text-[#895503] dark:text-[#e2c08d]',
+  added: 'text-[#587c0c] dark:text-[#81b88b]',
+  deleted: 'text-[#ad0707] dark:text-[#c74e39]',
+  renamed: 'text-[#895503] dark:text-[#e2c08d]',
+  untracked: 'text-[#007100] dark:text-[#73c991]',
+}
+
+function setMode(m: 'tree' | 'changes', b?: string) {
+  const query: Record<string, string> = {}
+  if (m === 'changes') {
+    query.mode = 'changes'
+    if (b && b !== 'read') query.base = b
+  }
+  void router.replace({ query })
+}
+
+async function openChange(path: string) {
+  await changes.openFile(path)
+  void router.replace({ query: { ...route.query, path } })
+}
 const project = computed(() => projects.byId.get(props.id)?.project)
 const size = computed(() => {
   const n = files.open?.size ?? 0
@@ -74,17 +121,29 @@ async function onTreeKey(e: KeyboardEvent): Promise<void> {
 
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
+  if (!features.byProject.has(props.id)) void features.load(props.id)
   await files.select(props.id)
   const p = route.query.path
-  if (typeof p === 'string' && p) {
+  if (mode.value === 'changes') {
+    await changes.select(props.id, base.value)
+    if (typeof p === 'string' && p) await changes.openFile(p)
+  } else if (typeof p === 'string' && p) {
     await files.reveal(p)
     await files.openFile(p)
   }
 })
 
 watch(
+  () => [mode.value, base.value] as const,
+  async ([m, b]) => {
+    if (m === 'changes') await changes.select(props.id, b)
+  },
+)
+
+watch(
   () => files.openPath,
   (p) => {
+    if (mode.value !== 'tree') return
     if (p !== (typeof route.query.path === 'string' ? route.query.path : null))
       void router.replace({ query: p ? { path: p } : {} })
   },
@@ -103,10 +162,35 @@ watch(
         class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
-          <span
-            class="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
-            >Files</span
+          <button
+            class="text-xs font-semibold tracking-wide uppercase"
+            :class="
+              mode === 'tree'
+                ? 'text-slate-900 dark:text-slate-100'
+                : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
+            "
+            data-test="mode-tree"
+            @click="setMode('tree')"
           >
+            Files
+          </button>
+          <button
+            class="ml-3 text-xs font-semibold tracking-wide uppercase"
+            :class="
+              mode === 'changes'
+                ? 'text-slate-900 dark:text-slate-100'
+                : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
+            "
+            data-test="mode-changes"
+            @click="setMode('changes')"
+          >
+            Changes<span
+              v-if="changes.unread.get(id)"
+              class="ml-1 rounded bg-blue-600 px-1 text-[10px] text-white"
+              data-test="unread-count"
+              >{{ changes.unread.get(id) }}</span
+            >
+          </button>
           <span class="grow" />
           <button
             class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
@@ -123,7 +207,74 @@ watch(
             refresh
           </button>
         </div>
+        <template v-if="mode === 'changes'">
+          <div class="flex items-center gap-2 px-3 pb-1 text-xs text-slate-500 dark:text-slate-400">
+            <span class="truncate" data-test="changes-base">{{ baseLabel }}</span>
+            <span class="grow" />
+            <button
+              v-if="base !== 'read'"
+              class="text-blue-700 hover:underline dark:text-blue-300"
+              @click="setMode('changes')"
+            >
+              since last read
+            </button>
+            <button
+              class="text-blue-700 hover:underline dark:text-blue-300"
+              data-test="mark-read"
+              @click="changes.markRead()"
+            >
+              mark as read
+            </button>
+          </div>
+          <div class="min-h-0 grow overflow-auto pb-4" data-test="changes-list">
+            <template v-for="r in changes.repos" :key="r.repo">
+              <div
+                v-if="changes.repos.length > 1 || r.note"
+                class="px-3 pt-2 pb-1 text-xs text-slate-500 dark:text-slate-400"
+              >
+                <span v-if="changes.repos.length > 1" class="font-mono">{{ r.repo }}</span>
+                <span v-if="r.note" class="ml-1 italic" data-test="changes-note">{{ r.note }}</span>
+              </div>
+              <button
+                v-for="f in r.files"
+                :key="f.path"
+                class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                :class="
+                  changes.openPath === f.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : ''
+                "
+                :title="f.oldPath ? `${f.oldPath} → ${f.path}` : f.path"
+                data-test="changed-file"
+                :data-path="f.path"
+                :data-status="f.status"
+                @click="openChange(f.path)"
+              >
+                <span class="truncate" :class="STATUS_CLASS[f.status]">{{
+                  f.path.slice(f.path.indexOf('/') + 1)
+                }}</span>
+                <span class="grow" />
+                <span class="shrink-0 text-xs" :class="STATUS_CLASS[f.status]">{{
+                  STATUS_LETTER[f.status]
+                }}</span>
+              </button>
+            </template>
+            <p
+              v-if="!changes.loading && changedCount === 0"
+              class="px-3 py-2 text-xs text-slate-400 dark:text-slate-500"
+              data-test="changes-empty"
+            >
+              No changes {{ baseLabel }}.
+            </p>
+          </div>
+          <p
+            v-if="changes.error"
+            class="px-3 py-2 text-xs text-red-700 dark:text-red-300"
+            data-test="changes-error"
+          >
+            {{ changes.error }}
+          </p>
+        </template>
         <input
+          v-if="mode === 'tree'"
           v-model="files.filter"
           type="search"
           class="mx-3 mb-1 rounded border border-slate-300 px-2 py-0.5 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700"
@@ -132,6 +283,7 @@ watch(
           @keydown.escape="files.filter = ''"
         />
         <ul
+          v-if="mode === 'tree'"
           class="min-h-0 grow overflow-auto pb-4 outline-none"
           tabindex="0"
           data-test="file-tree"
@@ -148,14 +300,47 @@ watch(
           />
         </ul>
         <p
-          v-if="files.error"
+          v-if="mode === 'tree' && files.error"
           class="px-3 py-2 text-xs text-red-700 dark:text-red-300"
           data-test="files-error"
         >
           {{ files.error }}
         </p>
       </aside>
-      <section class="flex min-w-0 grow flex-col">
+      <section v-if="mode === 'changes'" class="flex min-w-0 grow flex-col">
+        <div
+          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+        >
+          <span class="truncate font-mono text-xs" data-test="diff-path">{{
+            changes.openPath ?? 'select a changed file'
+          }}</span>
+          <span class="grow" />
+          <label v-if="changes.open" class="flex items-center gap-1 text-xs text-slate-500">
+            <input v-model="inline" type="checkbox" /> inline
+          </label>
+        </div>
+        <div class="min-h-0 grow bg-white dark:bg-slate-950">
+          <p v-if="!changes.open" class="p-6 text-sm text-slate-400">
+            Changes are measured from a base to the working tree, so uncommitted work shows too.
+            "Mark as read" moves the base to the current commit.
+          </p>
+          <p
+            v-else-if="changes.open.binary || changes.open.truncated"
+            class="p-6 text-sm text-slate-400"
+            data-test="diff-unavailable"
+          >
+            {{ changes.open.binary ? 'Binary file.' : 'Too large to show.' }}
+          </p>
+          <DiffViewer
+            v-else
+            :path="changes.open.path"
+            :before="changes.open.before ?? ''"
+            :after="changes.open.after ?? ''"
+            :inline="inline"
+          />
+        </div>
+      </section>
+      <section v-else class="flex min-w-0 grow flex-col">
         <div
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
         >

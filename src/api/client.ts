@@ -1,4 +1,6 @@
 import type {
+  FileDiff,
+  RepoChanges,
   Agent,
   AgentCounts,
   AgentStatus,
@@ -100,6 +102,22 @@ export const api = {
     slug: string,
     patch: { title?: string; body?: string; priority?: number },
   ) => call<{ feature: Feature }>('PATCH', `/api/projects/${projectId}/features/${slug}`, patch),
+  changes: (projectId: string, base = 'read') =>
+    call<{ base: string; repos: RepoChanges[] }>(
+      'GET',
+      `/api/projects/${projectId}/changes?base=${encodeURIComponent(base)}`,
+    ),
+  changedFile: (projectId: string, path: string, base = 'read') =>
+    call<FileDiff>(
+      'GET',
+      `/api/projects/${projectId}/changes/file?path=${encodeURIComponent(path)}&base=${encodeURIComponent(base)}`,
+    ),
+  markRead: (projectId: string, repo?: string) =>
+    call<{ repos: { repo: string; commit: string }[] }>(
+      'POST',
+      `/api/projects/${projectId}/changes/read`,
+      repo ? { repo } : {},
+    ),
   respondFeature: (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
     call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/respond`, {
       text,
