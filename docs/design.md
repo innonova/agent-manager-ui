@@ -114,6 +114,9 @@ localStorage and applied to `<html>` before the first paint:
   `vs-dark` theme is the same palette.
 - **Font size**: a stepped base size from 12 to 20 px on the root element;
   everything is sized in rem, so the whole page scales.
+- **Drafts**: unsent turn text is kept per agent in a store and persisted
+  in localStorage, so switching tab, agent or project, or reloading, does
+  not lose it. Sending or clearing the field drops the draft.
 - **Enter key**: what a bare Enter does in the turn input. `send` (with
   Shift+Enter for a newline), `newline` (the button or Ctrl+Enter sends),
   or `auto`, the default, which is `send` unless the primary pointer is

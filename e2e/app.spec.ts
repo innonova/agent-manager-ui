@@ -142,6 +142,23 @@ test('enter key preference: newline mode, Ctrl+Enter sends, send mode', async ({
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 })
 
+test('a draft survives switching tabs and reloading', async ({ page }) => {
+  await login(page)
+  await page.getByTestId('project-row').first().click()
+  await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
+  const input = page.getByTestId('turn-input')
+  await input.fill('half a thought')
+  await page.getByTestId('tab-files').click()
+  await expect(page.getByTestId('turn-input')).toHaveCount(0)
+  await page.getByTestId('tab-agents').click()
+  await expect(page.getByTestId('turn-input')).toHaveValue('half a thought')
+  await page.reload()
+  await expect(page.getByTestId('turn-input')).toHaveValue('half a thought')
+  await page.getByTestId('turn-input').fill('')
+  await page.reload()
+  await expect(page.getByTestId('turn-input')).toHaveValue('')
+})
+
 test.describe('touch-first device', () => {
   test.use({ hasTouch: true, viewport: { width: 900, height: 1200 } })
 

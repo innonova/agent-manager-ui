@@ -184,7 +184,12 @@ async function archive() {
         <div class="relative min-h-0 grow">
           <TranscriptView :items="items" />
         </div>
-        <TurnInput :state="current.status.state" @send="send" @interrupt="interrupt" />
+        <TurnInput
+          :agent-id="current.agent.id"
+          :state="current.status.state"
+          @send="send"
+          @interrupt="interrupt"
+        />
       </section>
       <section
         v-else

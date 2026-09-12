@@ -1,16 +1,22 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import type { AgentState } from '@/api/types'
+import { useDraftsStore } from '@/stores/drafts'
 import { usePreferencesStore } from '@/stores/preferences'
 
-const props = defineProps<{ state: AgentState; disabled?: boolean }>()
+const props = defineProps<{ agentId: string; state: AgentState; disabled?: boolean }>()
 /** The manager refuses overlapping turns, so sending is only offered while the agent can take one. */
 const busy = computed(
   () => props.disabled || props.state === 'working' || props.state === 'starting',
 )
 const emit = defineEmits<{ send: [text: string]; interrupt: [] }>()
-const text = ref('')
 const prefs = usePreferencesStore()
+const drafts = useDraftsStore()
+/** The draft is kept in the store, keyed by agent, so it survives navigation and reloads. */
+const text = computed({
+  get: () => drafts.get(props.agentId),
+  set: (v: string) => drafts.set(props.agentId, v),
+})
 const enterSends = computed(() => prefs.enterSends())
 const hint = computed(() =>
   enterSends.value
