@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { AgentState } from '@/api/types'
 
 const props = defineProps<{ state: AgentState; disabled?: boolean }>()
+/** The manager refuses overlapping turns, so sending is only offered while the agent can take one. */
+const busy = computed(
+  () => props.disabled || props.state === 'working' || props.state === 'starting',
+)
 const emit = defineEmits<{ send: [text: string]; interrupt: [] }>()
 const text = ref('')
 
 function send() {
   const t = text.value.trim()
-  if (!t || props.disabled) return
+  if (!t || busy.value) return
   emit('send', t)
   text.value = ''
 }
@@ -48,7 +52,7 @@ function onKey(e: KeyboardEvent) {
     <button
       type="submit"
       class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-      :disabled="disabled || !text.trim()"
+      :disabled="busy || !text.trim()"
       data-test="send"
     >
       send
