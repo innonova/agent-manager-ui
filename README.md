@@ -1,73 +1,32 @@
-# .
+# agent-manager-ui
 
-This template should help get you started developing with Vue 3 in Vite.
+Browser front end for `agent-manager`: a project list with live agent
+states, per-project agent transcripts with a turn input, a read-only file
+browser (Monaco) and a features board that queues `features/*.md` work on
+agents. It never talks to the daemon or parses agent output; everything
+comes from the manager's REST and websocket API.
 
-## Recommended IDE Setup
+- What it shows and how: [docs/design.md](docs/design.md)
+- The API and models it renders: `../agent-manager/docs/design.md`
+- Agent instructions for this repository: [CLAUDE.md](CLAUDE.md) (`AGENTS.md` is the same file)
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## Development
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```
 npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
+npm run dev            # Vite on :5173, proxies /api to agent-manager on :4268
+npm run build          # type-check + vite build -> dist/ (the manager's install script picks it up)
 npm run test:unit
+npm run test:e2e       # Playwright; starts its own daemon + manager with the fake profile on :4299
+npm run lint && npm run format
 ```
 
-### Run End-to-End Tests with [Playwright](https://playwright.dev)
+The e2e suite needs `../agent-daemon` and `../agent-manager` built
+(`npm run build` in each) and Playwright's Chromium (`npx playwright
+install chromium` once). It costs no tokens: every agent is the fake one.
 
-```sh
-# Install browsers for the first run
-npx playwright install
+## Deploying
 
-# When testing on CI, must build the project first
-npm run build
-
-# Runs the end-to-end tests
-npm run test:e2e
-# Runs the tests only on Chromium
-npm run test:e2e -- --project=chromium
-# Runs the tests of a specific file
-npm run test:e2e -- tests/example.spec.ts
-# Runs the tests in debug mode
-npm run test:e2e -- --debug
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
-```
+The manager serves the built UI. Build here, then run
+`npm run install:service` in `../agent-manager`; it copies `dist/` and
+restarts the manager, which does not affect running agents.
