@@ -83,8 +83,14 @@ export const api = {
   decide: (id: string, requestId: string, option: string) =>
     call<{ ok: true }>('POST', `/api/agents/${id}/permission`, { requestId, option }),
   agent: (id: string) => call<{ agent: Agent; status: AgentStatus }>('GET', `/api/agents/${id}`),
-  items: (id: string, from = 0) =>
-    call<{ items: StoredItem[] }>('GET', `/api/agents/${id}/items?from=${from}`),
+  /** Transcript items by index: everything from `from`, the last `tail`, or `limit` before `before`. */
+  items: (id: string, query: { from?: number; tail?: number; before?: number; limit?: number }) => {
+    const q = Object.entries(query)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('&')
+    return call<{ items: StoredItem[]; total: number }>('GET', `/api/agents/${id}/items?${q}`)
+  },
   turn: (id: string, text: string) =>
     call<{ ok: true }>('POST', `/api/agents/${id}/turn`, { text }),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),

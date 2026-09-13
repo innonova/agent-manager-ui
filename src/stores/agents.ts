@@ -11,10 +11,15 @@ export interface AgentRow {
   status: AgentStatus
 }
 
+/** Items fetched at a time: the tail on open, and each page of earlier history. */
+export const PAGE = 300
+
 /**
- * Agents per project and transcripts per agent. Everything live comes from
- * the event stream; after a reconnect the open transcript is refetched
- * from its last known index.
+ * Agents per project and transcripts per agent. A transcript is an array
+ * indexed by item index and as long as the whole history, but only the
+ * tail is fetched on open; earlier pages fill in holes on request. Live
+ * items come from the event stream; after a reconnect the open transcript
+ * is refetched from its last known index.
  */
 export const useAgentsStore = defineStore('agents', () => {
   const byProject = reactive(new Map<string, AgentRow[]>())
@@ -45,6 +50,7 @@ export const useAgentsStore = defineStore('agents', () => {
       generation.set(f.agentId, (generation.get(f.agentId) ?? 0) + 1)
       items.set(f.agentId, [])
       loaded.delete(f.agentId)
+      earliest.delete(f.agentId)
       void loadItems(f.agentId)
       return
     }
@@ -84,14 +90,23 @@ export const useAgentsStore = defineStore('agents', () => {
   const fetching = new Set<string>()
   /** Loads that failed; retried on reconnect. */
   const failed = new Set<string>()
+  /** Lowest index fetched so far per agent; everything below it is a hole. */
+  const earliest = reactive(new Map<string, number>())
+  const loadingEarlier = reactive(new Set<string>())
+  const hasEarlier = (agentId: string) => (earliest.get(agentId) ?? 0) > 0
+
   async function loadItems(agentId: string): Promise<void> {
     if (fetching.has(agentId)) return
     const gen = generation.get(agentId) ?? 0
     const from = loaded.has(agentId) ? (items.get(agentId)?.length ?? 0) : 0
     fetching.add(agentId)
     let fetched: StoredItem[]
+    let total: number
     try {
-      fetched = (await api.items(agentId, from)).items
+      ;({ items: fetched, total } = await api.items(
+        agentId,
+        loaded.has(agentId) ? { from } : { tail: PAGE },
+      ))
     } catch (e) {
       fetching.delete(agentId)
       arriving.delete(agentId)
@@ -106,15 +121,41 @@ export const useAgentsStore = defineStore('agents', () => {
     failed.delete(agentId)
     if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
-    if (fetched.length && fetched[0]!.index > list.length) return void loadItems(agentId) // a gap: start over
+    if (loaded.has(agentId) && fetched.length && fetched[0]!.index > list.length)
+      return void loadItems(agentId) // a gap: start over
+    if (total > list.length) list.length = total // holes below the tail are earlier history
     for (const it of fetched) list[it.index] = it
     for (const it of arriving.get(agentId) ?? []) if (it.index <= list.length) list[it.index] = it
     arriving.delete(agentId)
     items.set(agentId, list)
+    if (!loaded.has(agentId)) earliest.set(agentId, fetched[0]?.index ?? 0)
     loaded.add(agentId)
     if (!byId.has(agentId)) {
       const row = await api.agent(agentId)
       byId.set(agentId, row)
+    }
+  }
+
+  /** Fills in the page of history before the earliest item fetched so far. */
+  async function loadEarlier(agentId: string): Promise<void> {
+    const before = earliest.get(agentId) ?? 0
+    if (before <= 0 || loadingEarlier.has(agentId) || !loaded.has(agentId)) return
+    const gen = generation.get(agentId) ?? 0
+    loadingEarlier.add(agentId)
+    try {
+      const { items: fetched } = await api.items(agentId, { before, limit: PAGE })
+      if ((generation.get(agentId) ?? 0) !== gen) return
+      const list = items.get(agentId)
+      if (!list) return
+      for (const it of fetched) list[it.index] = it
+      earliest.set(agentId, fetched[0]?.index ?? 0)
+    } catch (e) {
+      useNotificationsStore().push(
+        'error',
+        `could not load earlier history: ${e instanceof ApiError ? e.message : String(e)}`,
+      )
+    } finally {
+      loadingEarlier.delete(agentId)
     }
   }
 
@@ -144,6 +185,7 @@ export const useAgentsStore = defineStore('agents', () => {
     loaded.delete(agentId)
     failed.delete(agentId)
     arriving.delete(agentId)
+    earliest.delete(agentId)
     const row = byId.get(agentId)
     if (row)
       byProject.set(
@@ -153,5 +195,17 @@ export const useAgentsStore = defineStore('agents', () => {
     byId.delete(agentId)
   }
 
-  return { byProject, byId, items, load, loadItems, create, archive, decide }
+  return {
+    byProject,
+    byId,
+    items,
+    load,
+    loadItems,
+    loadEarlier,
+    hasEarlier,
+    loadingEarlier,
+    create,
+    archive,
+    decide,
+  }
 })

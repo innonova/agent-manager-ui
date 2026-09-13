@@ -266,7 +266,13 @@ async function archive() {
           </button>
         </div>
         <div class="relative min-h-0 grow">
-          <TranscriptView :items="items" @decide="decide" />
+          <TranscriptView
+            :items="items"
+            :has-earlier="!!props.agentId && agents.hasEarlier(props.agentId)"
+            :loading-earlier="!!props.agentId && agents.loadingEarlier.has(props.agentId)"
+            @decide="decide"
+            @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"
+          />
           <!-- typing floats over the bottom of the transcript, right above the
                input, without moving anything -->
           <div

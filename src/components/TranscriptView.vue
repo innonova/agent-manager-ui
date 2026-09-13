@@ -4,8 +4,13 @@ import type { Item, StoredItem } from '@/api/types'
 import ToolCallItem from './ToolCallItem.vue'
 import TranscriptItem from './TranscriptItem.vue'
 
-const props = defineProps<{ items: StoredItem[] }>()
-const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
+const props = defineProps<{
+  items: StoredItem[]
+  /** Older history exists that is not loaded. */
+  hasEarlier?: boolean
+  loadingEarlier?: boolean
+}>()
+const emit = defineEmits<{ decide: [requestId: string, option: string]; loadEarlier: [] }>()
 
 type ToolUse = Extract<Item, { kind: 'tool_use' }>
 type ToolResult = Extract<Item, { kind: 'tool_result' }>
@@ -22,6 +27,7 @@ const rows = computed<Row[]>(() => {
   const out: Row[] = []
   const calls = new Map<string, Row & { kind: 'tool' }>()
   for (const s of props.items) {
+    if (!s) continue // a hole: history not loaded
     const it = s.item
     if (it.kind === 'tool_use') {
       const row: Row & { kind: 'tool' } = { key: s.index, kind: 'tool', call: it, result: null }
@@ -44,7 +50,24 @@ function onScroll() {
   const e = el.value
   if (!e) return
   following.value = e.scrollHeight - e.scrollTop - e.clientHeight < 40
+  if (e.scrollTop < 200 && props.hasEarlier && !props.loadingEarlier) emit('loadEarlier')
 }
+
+/**
+ * Earlier history is prepended; keep what the reader is looking at in
+ * place by growing the scroll offset by what the new rows added above.
+ */
+watch(
+  () => rows.value[0]?.key,
+  async (first, was) => {
+    const e = el.value
+    if (!e || first === undefined || was === undefined || first >= was) return
+    const height = e.scrollHeight
+    const top = e.scrollTop
+    await nextTick()
+    e.scrollTop = top + (e.scrollHeight - height)
+  },
+)
 
 async function follow() {
   if (!following.value) return
@@ -68,6 +91,15 @@ onMounted(follow)
 <template>
   <div ref="el" class="h-full overflow-y-auto px-4 py-3" data-test="transcript" @scroll="onScroll">
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
+      <button
+        v-if="hasEarlier"
+        class="self-center rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        data-test="load-earlier"
+        :disabled="loadingEarlier"
+        @click="emit('loadEarlier')"
+      >
+        {{ loadingEarlier ? 'loading earlier…' : 'load earlier' }}
+      </button>
       <template v-for="r in rows" :key="r.key">
         <ToolCallItem v-if="r.kind === 'tool'" :call="r.call" :result="r.result" />
         <TranscriptItem
@@ -77,7 +109,7 @@ onMounted(follow)
           @decide="(id, o) => emit('decide', id, o)"
         />
       </template>
-      <p v-if="items.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
+      <p v-if="rows.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
         No transcript yet.
       </p>
     </div>
