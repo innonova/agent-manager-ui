@@ -40,7 +40,14 @@ const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) :
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 
 const showNew = ref(false)
-const form = ref({ name: '', profile: '', cwd: '', permissions: 'bypass' as 'bypass' | 'ask' })
+const form = ref({
+  name: '',
+  profile: '',
+  cwd: '',
+  permissions: 'bypass' as 'bypass' | 'ask',
+  model: '',
+  effort: '',
+})
 const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
@@ -86,6 +93,8 @@ async function create() {
       profile: form.value.profile || undefined,
       cwd: form.value.cwd || undefined,
       permissions: form.value.permissions,
+      model: form.value.model.trim() || undefined,
+      effort: form.value.effort || undefined,
     })
     showNew.value = false
     form.value.name = ''
@@ -197,6 +206,13 @@ async function archive() {
             :background="current.status.background"
             data-test="agent-state"
           />
+          <span
+            v-if="current.status.model"
+            class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+            :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
+            data-test="agent-model-chip"
+            >{{ current.status.model }}</span
+          >
           <span
             v-if="current.status.error"
             class="truncate text-red-700 dark:text-red-300"
@@ -310,6 +326,31 @@ async function archive() {
           </option>
         </select>
       </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="text-sm">
+          <span class="text-slate-600 dark:text-slate-300">Model</span>
+          <input
+            v-model="form.model"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
+            placeholder="vendor default"
+            title="The vendor's model name, passed as is: claude-opus-5, gpt-6, … The vendor rejects a bad one at start."
+            data-test="agent-model"
+          />
+        </label>
+        <label class="text-sm">
+          <span class="text-slate-600 dark:text-slate-300">Effort</span>
+          <select
+            v-model="form.effort"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+            data-test="agent-effort"
+          >
+            <option value="">vendor default</option>
+            <option v-for="e in ['low', 'medium', 'high', 'xhigh', 'max']" :key="e" :value="e">
+              {{ e }}
+            </option>
+          </select>
+        </label>
+      </div>
       <label class="text-sm">
         <span class="text-slate-600 dark:text-slate-300">Permissions</span>
         <select

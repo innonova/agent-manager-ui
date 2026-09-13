@@ -148,7 +148,10 @@ in the header current.
 
 ## Agents and permissions
 
-The new-agent form has a permissions choice: `bypass` (default, the agent
+The new-agent form takes an optional model name and effort level,
+vendor names passed as is at session start (the vendor rejects a bad
+one), and the agent header shows the model the vendor reports as active
+as a chip next to the state. The new-agent form also has a permissions choice: `bypass` (default, the agent
 acts without asking) or `ask` (the vendor's gated tools wait for the
 human). It is fixed at creation and applied when the agent's session
 starts.

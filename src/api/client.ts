@@ -70,7 +70,14 @@ export const api = {
     call<{ agent: Agent; status: AgentStatus }[]>('GET', `/api/projects/${projectId}/agents`),
   createAgent: (
     projectId: string,
-    input: { name: string; profile?: string; cwd?: string; permissions?: 'bypass' | 'ask' },
+    input: {
+      name: string
+      profile?: string
+      cwd?: string
+      permissions?: 'bypass' | 'ask'
+      model?: string
+      effort?: string
+    },
   ) =>
     call<{ agent: Agent; status: AgentStatus }>('POST', `/api/projects/${projectId}/agents`, input),
   decide: (id: string, requestId: string, option: string) =>

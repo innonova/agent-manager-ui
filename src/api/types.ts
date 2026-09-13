@@ -44,6 +44,9 @@ export interface Agent {
   archivedAt: number | null
   /** `ask`: gated tools wait for the human; `bypass`: the agent acts freely. */
   permissions: 'bypass' | 'ask'
+  /** Vendor model and effort names passed at session start; null is the vendor's default. */
+  model: string | null
+  effort: string | null
 }
 
 export interface PresenceUser {
@@ -64,6 +67,8 @@ export interface AgentStatus {
   lastActivityAt: number
   /** Background jobs the agent left running; it will start a turn by itself when they finish. */
   background: number
+  /** The model the vendor reports as active, once it has said. */
+  model: string | null
 }
 
 export type Item =

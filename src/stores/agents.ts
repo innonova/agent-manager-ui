@@ -120,7 +120,14 @@ export const useAgentsStore = defineStore('agents', () => {
 
   async function create(
     projectId: string,
-    input: { name: string; profile?: string; cwd?: string; permissions?: 'bypass' | 'ask' },
+    input: {
+      name: string
+      profile?: string
+      cwd?: string
+      permissions?: 'bypass' | 'ask'
+      model?: string
+      effort?: string
+    },
   ): Promise<Agent> {
     const row = await api.createAgent(projectId, input)
     byId.set(row.agent.id, row)

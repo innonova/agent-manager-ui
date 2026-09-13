@@ -360,8 +360,11 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   await page.getByTestId('new-agent').click()
   await page.getByTestId('agent-name-input').fill('careful')
   await page.getByTestId('agent-permissions').selectOption('ask')
+  await page.getByTestId('agent-model').fill('fake-9')
+  await page.getByTestId('agent-effort').selectOption('high')
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect(page.getByTestId('agent-model-chip')).toHaveText('fake-9') // the vendor reports what it runs
   await page.getByTestId('turn-input').fill('this needs permission')
   await page.getByTestId('send').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'waiting-permission')
