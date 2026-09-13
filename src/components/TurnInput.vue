@@ -4,15 +4,22 @@ import type { AgentState } from '@/api/types'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePreferencesStore } from '@/stores/preferences'
 
-const props = defineProps<{ agentId: string; state: AgentState; disabled?: boolean }>()
-/** The manager refuses overlapping turns, so sending is only offered while the agent can take one. */
+const props = defineProps<{
+  agentId: string
+  state: AgentState
+  disabled?: boolean
+  /** Messages the manager holds for the next turn. */
+  queued?: number
+}>()
+/**
+ * While the agent works, a message steers the turn (the manager delivers
+ * it mid-turn or queues it); while it starts or waits on a permission,
+ * nothing can be sent.
+ */
 const busy = computed(
-  () =>
-    props.disabled ||
-    props.state === 'working' ||
-    props.state === 'starting' ||
-    props.state === 'waiting-permission',
+  () => props.disabled || props.state === 'starting' || props.state === 'waiting-permission',
 )
+const steering = computed(() => props.state === 'working')
 const emit = defineEmits<{
   send: [text: string]
   interrupt: []
@@ -85,7 +92,9 @@ function onKey(e: KeyboardEvent) {
           ? 'Send a message to resume the agent…'
           : state === 'waiting-permission'
             ? 'The agent is waiting for your answer above.'
-            : `Message the agent… (${hint})`
+            : state === 'working'
+              ? `The agent is working; a message now is seen at its next step (${hint})`
+              : `Message the agent… (${hint})`
       "
       :disabled="disabled"
       spellcheck="true"
@@ -107,8 +116,16 @@ function onKey(e: KeyboardEvent) {
       class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
       :disabled="busy || !text.trim()"
       data-test="send"
+      :title="steering ? 'Delivered during the turn, at the agent\'s next step' : undefined"
     >
-      send
+      {{ steering ? 'steer' : 'send' }}
     </button>
+    <span
+      v-if="queued"
+      class="text-xs text-slate-500 dark:text-slate-400"
+      data-test="queued"
+      title="Held by the manager; sent when the agent finishes this turn"
+      >{{ queued }} queued</span
+    >
   </form>
 </template>

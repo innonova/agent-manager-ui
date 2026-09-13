@@ -119,8 +119,14 @@ async function send(text: string) {
   if (!props.agentId) return
   const agentId = props.agentId
   try {
-    await api.turn(agentId, text)
+    const steer = current.value?.status.state === 'working'
+    const { mode } = await api.turn(agentId, text, steer)
     drafts.set(agentId, '') // accepted: the draft is done; refused: it stays
+    if (mode === 'queued')
+      notifications.push(
+        'info',
+        'the agent cannot take a message mid-turn; queued for when it finishes',
+      )
   } catch (e) {
     notifications.push('error', e instanceof ApiError ? e.message : String(e))
   }
@@ -295,6 +301,7 @@ async function archive() {
         <TurnInput
           :agent-id="current.agent.id"
           :state="current.status.state"
+          :queued="current.status.queued"
           @send="send"
           @interrupt="interrupt"
           @typing="presence.typed()"

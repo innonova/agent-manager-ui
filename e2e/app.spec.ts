@@ -585,3 +585,23 @@ test('edit a project from inside it; save and restart resumes its idle agents', 
   await page.getByTestId('form-secondary').click()
   await expect(page.getByRole('status')).toContainText(/restarted \d+ agent/)
 })
+
+test('a message while the agent works steers the turn instead of being refused', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  await page.getByTestId('turn-input').fill('slow please')
+  await page.getByTestId('turn-input').press('Enter')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
+  await expect(page.getByTestId('send')).toHaveText('steer')
+  await page.getByTestId('turn-input').fill('and this')
+  await page.getByTestId('send').click()
+  await expect(page.locator('[data-item="text"]').last()).toContainText('Also noted: and this', {
+    timeout: 20000,
+  })
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect(page.getByTestId('send')).toHaveText('send')
+})

@@ -69,6 +69,8 @@ export interface AgentStatus {
   background: number
   /** The model the vendor reports as active, once it has said. */
   model: string | null
+  /** Messages held for the next turn because the vendor could not take one mid-turn. */
+  queued: number
 }
 
 export type Item =

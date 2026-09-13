@@ -245,6 +245,16 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Steering a working agent
+
+While an agent works, the composer stays open and its button reads
+"steer": the message goes to the manager with `steer: true`, which
+delivers it into the running turn where the vendor can take one
+(Claude, Codex) and otherwise holds it for the next turn; a held
+message shows as "N queued" beside the button and a toast says so.
+Starting and waiting on a permission still block sending. Interrupt is
+unchanged.
+
 ## Editing a project
 
 The projects list's "edit" and the "edit" link in a project's header
