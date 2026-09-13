@@ -28,6 +28,11 @@ export class EventStream {
     this.ws = null
   }
 
+  /** The one client-to-server frame (presence); dropped silently when not connected. */
+  send(frame: { type: 'presence'; agentId: string | null; typing: boolean }): void {
+    if (this.ws?.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify(frame))
+  }
+
   on(listener: Listener): () => void {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)

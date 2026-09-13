@@ -13,7 +13,12 @@ const busy = computed(
     props.state === 'starting' ||
     props.state === 'waiting-permission',
 )
-const emit = defineEmits<{ send: [text: string]; interrupt: [] }>()
+const emit = defineEmits<{
+  send: [text: string]
+  interrupt: []
+  typing: []
+  stoppedTyping: []
+}>()
 const prefs = usePreferencesStore()
 const drafts = useDraftsStore()
 /** The draft is kept in the store, keyed by agent, so it survives navigation and reloads. */
@@ -32,7 +37,11 @@ function fit(): void {
   el.style.height = `${el.scrollHeight}px`
 }
 onMounted(fit)
-watch(text, () => void nextTick(fit))
+watch(text, (v) => {
+  void nextTick(fit)
+  if (v.trim()) emit('typing')
+  else emit('stoppedTyping')
+})
 const enterSends = computed(() => prefs.enterSends())
 const hint = computed(() =>
   enterSends.value
@@ -45,6 +54,7 @@ function send() {
   if (!t || busy.value) return
   emit('send', t)
   text.value = ''
+  emit('stoppedTyping')
 }
 
 /**

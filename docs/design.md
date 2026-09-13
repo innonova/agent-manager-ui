@@ -119,6 +119,18 @@ and priority can be overridden behind a "more options" toggle. In
 multi-repo projects each row shows which repository the feature lives
 in, since files can also be written by hand in any of them.
 
+## Presence
+
+Every tab reports which agent it has open and, at most every two
+seconds while the text changes, that its user is typing there; the
+manager broadcasts the picture and the agent header shows the others:
+"bob is here", "bob is typing…". Your own tabs are not shown to you.
+Typing stops being reported when the turn is sent or the field is
+emptied, and the manager expires it after five seconds regardless. The
+point is that two people do not send a turn into the same agent at
+once; the manager would refuse the second anyway, so this is courtesy,
+not safety.
+
 ## Users
 
 A users page (from the settings menu) lists everyone with their last

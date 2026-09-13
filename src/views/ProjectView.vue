@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
 import type { Profile } from '@/api/types'
@@ -11,11 +11,20 @@ import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
 import { useChangesStore } from '@/stores/changes'
+import { usePresenceStore } from '@/stores/presence'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
 const changes = useChangesStore()
+const presence = usePresenceStore()
+watch(
+  () => props.agentId ?? null,
+  (id) => presence.setViewing(id),
+  { immediate: true },
+)
+onUnmounted(() => presence.setViewing(null))
+const othersHere = computed(() => (props.agentId ? presence.others(props.agentId) : []))
 const router = useRouter()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
@@ -186,6 +195,17 @@ async function archive() {
             data-test="agent-cwd-label"
             >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
           >
+          <span
+            v-if="othersHere.length"
+            class="text-xs text-violet-700 dark:text-violet-300"
+            data-test="presence"
+          >
+            {{
+              othersHere
+                .map((u) => (u.typing ? `${u.name} is typing…` : `${u.name} is here`))
+                .join(' · ')
+            }}
+          </span>
           <RouterLink
             v-if="changes.unread.get(id)"
             :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
@@ -217,6 +237,8 @@ async function archive() {
           :state="current.status.state"
           @send="send"
           @interrupt="interrupt"
+          @typing="presence.typed()"
+          @stopped-typing="presence.stoppedTyping()"
         />
       </section>
       <section

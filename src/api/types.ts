@@ -46,6 +46,12 @@ export interface Agent {
   permissions: 'bypass' | 'ask'
 }
 
+export interface PresenceUser {
+  userId: string
+  name: string
+  typing: boolean
+}
+
 export interface PermissionOption {
   id: string
   kind: 'allow' | 'allow-always' | 'deny'
@@ -94,7 +100,12 @@ export interface Profile {
 }
 
 export type EventFrame =
-  | { type: 'hello'; user: string; daemon: { connected: boolean } }
+  | {
+      type: 'hello'
+      user: string
+      daemon: { connected: boolean }
+      presence?: Record<string, PresenceUser[]>
+    }
   | { type: 'daemon'; connected: boolean }
   | { type: 'project.counts'; projectId: string; counts: AgentCounts }
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }
@@ -107,6 +118,7 @@ export type EventFrame =
       session: { daemonSessionId: string; startedAt: number; endedAt: number | null }
     }
   | { type: 'users.changed'; users: User[] }
+  | { type: 'presence'; agents: Record<string, PresenceUser[]> }
 
 export interface DirEntry {
   name: string

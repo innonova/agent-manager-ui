@@ -421,6 +421,36 @@ test('users: create with a shown-once password, rename yourself, reset, remove',
   await expect(page.locator('[data-test=user-row][data-name="admin"]').getByTestId('remove-user')).toHaveCount(0)
 })
 
+test('presence: another user on the same agent shows as here and as typing', async ({
+  page,
+  browser,
+}) => {
+  await login(page)
+  const created = await page.request.post('/api/users', { data: { name: 'pat' } })
+  const { password } = (await created.json()) as { password: string }
+  await page.getByTestId('project-row').first().click()
+  await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
+  await expect(page.getByTestId('presence')).toHaveCount(0)
+
+  const other = await browser.newContext()
+  const pat = await other.newPage()
+  await pat.goto('/')
+  await pat.getByTestId('login-name').fill('pat')
+  await pat.getByTestId('login-password').fill(password)
+  await pat.getByTestId('login-submit').click()
+  await pat.waitForURL(/\/$|\/projects/)
+  await pat.getByTestId('project-row').first().click()
+  await pat.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
+  await expect(page.getByTestId('presence')).toHaveText('pat is here')
+  await pat.getByTestId('turn-input').fill('thinking about it')
+  await expect(page.getByTestId('presence')).toHaveText('pat is typing…')
+  await pat.getByTestId('turn-input').fill('')
+  await expect(page.getByTestId('presence')).toHaveText('pat is here')
+  await other.close()
+  await expect(page.getByTestId('presence')).toHaveCount(0)
+  await page.request.delete(`/api/users/${((await created.json()) as { user: { id: string } }).user.id}`)
+})
+
 test('changes view: unread files since the cursor, a diff, mark as read', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()
