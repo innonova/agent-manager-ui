@@ -25,6 +25,7 @@ watch(
 )
 onUnmounted(() => presence.setViewing(null))
 const othersHere = computed(() => (props.agentId ? presence.others(props.agentId) : []))
+const othersTyping = computed(() => othersHere.value.filter((u) => u.typing))
 const router = useRouter()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
@@ -200,11 +201,7 @@ async function archive() {
             class="text-xs text-violet-700 dark:text-violet-300"
             data-test="presence"
           >
-            {{
-              othersHere
-                .map((u) => (u.typing ? `${u.name} is typing…` : `${u.name} is here`))
-                .join(' · ')
-            }}
+            {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
           </span>
           <RouterLink
             v-if="changes.unread.get(id)"
@@ -231,6 +228,14 @@ async function archive() {
         </div>
         <div class="relative min-h-0 grow">
           <TranscriptView :items="items" @decide="decide" />
+        </div>
+        <!-- typing goes where the eye is when typing, not in the header -->
+        <div
+          v-if="othersTyping.length"
+          class="animate-pulse border-t border-slate-200 bg-white px-4 pt-2 text-xs text-violet-700 dark:border-slate-800 dark:bg-slate-900 dark:text-violet-300"
+          data-test="presence-typing"
+        >
+          {{ othersTyping.map((u) => `${u.name} is typing…`).join(' · ') }}
         </div>
         <TurnInput
           :agent-id="current.agent.id"

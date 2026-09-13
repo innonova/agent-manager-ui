@@ -123,8 +123,9 @@ in, since files can also be written by hand in any of them.
 
 Every tab reports which agent it has open and, at most every two
 seconds while the text changes, that its user is typing there; the
-manager broadcasts the picture and the agent header shows the others:
-"bob is here", "bob is typing…". Your own tabs are not shown to you.
+manager broadcasts the picture; the agent header shows who else is here
+and a line directly above the turn input, where the eye is while typing,
+shows "bob is typing…". Your own tabs are not shown to you.
 Typing stops being reported when the turn is sent or the field is
 emptied, and the manager expires it after five seconds regardless. The
 point is that two people do not send a turn into the same agent at

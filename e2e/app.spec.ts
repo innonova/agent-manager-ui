@@ -443,9 +443,10 @@ test('presence: another user on the same agent shows as here and as typing', asy
   await pat.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
   await expect(page.getByTestId('presence')).toHaveText('pat is here')
   await pat.getByTestId('turn-input').fill('thinking about it')
-  await expect(page.getByTestId('presence')).toHaveText('pat is typing…')
+  await expect(page.getByTestId('presence-typing')).toHaveText('pat is typing…') // above the input
+  await expect(page.getByTestId('presence')).toHaveText('pat is here') // the header keeps "here"
   await pat.getByTestId('turn-input').fill('')
-  await expect(page.getByTestId('presence')).toHaveText('pat is here')
+  await expect(page.getByTestId('presence-typing')).toHaveCount(0)
   await other.close()
   await expect(page.getByTestId('presence')).toHaveCount(0)
   await page.request.delete(`/api/users/${((await created.json()) as { user: { id: string } }).user.id}`)
