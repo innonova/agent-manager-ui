@@ -93,6 +93,8 @@ export interface AccountUsage {
   status?: 'ok' | 'warning' | 'rejected'
   plan?: string
   context?: { used: number; size: number }
+  spend?: { inputTokens: number; outputTokens: number; costUsd?: number; turns: number }
+  provider?: string
   at: number
 }
 

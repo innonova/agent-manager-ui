@@ -250,9 +250,11 @@ could not be loaded instead of looping.
 ## Account usage
 
 An agent whose vendor reports the account's limits gets a chip in its
-header, "5h 33% · 7d 41%" (Copilot: "ctx N%", its context window),
-amber from 80% and red when the vendor refuses, with the reset times
-and the plan in the tooltip. The projects page shows an "Account usage"
+header, "5h 33% · 7d 41% · 7d+overage 66%" with every window the vendor
+names (Copilot: "ctx N%", its context window; with no windows, as on
+Bedrock or Vertex, the session's cost or tokens instead), amber from
+80% and red when the vendor refuses, with the reset times, the
+session's spend, the provider and the plan in the tooltip. The projects page shows an "Account usage"
 block with the latest report per machine and vendor from `/api/usage`,
 refreshed half a second after any agent reports new usage. Only what
 agents report while working: nothing polls the vendors.
