@@ -64,7 +64,8 @@ const waitForPort = (proc, re, what) =>
     let log = ''
     const onData = (d) => {
       log += d
-      process.stdout.write(d)
+      // forwarded for the whole run, tagged so a stray line can be placed
+      process.stdout.write(String(d).replace(/^(?=.)/gm, `[${what}] `))
       const m = log.match(re)
       if (m) resolve(Number(m[1]))
     }
