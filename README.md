@@ -10,6 +10,8 @@ comes from the manager's REST and websocket API.
 - The API and models it renders: `../agent-manager/docs/design.md`
 - Agent instructions for this repository: [CLAUDE.md](CLAUDE.md) (`AGENTS.md` is the same file)
 
+Installing the whole setup from scratch: `../agent-daemon/docs/install.md`.
+
 ## Development
 
 ```
