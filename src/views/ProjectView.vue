@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { Profile } from '@/api/types'
+import type { Profile, TurnImage } from '@/api/types'
 import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
@@ -143,13 +143,15 @@ async function decide(requestId: string, option: string) {
   }
 }
 
-async function send(text: string) {
+const turnInput = ref<InstanceType<typeof TurnInput> | null>(null)
+async function send(text: string, images: TurnImage[] = []) {
   if (!props.agentId) return
   const agentId = props.agentId
   try {
     const steer = current.value?.status.state === 'working'
-    const { mode } = await api.turn(agentId, text, steer)
+    const { mode } = await api.turn(agentId, text, steer, images)
     drafts.set(agentId, '') // accepted: the draft is done; refused: it stays
+    turnInput.value?.clearAttachments()
     if (mode === 'queued')
       notifications.push(
         'info',
@@ -327,6 +329,7 @@ async function archive() {
           </div>
         </div>
         <TurnInput
+          ref="turnInput"
           :agent-id="current.agent.id"
           :state="current.status.state"
           :queued="current.status.queued"

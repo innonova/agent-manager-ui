@@ -643,3 +643,37 @@ test('the sidebar is a tree of every project: switch projects and agents without
       .first(),
   ).not.toHaveAttribute('data-open', 'true')
 })
+
+test('an image pasted into the composer goes with the turn and shows in the transcript', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  // a 1x1 PNG pasted from the clipboard
+  await page.getByTestId('turn-input').focus()
+  await page.evaluate(() => {
+    const bytes = Uint8Array.from(
+      atob(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+      ),
+      (c) => c.charCodeAt(0),
+    )
+    const file = new File([bytes], 'dot.png', { type: 'image/png' })
+    const dt = new DataTransfer()
+    dt.items.add(file)
+    const ev = new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true })
+    document.querySelector('[data-test=turn-input]')!.dispatchEvent(ev)
+  })
+  await expect(page.getByTestId('attachment')).toHaveCount(1)
+  await page.getByTestId('turn-input').fill('look at this')
+  await page.getByTestId('send').click()
+  await expect(page.getByTestId('attachment')).toHaveCount(0)
+  await expect(
+    page.locator('[data-item="user"]').last().locator('[data-test=user-images] img'),
+  ).toHaveCount(1)
+  await expect(page.locator('[data-item="text"]').last()).toContainText('with 1 image', {
+    timeout: 20000,
+  })
+})

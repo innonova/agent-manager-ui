@@ -247,6 +247,18 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Images with a turn
+
+Paste an image into the composer, or drop one on it, and it shows as a
+thumbnail above the box with a remove button; it goes with the next
+send, as base64 in the turn's `images`, and the thumbnails clear once
+the manager accepted the turn. A message may be images alone (sent as
+"(image)"). The same limits as the manager's apply in the box (four
+images, three megabytes each; png, jpeg, gif, webp), said inline when
+exceeded. A user item shows its images as thumbnails that open full
+size in a new tab. Pasted images are not part of the draft: they are
+lost on navigation, unlike the text.
+
 ## Steering a working agent
 
 While an agent works, the composer stays open and its button reads

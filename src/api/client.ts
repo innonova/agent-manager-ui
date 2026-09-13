@@ -1,5 +1,6 @@
 import type {
   HostStatus,
+  TurnImage,
   FileDiff,
   RepoChanges,
   Agent,
@@ -105,10 +106,11 @@ export const api = {
     return call<{ items: StoredItem[]; total: number }>('GET', `/api/agents/${id}/items?${q}`)
   },
   /** `steer`: while a turn runs, the message goes into it (or is queued) instead of being refused. */
-  turn: (id: string, text: string, steer = false) =>
+  turn: (id: string, text: string, steer = false, images: TurnImage[] = []) =>
     call<{ ok: true; mode: 'sent' | 'steered' | 'queued' }>('POST', `/api/agents/${id}/turn`, {
       text,
       ...(steer ? { steer: true } : {}),
+      ...(images.length ? { images } : {}),
     }),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),
   stop: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/stop`, {}),

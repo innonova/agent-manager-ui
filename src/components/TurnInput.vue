@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import type { AgentState } from '@/api/types'
+import type { AgentState, TurnImage } from '@/api/types'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePreferencesStore } from '@/stores/preferences'
 
@@ -21,11 +21,70 @@ const busy = computed(
 )
 const steering = computed(() => props.state === 'working')
 const emit = defineEmits<{
-  send: [text: string]
+  send: [text: string, images: TurnImage[]]
   interrupt: []
   typing: []
   stoppedTyping: []
 }>()
+
+/** Images pasted or dropped into the box, shown as thumbnails until sent. Not part of the draft. */
+const attachments = ref<{ mediaType: string; data: string; url: string; name: string }[]>([])
+const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+const MAX_IMAGES = 4
+const MAX_BYTES = 3 * 1024 * 1024
+async function attach(files: File[]) {
+  for (const f of files) {
+    if (!IMAGE_TYPES.includes(f.type)) continue
+    if (attachments.value.length >= MAX_IMAGES) {
+      emit('stoppedTyping')
+      attachError.value = `at most ${MAX_IMAGES} images per message`
+      return
+    }
+    if (f.size > MAX_BYTES) {
+      attachError.value = `${f.name || 'image'} is over ${MAX_BYTES / 1024 / 1024} MB`
+      continue
+    }
+    const data = await new Promise<string>((resolve, reject) => {
+      const r = new FileReader()
+      r.onload = () => resolve(String(r.result).split(',')[1] ?? '')
+      r.onerror = () => reject(r.error)
+      r.readAsDataURL(f)
+    })
+    attachments.value.push({
+      mediaType: f.type,
+      data,
+      url: URL.createObjectURL(f),
+      name: f.name || 'pasted image',
+    })
+    attachError.value = null
+  }
+}
+const attachError = ref<string | null>(null)
+function detach(i: number) {
+  const [a] = attachments.value.splice(i, 1)
+  if (a) URL.revokeObjectURL(a.url)
+}
+function onPaste(e: ClipboardEvent) {
+  const files = [...(e.clipboardData?.items ?? [])]
+    .filter((it) => it.kind === 'file' && it.type.startsWith('image/'))
+    .map((it) => it.getAsFile())
+    .filter((f): f is File => !!f)
+  if (files.length === 0) return
+  e.preventDefault()
+  void attach(files)
+}
+function onDrop(e: DragEvent) {
+  const files = [...(e.dataTransfer?.files ?? [])].filter((f) => f.type.startsWith('image/'))
+  if (files.length === 0) return
+  e.preventDefault()
+  void attach(files)
+}
+/** The parent calls this once the manager accepted the turn. */
+function clearAttachments() {
+  for (const a of attachments.value) URL.revokeObjectURL(a.url)
+  attachments.value = []
+}
+defineExpose({ clearAttachments })
 const prefs = usePreferencesStore()
 const drafts = useDraftsStore()
 /** The draft is kept in the store, keyed by agent, so it survives navigation and reloads. */
@@ -59,8 +118,13 @@ const hint = computed(() =>
 
 function send() {
   const t = text.value.trim()
-  if (!t || busy.value) return
-  emit('send', t) // the parent clears the draft once the manager accepted the turn
+  if ((!t && attachments.value.length === 0) || busy.value) return
+  // the parent clears the draft and the attachments once the manager accepted the turn
+  emit(
+    'send',
+    t || '(image)',
+    attachments.value.map((a) => ({ mediaType: a.mediaType, data: a.data })),
+  )
   emit('stoppedTyping')
 }
 
@@ -79,53 +143,85 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <form
-    class="flex items-end gap-2 border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+    class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
     @submit.prevent="send"
+    @dragover.prevent
+    @drop="onDrop"
   >
-    <textarea
-      ref="box"
-      v-model="text"
-      rows="2"
-      class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
-      :placeholder="
-        state === 'exited'
-          ? 'Send a message to resume the agent…'
-          : state === 'waiting-permission'
-            ? 'The agent is waiting for your answer above.'
-            : state === 'working'
-              ? `The agent is working; a message now is seen at its next step (${hint})`
-              : `Message the agent… (${hint})`
-      "
-      :disabled="disabled"
-      spellcheck="true"
-      data-test="turn-input"
-      @keydown="onKey"
-      @input="onInput"
-    />
-    <button
-      v-if="state === 'working'"
-      type="button"
-      class="rounded border border-amber-400 px-3 py-2 text-sm text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
-      data-test="interrupt"
-      @click="emit('interrupt')"
+    <div
+      v-if="attachments.length || attachError"
+      class="flex flex-wrap items-center gap-2"
+      data-test="attachments"
     >
-      interrupt
-    </button>
-    <button
-      type="submit"
-      class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-      :disabled="busy || !text.trim()"
-      data-test="send"
-      :title="steering ? 'Delivered during the turn, at the agent\'s next step' : undefined"
-    >
-      {{ steering ? 'steer' : 'send' }}
-    </button>
-    <span
-      v-if="queued"
-      class="text-xs text-slate-500 dark:text-slate-400"
-      data-test="queued"
-      title="Held by the manager; sent when the agent finishes this turn"
-      >{{ queued }} queued</span
-    >
+      <div
+        v-for="(a, i) in attachments"
+        :key="a.url"
+        class="relative h-16 w-16 overflow-hidden rounded border border-slate-300 dark:border-slate-700"
+        data-test="attachment"
+        :title="a.name"
+      >
+        <img :src="a.url" :alt="a.name" class="h-full w-full object-cover" />
+        <button
+          type="button"
+          class="absolute top-0 right-0 rounded-bl bg-slate-900/70 px-1 text-xs text-white hover:bg-red-700"
+          title="Remove"
+          data-test="attachment-remove"
+          @click="detach(i)"
+        >
+          ×
+        </button>
+      </div>
+      <span v-if="attachError" class="text-xs text-red-700 dark:text-red-300">{{
+        attachError
+      }}</span>
+    </div>
+    <div class="flex items-end gap-2">
+      <textarea
+        ref="box"
+        v-model="text"
+        rows="2"
+        class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
+        :placeholder="
+          state === 'exited'
+            ? 'Send a message to resume the agent…'
+            : state === 'waiting-permission'
+              ? 'The agent is waiting for your answer above.'
+              : state === 'working'
+                ? `The agent is working; a message now is seen at its next step (${hint})`
+                : `Message the agent… (${hint})`
+        "
+        :disabled="disabled"
+        spellcheck="true"
+        data-test="turn-input"
+        @keydown="onKey"
+        @input="onInput"
+        @paste="onPaste"
+      />
+      <button
+        v-if="state === 'working'"
+        type="button"
+        class="rounded border border-amber-400 px-3 py-2 text-sm text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
+        data-test="interrupt"
+        @click="emit('interrupt')"
+      >
+        interrupt
+      </button>
+      <button
+        type="submit"
+        class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+        :disabled="busy || (!text.trim() && attachments.length === 0)"
+        data-test="send"
+        :title="steering ? 'Delivered during the turn, at the agent\'s next step' : undefined"
+      >
+        {{ steering ? 'steer' : 'send' }}
+      </button>
+      <span
+        v-if="queued"
+        class="text-xs text-slate-500 dark:text-slate-400"
+        data-test="queued"
+        title="Held by the manager; sent when the agent finishes this turn"
+        >{{ queued }} queued</span
+      >
+    </div>
   </form>
 </template>

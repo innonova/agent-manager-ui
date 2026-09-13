@@ -80,6 +80,22 @@ const cost = computed(() =>
       :title="time"
     >
       {{ item.text }}
+      <div v-if="item.images?.length" class="mt-2 flex flex-wrap gap-2" data-test="user-images">
+        <a
+          v-for="(img, i) in item.images"
+          :key="i"
+          :href="`data:${img.mediaType};base64,${img.data}`"
+          target="_blank"
+          rel="noopener"
+          title="Open full size"
+        >
+          <img
+            :src="`data:${img.mediaType};base64,${img.data}`"
+            alt="pasted image"
+            class="max-h-40 max-w-[16rem] rounded border border-blue-400 object-contain"
+          />
+        </a>
+      </div>
     </div>
   </div>
 

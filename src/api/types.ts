@@ -86,8 +86,14 @@ export interface AgentStatus {
   queued: number
 }
 
+/** An image sent with a turn: base64 with its media type. */
+export interface TurnImage {
+  mediaType: string
+  data: string
+}
+
 export type Item =
-  | { kind: 'user'; text: string; by?: string }
+  | { kind: 'user'; text: string; by?: string; images?: TurnImage[] }
   | { kind: 'text'; text: string; streaming: boolean }
   | { kind: 'thinking'; text: string }
   | {
