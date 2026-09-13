@@ -92,12 +92,32 @@ const agentsOf = (id: string) => agents.byProject.get(id) ?? []
         :class="r.project.id === projectId ? 'font-semibold' : 'text-slate-700 dark:text-slate-300'"
       >
         <button
-          class="w-4 shrink-0 text-xs text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-          :title="isOpen(r.project.id) ? 'collapse' : 'expand'"
+          class="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+          :class="r.project.id === projectId ? 'cursor-default opacity-60' : ''"
+          :title="
+            r.project.id === projectId
+              ? 'current project'
+              : isOpen(r.project.id)
+                ? 'collapse'
+                : 'expand'
+          "
           data-test="tree-toggle"
           @click="toggle(r.project.id)"
         >
-          {{ isOpen(r.project.id) ? '▾' : '▸' }}
+          <!-- the same chevron as the file tree: right when collapsed, down when expanded -->
+          <svg
+            class="h-4 w-4 transition-transform duration-100"
+            :class="isOpen(r.project.id) ? 'rotate-90' : ''"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M6 3.5L10.5 8 6 12.5" />
+          </svg>
         </button>
         <RouterLink
           :to="{ name: 'project', params: { id: r.project.id } }"
