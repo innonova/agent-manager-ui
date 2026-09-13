@@ -61,7 +61,7 @@ export interface AgentStatus {
 }
 
 export type Item =
-  | { kind: 'user'; text: string }
+  | { kind: 'user'; text: string; by?: string }
   | { kind: 'text'; text: string; streaming: boolean }
   | { kind: 'thinking'; text: string }
   | {

@@ -45,7 +45,8 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   // a turn streams and finishes
   await page.getByTestId('turn-input').fill('use a tool please')
   await page.getByTestId('send').click()
-  await expect(page.locator('[data-item="user"]')).toHaveText('use a tool please')
+  await expect(page.locator('[data-item="user"]')).toContainText('use a tool please')
+  await expect(page.locator('[data-item="user"]').getByTestId('turn-by')).toHaveText('admin')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
   // a tool call is one collapsed line with its result folded under it
   const call = page.locator('[data-item="tool_use"]').first()
@@ -136,7 +137,7 @@ test('enter key preference: newline mode, Ctrl+Enter sends, send mode', async ({
   await page.keyboard.type('second')
   await expect(input).toHaveValue('first\nsecond')
   await page.keyboard.press('Control+Enter')
-  await expect(page.locator('[data-item="user"]').last()).toHaveText('first\nsecond')
+  await expect(page.locator('[data-item="user"]').last()).toContainText('first\nsecond')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 
   await page.reload()
@@ -147,7 +148,7 @@ test('enter key preference: newline mode, Ctrl+Enter sends, send mode', async ({
   await input.click()
   await page.keyboard.type('third')
   await page.keyboard.press('Enter')
-  await expect(page.locator('[data-item="user"]').last()).toHaveText('third')
+  await expect(page.locator('[data-item="user"]').last()).toContainText('third')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 })
 
@@ -508,7 +509,7 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await row.getByTestId('feature-respond').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await expect(row.getByTestId('feature-body')).toContainText('Also wave.')
-  expect(fs.readFileSync(file, 'utf8')).toMatch(/## Response \(\d{4}-\d{2}-\d{2}\)\n\nAlso wave\./)
+  expect(fs.readFileSync(file, 'utf8')).toMatch(/## Response \(\d{4}-\d{2}-\d{2}, admin\)\n\nAlso wave\./)
   await row.getByTestId('feature-done').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
 })

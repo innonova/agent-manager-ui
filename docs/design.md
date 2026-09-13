@@ -143,7 +143,7 @@ Items from the manager map onto components:
 
 | item.kind | rendering |
 |---|---|
-| `user` | right-aligned bubble |
+| `user` | right-aligned bubble, with the sender's name above it when the manager knows it (`by`) |
 | `text` | markdown, grows while `streaming` |
 | `thinking` | collapsed, expandable |
 | `permission` | an amber card while undecided: tool, what the agent wants, the command or input, and a button per option the vendor offers (Allow, Always allow, Deny); once decided, a plain card noting the choice. The turn input is disabled meanwhile. Only agents created with `permissions: ask` produce these |

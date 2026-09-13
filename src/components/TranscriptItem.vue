@@ -48,7 +48,13 @@ const cost = computed(() =>
 </script>
 
 <template>
-  <div v-if="item.kind === 'user'" class="flex justify-end" data-item="user">
+  <div v-if="item.kind === 'user'" class="flex flex-col items-end" data-item="user">
+    <span
+      v-if="item.by"
+      class="mr-1 mb-0.5 text-[11px] text-slate-400 dark:text-slate-500"
+      data-test="turn-by"
+      >{{ item.by }}</span
+    >
     <div
       class="max-w-[80%] rounded-lg bg-blue-600 px-3 py-2 text-sm whitespace-pre-wrap text-white"
     >
