@@ -86,6 +86,14 @@ export const api = {
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
 
+  users: () => call<{ users: User[] }>('GET', '/api/users'),
+  createUser: (name: string) =>
+    call<{ user: User; password: string }>('POST', '/api/users', { name }),
+  renameMe: (name: string) => call<{ user: User }>('PATCH', '/api/users/me', { name }),
+  resetPassword: (id: string) =>
+    call<{ password: string }>('POST', `/api/users/${id}/password`, {}),
+  deleteUser: (id: string) => call<{ ok: true }>('DELETE', `/api/users/${id}`),
+
   files: (projectId: string, path = '') =>
     call<{ path: string; entries: DirEntry[] }>(
       'GET',

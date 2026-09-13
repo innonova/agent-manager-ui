@@ -119,6 +119,17 @@ and priority can be overridden behind a "more options" toggle. In
 multi-repo projects each row shows which repository the feature lives
 in, since files can also be written by hand in any of them.
 
+## Users
+
+A users page (from the settings menu) lists everyone with their last
+login. "New user" takes a name; the manager's generated password is
+shown once in a dialog with a copy button. You can rename yourself
+inline. "New password" on any row, behind a confirm that names the user
+and says their logins will end, shows the new one once. "Remove" on any
+other row, behind a confirm. Everyone is a trusted admin, so nothing is
+hidden by role. `users.changed` events keep the list and your own name
+in the header current.
+
 ## Agents and permissions
 
 The new-agent form has a permissions choice: `bypass` (default, the agent

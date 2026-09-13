@@ -11,6 +11,7 @@ const router = createRouter({
       meta: { public: true },
     },
     { path: '/', name: 'projects', component: () => import('@/views/ProjectsView.vue') },
+    { path: '/users', name: 'users', component: () => import('@/views/UsersView.vue') },
     {
       path: '/projects/:id',
       name: 'project',

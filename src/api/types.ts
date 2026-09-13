@@ -2,6 +2,8 @@
 export interface User {
   id: string
   name: string
+  createdAt: number
+  lastLoginAt: number | null
 }
 
 export interface Repo {
@@ -104,6 +106,7 @@ export type EventFrame =
       agentId: string
       session: { daemonSessionId: string; startedAt: number; endedAt: number | null }
     }
+  | { type: 'users.changed'; users: User[] }
 
 export interface DirEntry {
   name: string

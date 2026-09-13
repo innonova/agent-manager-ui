@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { FONT_SIZES, usePreferencesStore, type EnterKey, type Theme } from '@/stores/preferences'
 
 const prefs = usePreferencesStore()
@@ -133,6 +134,13 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
             : 'When an agent is ready or needs input and this page is not in front.'
         }}
       </p>
+      <RouterLink
+        :to="{ name: 'users' }"
+        class="mt-3 block text-xs text-blue-700 hover:underline dark:text-blue-300"
+        data-test="users-link"
+        @click="open = false"
+        >Users…</RouterLink
+      >
     </div>
   </div>
 </template>

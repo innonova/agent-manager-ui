@@ -382,6 +382,44 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   await expect(page.locator('[data-item="text"]').last()).toContainText('not removing it')
 })
 
+test('users: create with a shown-once password, rename yourself, reset, remove', async ({ page }) => {
+  await login(page)
+  await page.getByTestId('settings').click()
+  await page.getByTestId('users-link').click()
+  await expect(page).toHaveURL(/\/users$/)
+  await expect(page.getByTestId('user-row')).toHaveCount(1)
+  await page.getByTestId('new-user').click()
+  await page.getByTestId('user-name-input').fill('bob')
+  await page.getByTestId('form-submit').click()
+  const password = (await page.getByTestId('password').textContent())!.trim()
+  expect(password).toMatch(/^[a-z2-9]{4}(-[a-z2-9]{4}){3}$/)
+  await page.getByTestId('form-submit').click() // done
+  await expect(page.getByTestId('user-row')).toHaveCount(2)
+
+  // rename yourself; the header follows
+  await page.getByTestId('rename').click()
+  await page.getByTestId('rename-input').fill('admin2')
+  await page.getByTestId('rename-save').click()
+  await expect(page.locator('[data-test=user-row][data-name="admin2"]')).toBeVisible()
+  await expect(page.locator('header')).toContainText('admin2')
+  await page.getByTestId('rename').click()
+  await page.getByTestId('rename-input').fill('admin')
+  await page.getByTestId('rename-save').click()
+  await expect(page.locator('[data-test=user-row][data-name="admin"]')).toBeVisible()
+
+  // a new password for bob, behind a confirm
+  page.once('dialog', (d) => d.accept())
+  await page.locator('[data-test=user-row][data-name="bob"]').getByTestId('reset-password').click()
+  const fresh = (await page.getByTestId('password').textContent())!.trim()
+  expect(fresh).not.toBe(password)
+  await page.getByTestId('form-submit').click()
+
+  page.once('dialog', (d) => d.accept())
+  await page.locator('[data-test=user-row][data-name="bob"]').getByTestId('remove-user').click()
+  await expect(page.getByTestId('user-row')).toHaveCount(1)
+  await expect(page.locator('[data-test=user-row][data-name="admin"]').getByTestId('remove-user')).toHaveCount(0)
+})
+
 test('changes view: unread files since the cursor, a diff, mark as read', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()

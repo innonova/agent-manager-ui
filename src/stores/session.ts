@@ -27,6 +27,10 @@ export const useSessionStore = defineStore('session', () => {
   events.on((f) => {
     if (f.type === 'hello') daemonConnected.value = f.daemon.connected
     if (f.type === 'daemon') daemonConnected.value = f.connected
+    if (f.type === 'users.changed' && user.value) {
+      const mine = f.users.find((u) => u.id === user.value!.id)
+      if (mine) user.value = mine
+    }
   })
   unauthorized.addEventListener('unauthorized', () => {
     user.value = null
