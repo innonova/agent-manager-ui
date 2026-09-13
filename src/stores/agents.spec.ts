@@ -89,6 +89,28 @@ describe('agents store transcript paging', () => {
     expect(store.items.get('a')![3]?.index).toBe(3)
   })
 
+  it('a refetch after a gap starts at the unfinished turn, so items changed in place are picked up', async () => {
+    items.mockResolvedValueOnce({ items: range(0, 6), total: 6 }) // ..., turn_end at 3, then a user item and a streaming text
+    const store = useAgentsStore()
+    store.byId.set('a', { agent: { id: 'a' } as never, status: {} as never })
+    await store.loadItems('a')
+    const list = store.items.get('a')!
+    list[3] = { ...item(3), item: { kind: 'turn_end' } }
+    list[5] = { ...item(5), item: { kind: 'text', text: 'partial', streaming: true } }
+    items.mockResolvedValueOnce({
+      items: [
+        { ...item(5), item: { kind: 'text', text: 'partial and done', streaming: false } },
+        { ...item(6), item: { kind: 'turn_end' } },
+      ],
+      total: 7,
+    })
+    await store.loadItems('a', { sinceTurnStart: true })
+    expect(items).toHaveBeenLastCalledWith('a', { from: 4 })
+    expect(list[5]?.item).toMatchObject({ text: 'partial and done', streaming: false })
+    expect(list[6]?.item.kind).toBe('turn_end')
+    expect(list.length).toBe(7)
+  })
+
   it('a short transcript has nothing earlier', async () => {
     items.mockResolvedValue({ items: range(0, 5), total: 5 })
     const store = useAgentsStore()

@@ -74,7 +74,7 @@ export const useAgentsStore = defineStore('agents', () => {
 
   events.onReconnect = ((prev) => () => {
     prev?.()
-    for (const id of new Set([...loaded, ...failed])) void loadItems(id)
+    for (const id of new Set([...loaded, ...failed])) void loadItems(id, { sinceTurnStart: true })
     for (const projectId of byProject.keys()) load(projectId).catch(() => undefined) // a spoke down: nothing to do here
   })(events.onReconnect)
   // A spoke's stream came back on the hub: what we show of that machine may
@@ -82,7 +82,8 @@ export const useAgentsStore = defineStore('agents', () => {
   events.on((f) => {
     if (f.type !== 'host.reconnected') return
     const mine = (id: string) => id.startsWith(`${f.name}:`)
-    for (const id of new Set([...loaded, ...failed])) if (mine(id)) void loadItems(id)
+    for (const id of new Set([...loaded, ...failed]))
+      if (mine(id)) void loadItems(id, { sinceTurnStart: true })
     for (const projectId of byProject.keys())
       if (mine(projectId)) load(projectId).catch(() => undefined)
   })
@@ -105,10 +106,29 @@ export const useAgentsStore = defineStore('agents', () => {
   const loadingEarlier = reactive(new Set<string>())
   const hasEarlier = (agentId: string) => (earliest.get(agentId) ?? 0) > 0
 
-  async function loadItems(agentId: string): Promise<void> {
+  /**
+   * The index a refetch after a gap starts from: the beginning of the
+   * unfinished turn, since its items may have changed in place (a stream
+   * ending, a permission answered) while the socket was down.
+   */
+  function turnStart(list: (StoredItem | undefined)[]): number {
+    for (let i = list.length - 1; i >= 0 && i >= list.length - PAGE; i--)
+      if (list[i]?.item.kind === 'turn_end') return i + 1
+    return Math.max(0, list.length - PAGE)
+  }
+
+  async function loadItems(
+    agentId: string,
+    opts: { sinceTurnStart?: boolean } = {},
+  ): Promise<void> {
     if (fetching.has(agentId)) return
     const gen = generation.get(agentId) ?? 0
-    const from = loaded.has(agentId) ? (items.get(agentId)?.length ?? 0) : 0
+    const list0 = items.get(agentId)
+    const from = loaded.has(agentId)
+      ? opts.sinceTurnStart && list0
+        ? turnStart(list0)
+        : (list0?.length ?? 0)
+      : 0
     fetching.add(agentId)
     let fetched: StoredItem[]
     let total: number
@@ -131,7 +151,7 @@ export const useAgentsStore = defineStore('agents', () => {
     failed.delete(agentId)
     if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
-    if (loaded.has(agentId) && (total < list.length || (fetched[0]?.index ?? 0) > list.length)) {
+    if (loaded.has(agentId) && (total < list.length || (fetched[0]?.index ?? from) > list.length)) {
       // the manager renumbered (a rebuild whose reset this tab missed): start over
       items.set(agentId, [])
       loaded.delete(agentId)
