@@ -220,8 +220,9 @@ the SVG changes.
 
 Each build carries an id (`__BUILD_ID__`, also written as `build.json`
 next to the bundle). The page fetches `build.json` when the events
-socket reconnects (a deploy restarts the manager), when the tab becomes
-visible, and every ten minutes; a different id shows an "update
+socket reconnects (a manager deploy restarts it), when the tab becomes
+visible or focused, and every minute (a UI-only deploy swaps the build
+without a restart, so there is nothing else to notice it by); a different id shows an "update
 available · reload" button in the header. Nothing reloads by itself,
 since a draft or a scroll position may be in play.
 

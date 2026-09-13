@@ -41,9 +41,8 @@ instead: it rebuilds and restarts the manager and copies the UI along.
 
 - Build the UI first. The install script copies whatever is in `dist/`;
   a stale build ships silently.
-- `install:ui` never restarts anything; open tabs offer a reload when
-  they next check for a new build (on reconnect, on becoming visible, or
-  every ten minutes). Restarting the manager (`install:service`) is safe
+- `install:ui` never restarts anything; open tabs offer a reload within a
+  minute (they check on reconnect, on focus, and every minute). Restarting the manager (`install:service`) is safe
   at any time too: agents live in the daemon and are re-adopted on
   start. The daemon is never touched.
 - The install does not touch the manager's database or its
