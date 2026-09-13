@@ -1,6 +1,6 @@
 ---
 title: paste images into the chat
-status: review
+status: done
 priority: 60
 ---
 

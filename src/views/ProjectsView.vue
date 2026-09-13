@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { Profile, Project } from '@/api/types'
+import type { AccountUsageRow, Profile, Project } from '@/api/types'
 import AgentCountBadges from '@/components/AgentCountBadges.vue'
 import AppShell from '@/components/AppShell.vue'
+import UsageChip from '@/components/UsageChip.vue'
+import { events } from '@/api/events'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectForm, { type ProjectFormValue } from '@/components/ProjectForm.vue'
 import { useProjectsStore } from '@/stores/projects'
@@ -22,6 +24,21 @@ const form = ref<ProjectFormValue>(empty())
 const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
+/** Per host, the accounts' usage; refreshed when any agent reports new usage. */
+const usage = ref<{ host: string; accounts: AccountUsageRow[] }[]>([])
+async function loadUsage() {
+  usage.value = (await api.usage().catch(() => ({ hosts: [] }))).hosts
+}
+let usageTimer: number | null = null
+const offUsage = events.on((f) => {
+  if (f.type !== 'agent.state' || !f.status.usage) return
+  if (usageTimer) clearTimeout(usageTimer)
+  usageTimer = window.setTimeout(() => void loadUsage(), 500)
+})
+onUnmounted(() => {
+  offUsage?.()
+  if (usageTimer) clearTimeout(usageTimer)
+})
 
 function empty(): ProjectFormValue {
   return {
@@ -38,6 +55,7 @@ onMounted(async () => {
     (p) => p.supported,
   )
   // ?edit=<id>: sent here from inside a project to edit it
+  void loadUsage()
   const wanted = typeof route.query.edit === 'string' ? projects.byId.get(route.query.edit) : null
   if (wanted) {
     openEdit(wanted.project)
@@ -116,6 +134,32 @@ async function submit(restart = false) {
         >
           new project
         </button>
+      </div>
+      <!-- the vendor accounts' limits, per machine, as last reported through an agent -->
+      <div
+        v-if="usage.length"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        data-test="usage"
+      >
+        <div
+          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        >
+          Account usage
+        </div>
+        <div
+          v-for="h in usage"
+          :key="h.host"
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5"
+        >
+          <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
+          <template v-for="a in h.accounts" :key="a.profile">
+            <span class="text-slate-500 dark:text-slate-400">{{ a.profile }}</span>
+            <UsageChip :usage="a.usage" />
+          </template>
+          <span v-if="h.accounts.length === 0" class="text-xs text-slate-400 dark:text-slate-500"
+            >nothing reported yet</span
+          >
+        </div>
       </div>
       <p
         v-if="projects.loaded && projects.rows.length === 0"

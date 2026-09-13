@@ -703,3 +703,19 @@ test('files view: a new folder and an uploaded file land in the tree and can be 
   await expect(page).toHaveURL(/\/agents\//)
   await expect(page.getByTestId('turn-input')).toHaveValue(/See .*logs\/app\.log/)
 })
+
+test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  await page.getByTestId('turn-input').fill('usage 85')
+  await page.getByTestId('turn-input').press('Enter')
+  await expect(page.getByTestId('usage-chip').first()).toContainText('5h 85%', { timeout: 20000 })
+  await expect(page.getByTestId('usage-chip').first()).toContainText('7d 43%')
+  await page.getByRole('link', { name: 'agent-manager' }).click()
+  await expect(page.getByTestId('usage')).toContainText('fake')
+  await expect(page.getByTestId('usage').getByTestId('usage-chip').first()).toContainText('5h 85%')
+})

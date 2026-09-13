@@ -247,6 +247,16 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Account usage
+
+An agent whose vendor reports the account's limits gets a chip in its
+header, "5h 33% · 7d 41%" (Copilot: "ctx N%", its context window),
+amber from 80% and red when the vendor refuses, with the reset times
+and the plan in the tooltip. The projects page shows an "Account usage"
+block with the latest report per machine and vendor from `/api/usage`,
+refreshed half a second after any agent reports new usage. Only what
+agents report while working: nothing polls the vendors.
+
 ## Uploads and new folders
 
 The files tree can take files. Its toolbar, a row under the mode tabs

@@ -7,6 +7,7 @@ import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
 import StateBadge from '@/components/StateBadge.vue'
+import UsageChip from '@/components/UsageChip.vue'
 import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
@@ -259,6 +260,7 @@ async function archive() {
             data-test="agent-model-chip"
             >{{ current.status.model }}</span
           >
+          <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
           <span
             v-if="current.status.error"
             class="truncate text-red-700 dark:text-red-300"

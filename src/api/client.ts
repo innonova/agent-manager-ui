@@ -1,4 +1,5 @@
 import type {
+  AccountUsageRow,
   HostStatus,
   TurnImage,
   FileDiff,
@@ -117,6 +118,9 @@ export const api = {
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
+  /** The vendor accounts' usage per host, as last reported through an agent. */
+  usage: () =>
+    call<{ hosts: { host: string; accounts: AccountUsageRow[] }[] }>('GET', '/api/usage'),
   /** Public: the manager's daemon link and, as a hub, its hosts. */
   health: () =>
     call<{ status: string; daemon: boolean; hosts: HostStatus[] }>('GET', '/api/health'),

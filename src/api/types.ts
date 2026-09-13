@@ -84,6 +84,22 @@ export interface AgentStatus {
   model: string | null
   /** Messages held for the next turn because the vendor could not take one mid-turn. */
   queued: number
+  /** The vendor account's limits as last reported through this agent. */
+  usage: AccountUsage | null
+}
+
+export interface AccountUsage {
+  windows: { name: string; usedPercent: number; resetsAt: number | null }[]
+  status?: 'ok' | 'warning' | 'rejected'
+  plan?: string
+  context?: { used: number; size: number }
+  at: number
+}
+
+export interface AccountUsageRow {
+  profile: string
+  agentId: string
+  usage: AccountUsage
 }
 
 /** An image sent with a turn: base64 with its media type. */

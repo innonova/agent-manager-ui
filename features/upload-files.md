@@ -1,6 +1,6 @@
 ---
 title: upload files and create folders in the files view
-status: review
+status: done
 priority: 60
 ---
 
