@@ -297,53 +297,119 @@ async function createFolder() {
             >
           </button>
           <span class="grow" />
-          <template v-if="mode === 'tree'">
-            <span
-              v-if="files.targetDir()"
-              class="mr-2 max-w-48 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400"
-              :title="`Uploads and new folders go into ${files.targetDir()}; select a folder or a file in the tree to change it`"
-              data-test="files-target"
-              >into {{ files.targetDir() }}</span
-            >
-            <button
-              class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
-              :title="`Upload files into ${files.targetDir() ?? 'the project'}`"
-              data-test="files-upload"
-              @click="pickFiles()"
-            >
-              upload
-            </button>
-            <input
-              ref="filePicker"
-              type="file"
-              multiple
-              class="hidden"
-              data-test="files-upload-input"
-              @change="onPicked"
-            />
-            <button
-              class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
-              :title="`New folder in ${files.targetDir() ?? 'the project'}`"
-              data-test="files-new-folder"
-              @click="newFolder = newFolder === null ? '' : null"
-            >
-              new folder
-            </button>
-          </template>
           <button
-            v-if="mode === 'tree'"
-            class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
+            v-if="mode === 'changes'"
+            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            data-test="files-refresh"
+            @click="changes.load()"
+          >
+            refresh
+          </button>
+        </div>
+        <!-- the tree's toolbar: where writes go, and the actions as icons (VS Code's explorer header) -->
+        <div
+          v-if="mode === 'tree'"
+          class="flex items-center gap-1 px-2 pb-1 text-slate-500 dark:text-slate-400"
+          data-test="files-toolbar"
+        >
+          <span
+            v-if="files.targetDir()"
+            class="min-w-0 grow truncate pl-1 font-mono text-[11px]"
+            :title="`Uploads and new folders go into ${files.targetDir()}; select a folder or a file in the tree to change it`"
+            data-test="files-target"
+            >into {{ files.targetDir() }}</span
+          >
+          <span v-else class="grow" />
+          <button
+            class="rounded p-1 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            :title="`Upload files into ${files.targetDir() ?? 'the project'}`"
+            :aria-label="`Upload files into ${files.targetDir() ?? 'the project'}`"
+            data-test="files-upload"
+            @click="pickFiles()"
+          >
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M8 11V3M4.5 6.5 8 3l3.5 3.5M3 13h10" />
+            </svg>
+          </button>
+          <input
+            ref="filePicker"
+            type="file"
+            multiple
+            class="hidden"
+            data-test="files-upload-input"
+            @change="onPicked"
+          />
+          <button
+            class="rounded p-1 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            :title="`New folder in ${files.targetDir() ?? 'the project'}`"
+            :aria-label="`New folder in ${files.targetDir() ?? 'the project'}`"
+            data-test="files-new-folder"
+            @click="newFolder = newFolder === null ? '' : null"
+          >
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path
+                d="M2 4.5A1.5 1.5 0 0 1 3.5 3H6l1.5 1.5h5A1.5 1.5 0 0 1 14 6v6.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5z"
+              />
+              <path d="M8 7.5v4M6 9.5h4" />
+            </svg>
+          </button>
+          <button
+            class="rounded p-1 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            title="Collapse all folders"
+            aria-label="Collapse all folders"
             data-test="files-collapse"
             @click="files.collapseAll()"
           >
-            collapse
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M3 3h10v10H3zM3 6.5h10M3 9.5h10" />
+            </svg>
           </button>
           <button
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="rounded p-1 hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+            title="Refresh the tree"
+            aria-label="Refresh the tree"
             data-test="files-refresh"
-            @click="mode === 'tree' ? files.refresh() : changes.load()"
+            @click="files.refresh()"
           >
-            refresh
+            <svg
+              class="h-4 w-4"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M13 8a5 5 0 1 1-1.5-3.6M13 3v2.5h-2.5" />
+            </svg>
           </button>
         </div>
         <template v-if="mode === 'changes'">

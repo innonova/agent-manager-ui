@@ -249,8 +249,10 @@ could not be loaded instead of looping.
 
 ## Uploads and new folders
 
-The files tree can take files: "upload" opens a picker and a drop on
-the tree does the same; "new folder" creates one. Both land in the
+The files tree can take files. Its toolbar, a row under the mode tabs
+like VS Code's explorer header, holds the actions as icons with
+tooltips: upload (a picker; a drop on the tree does the same), new
+folder, collapse all, refresh. Both land in the
 target directory: the focused directory, else the directory of the
 focused or open file, else the first repository; the header says "into
 <dir>" so the target is never a guess, and the selected row stays
