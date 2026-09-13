@@ -53,6 +53,13 @@ async function follow() {
   if (e) e.scrollTop = e.scrollHeight
 }
 
+watch(
+  () => props.items,
+  () => {
+    following.value = true // a different transcript starts at its end
+    void follow()
+  },
+)
 watch(() => props.items.length, follow)
 watch(() => props.items[props.items.length - 1]?.item, follow, { deep: true })
 onMounted(follow)

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { api, ApiError } from '@/api/client'
 import type { User } from '@/api/types'
 import { events } from '@/api/events'
@@ -24,9 +24,10 @@ async function load() {
   users.value = (await api.users()).users
 }
 onMounted(load)
-events.on((f) => {
+const off = events.on((f) => {
   if (f.type === 'users.changed') users.value = f.users
 })
+onUnmounted(off)
 
 const when = (t: number | null) => (t ? new Date(t).toLocaleString() : 'never')
 

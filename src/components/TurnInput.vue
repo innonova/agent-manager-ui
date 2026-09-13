@@ -37,11 +37,12 @@ function fit(): void {
   el.style.height = `${el.scrollHeight}px`
 }
 onMounted(fit)
-watch(text, (v) => {
-  void nextTick(fit)
-  if (v.trim()) emit('typing')
+watch(text, () => void nextTick(fit))
+/** Typing is reported from keystrokes only, never from a draft being restored. */
+function onInput() {
+  if (text.value.trim()) emit('typing')
   else emit('stoppedTyping')
-})
+}
 const enterSends = computed(() => prefs.enterSends())
 const hint = computed(() =>
   enterSends.value
@@ -91,6 +92,7 @@ function onKey(e: KeyboardEvent) {
       spellcheck="true"
       data-test="turn-input"
       @keydown="onKey"
+      @input="onInput"
     />
     <button
       v-if="state === 'working'"

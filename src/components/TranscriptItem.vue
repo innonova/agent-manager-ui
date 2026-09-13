@@ -6,6 +6,13 @@ import type { Item } from '@/api/types'
 
 const props = defineProps<{ item: Item }>()
 const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
+/** Set on the first click; the manager's item update replaces the card with the decision. */
+const deciding = ref(false)
+function decide(requestId: string, option: string) {
+  if (deciding.value) return
+  deciding.value = true
+  emit('decide', requestId, option)
+}
 const open = ref(false)
 const permissionInput = computed(() =>
   props.item.kind === 'permission'
@@ -104,10 +111,11 @@ const cost = computed(() =>
       <button
         v-for="o in item.options"
         :key="o.id"
-        class="rounded border px-3 py-1"
+        class="rounded border px-3 py-1 disabled:opacity-50"
         :class="OPTION_CLASS[o.kind]"
+        :disabled="deciding"
         :data-test="`permission-${o.kind}`"
-        @click="emit('decide', item.requestId, o.id)"
+        @click="decide(item.requestId, o.id)"
       >
         {{ o.label }}
       </button>

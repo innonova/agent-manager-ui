@@ -21,6 +21,15 @@ const enterKeys: { value: EnterKey; label: string; title: string }[] = [
   },
 ]
 
+/** Tracked as state: the browser's permission can change under us when the user answers its prompt. */
+const permission = ref(prefs.notificationPermission())
+async function toggleNotifications(e: Event) {
+  const box = e.target as HTMLInputElement
+  await prefs.setDesktopNotifications(box.checked)
+  permission.value = prefs.notificationPermission()
+  box.checked = prefs.desktopNotifications // refused: the box goes back
+}
+
 function onDocClick(e: MouseEvent) {
   if (open.value && el.value && !el.value.contains(e.target as Node)) open.value = false
 }
@@ -121,15 +130,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         <input
           type="checkbox"
           :checked="prefs.desktopNotifications"
-          :disabled="prefs.notificationPermission() === 'unsupported'"
+          :disabled="permission === 'unsupported'"
           data-test="notify-toggle"
-          @change="prefs.setDesktopNotifications(($event.target as HTMLInputElement).checked)"
+          @change="toggleNotifications($event)"
         />
         <span>Desktop notifications</span>
       </label>
       <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-test="notify-hint">
         {{
-          prefs.notificationPermission() === 'denied'
+          permission === 'denied'
             ? 'Blocked by the browser; allow notifications for this site first.'
             : 'When an agent is ready or needs input and this page is not in front.'
         }}

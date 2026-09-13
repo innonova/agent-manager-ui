@@ -43,7 +43,7 @@ const busy = ref(false)
 const profiles = ref<Profile[]>([])
 
 onMounted(() => void changes.countUnread(props.id))
-onMounted(async () => {
+async function loadProject() {
   if (!projects.loaded) await projects.load()
   await agents.load(props.id)
   profiles.value = (await api.profiles().catch(() => ({ profiles: [] }))).profiles.filter(
@@ -56,7 +56,15 @@ onMounted(async () => {
       name: 'agent',
       params: { id: props.id, agentId: rows.value[0].agent.id },
     })
-})
+}
+onMounted(loadProject)
+watch(
+  () => props.id,
+  () => {
+    // the same component serves every project: a notification click can swap the id under us
+    void loadProject()
+  },
+)
 
 watch(
   () => props.agentId,

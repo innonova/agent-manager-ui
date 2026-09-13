@@ -1,4 +1,5 @@
 import type { EventFrame } from './types'
+import { unauthorized } from './client'
 
 type Listener = (frame: EventFrame) => void
 
@@ -51,12 +52,23 @@ export class EventStream {
     }
     ws.onmessage = (m) => {
       const frame = JSON.parse(String(m.data)) as EventFrame
-      for (const l of this.listeners) l(frame)
+      for (const l of this.listeners) {
+        try {
+          l(frame)
+        } catch (e) {
+          console.error('event listener failed', e) // one listener must not starve the rest
+        }
+      }
     }
     ws.onclose = (ev) => {
       this.ws = null
       this.onStatus?.(false)
-      if (ev.code === 4401 || this.stopped) return
+      if (ev.code === 4401) {
+        // the session is gone (expired, or the password was reset): back to login
+        unauthorized.dispatchEvent(new Event('unauthorized'))
+        return
+      }
+      if (this.stopped) return
       this.timer = window.setTimeout(() => this.connect(), this.backoff)
       this.backoff = Math.min(this.backoff * 2, 10_000)
     }

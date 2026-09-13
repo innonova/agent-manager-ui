@@ -39,9 +39,8 @@ const changedCount = computed(() => changes.repos.reduce((n, r) => n + r.files.l
 const canMarkRead = computed(
   () =>
     base.value === 'read' &&
-    changes.repos.some(
-      (r) => r.head && (r.base !== r.head || r.note?.startsWith('nothing marked read')),
-    ),
+    // any fallback note (nothing read yet, history rewritten) is cleared by marking read too
+    changes.repos.some((r) => r.head && (r.base !== r.head || r.note)),
 )
 const notifications = useNotificationsStore()
 async function markRead() {
@@ -142,8 +141,9 @@ async function onTreeKey(e: KeyboardEvent): Promise<void> {
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
   if (!features.byProject.has(props.id)) void features.load(props.id)
+  void changes.countUnread(props.id)
+  const p = route.query.path // before select(), which resets the open path and the URL follows
   await files.select(props.id)
-  const p = route.query.path
   if (mode.value === 'changes') {
     await changes.select(props.id, base.value)
     if (typeof p === 'string' && p) await changes.openFile(p)

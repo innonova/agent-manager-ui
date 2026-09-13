@@ -154,8 +154,10 @@ export const useFilesStore = defineStore('files', () => {
 
   async function loadDir(path: string): Promise<void> {
     if (!projectId.value) return
+    const forProject = projectId.value
     try {
-      const r = await api.files(projectId.value, path)
+      const r = await api.files(forProject, path)
+      if (projectId.value !== forProject) return // switched meanwhile
       dirs.set(path, r.entries)
       error.value = null
     } catch (e) {
@@ -175,9 +177,12 @@ export const useFilesStore = defineStore('files', () => {
 
   async function openFile(path: string): Promise<void> {
     if (!projectId.value) return
+    const forProject = projectId.value
     openPath.value = path
     try {
-      open.value = await api.file(projectId.value, path)
+      const content = await api.file(forProject, path)
+      if (projectId.value !== forProject || openPath.value !== path) return
+      open.value = content
       error.value = null
     } catch (e) {
       open.value = null

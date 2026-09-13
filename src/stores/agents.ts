@@ -42,6 +42,7 @@ export const useAgentsStore = defineStore('agents', () => {
     }
     if (f.type === 'agent.reset') {
       // the manager rebuilt this transcript from scratch; start over
+      generation.set(f.agentId, (generation.get(f.agentId) ?? 0) + 1)
       items.set(f.agentId, [])
       loaded.delete(f.agentId)
       void loadItems(f.agentId)
@@ -56,10 +57,11 @@ export const useAgentsStore = defineStore('agents', () => {
     }
   })
 
-  events.onReconnect = () => {
+  events.onReconnect = ((prev) => () => {
+    prev?.()
     for (const id of loaded) void loadItems(id)
     for (const projectId of byProject.keys()) void load(projectId)
-  }
+  })(events.onReconnect)
 
   async function load(projectId: string): Promise<void> {
     const rows = await api.agents(projectId)
@@ -67,10 +69,15 @@ export const useAgentsStore = defineStore('agents', () => {
     for (const r of rows) byId.set(r.agent.id, r)
   }
 
+  /** Bumped on agent.reset so a load started before the reset is discarded. */
+  const generation = new Map<string, number>()
   async function loadItems(agentId: string): Promise<void> {
+    const gen = generation.get(agentId) ?? 0
     const from = loaded.has(agentId) ? (items.get(agentId)?.length ?? 0) : 0
     const { items: fetched } = await api.items(agentId, from)
+    if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
+    if (fetched.length && fetched[0]!.index > list.length) return void loadItems(agentId) // a gap: start over
     for (const it of fetched) list[it.index] = it
     items.set(agentId, list)
     loaded.add(agentId)

@@ -25,6 +25,10 @@ export const useProjectsStore = defineStore('projects', () => {
     rows.value = await api.projects()
     loaded.value = true
   }
+  events.onReconnect = ((prev) => () => {
+    prev?.()
+    if (loaded.value) void load() // counts may have moved while the socket was down
+  })(events.onReconnect)
 
   const sorted = (list: ProjectRow[]) =>
     [...list].sort((a, b) => a.project.name.localeCompare(b.project.name))

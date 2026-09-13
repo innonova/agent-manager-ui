@@ -4,6 +4,22 @@ import { api } from '@/api/client'
 import { events } from '@/api/events'
 import type { Feature, FeatureStatus } from '@/api/types'
 
+const ORDER: Record<FeatureStatus, number> = {
+  'in-progress': 0,
+  review: 1,
+  blocked: 2,
+  planned: 3,
+  done: 4,
+}
+function compare(a: Feature, b: Feature): number {
+  return (
+    ORDER[a.status] - ORDER[b.status] ||
+    (a.status === 'done'
+      ? b.mtime - a.mtime
+      : a.priority - b.priority || a.slug.localeCompare(b.slug))
+  )
+}
+
 /** Features per project, kept current by feature.changed events (the manager polls the files, so an agent's own edits arrive too). */
 export const useFeaturesStore = defineStore('features', () => {
   const byProject = reactive(new Map<string, Feature[]>())
@@ -15,6 +31,7 @@ export const useFeaturesStore = defineStore('features', () => {
     const i = list.findIndex((x) => x.slug === f.feature.slug)
     if (i >= 0) list[i] = f.feature
     else list.push(f.feature)
+    list.sort(compare) // the manager's order: status, then priority, done newest first
   })
   events.onReconnect = ((prev) => () => {
     prev?.()

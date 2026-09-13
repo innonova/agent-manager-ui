@@ -47,8 +47,12 @@ export const useChangesStore = defineStore('changes', () => {
   async function load(): Promise<void> {
     if (!projectId.value) return
     loading.value = true
+    const forProject = projectId.value
+    const forBase = base.value
     try {
-      repos.value = (await api.changes(projectId.value, base.value)).repos
+      const r = await api.changes(forProject, forBase)
+      if (projectId.value !== forProject || base.value !== forBase) return
+      repos.value = r.repos
       error.value = null
       if (openPath.value) await openFile(openPath.value)
     } catch (e) {
@@ -61,8 +65,11 @@ export const useChangesStore = defineStore('changes', () => {
   async function openFile(path: string): Promise<void> {
     if (!projectId.value) return
     openPath.value = path
+    const forProject = projectId.value
     try {
-      open.value = await api.changedFile(projectId.value, path, base.value)
+      const d = await api.changedFile(forProject, path, base.value)
+      if (projectId.value !== forProject || openPath.value !== path) return
+      open.value = d
       error.value = null
     } catch (e) {
       open.value = null
