@@ -1,6 +1,13 @@
 <script setup lang="ts">
-defineProps<{ title: string; error?: string | null; busy?: boolean; submitLabel?: string }>()
-const emit = defineEmits<{ close: []; submit: [] }>()
+defineProps<{
+  title: string
+  error?: string | null
+  busy?: boolean
+  submitLabel?: string
+  /** A second way to submit, shown next to the main one. */
+  secondaryLabel?: string
+}>()
+const emit = defineEmits<{ close: []; submit: []; secondary: [] }>()
 </script>
 
 <template>
@@ -26,6 +33,16 @@ const emit = defineEmits<{ close: []; submit: [] }>()
           @click="emit('close')"
         >
           cancel
+        </button>
+        <button
+          v-if="secondaryLabel"
+          type="button"
+          class="rounded border border-blue-600 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-slate-800"
+          :disabled="busy"
+          data-test="form-secondary"
+          @click="emit('secondary')"
+        >
+          {{ secondaryLabel }}
         </button>
         <button
           type="submit"

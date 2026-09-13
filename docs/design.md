@@ -245,6 +245,17 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Editing a project
+
+The projects list's "edit" and the "edit" link in a project's header
+open the same form as creation: name, repositories (add, remove,
+reorder; the first is primary) and default profile. Running agents keep
+the repositories they were started with, so the form offers "save and
+restart agents" beside "save": it saves, then asks the manager to stop
+and resume every idle agent of the project; agents working, waiting on
+a permission or with background jobs are left alone and named in the
+toast.
+
 ## Attention badge
 
 The tab title gets a count and the favicon a red badge with it, for the

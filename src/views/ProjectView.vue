@@ -154,6 +154,13 @@ async function archive() {
     <template #title>
       <span class="text-slate-400 dark:text-slate-500">/</span>
       <span data-test="project-title">{{ project?.name ?? '…' }}</span>
+      <RouterLink
+        :to="{ name: 'projects', query: { edit: id } }"
+        class="text-xs text-slate-400 hover:text-slate-900 hover:underline dark:text-slate-500 dark:hover:text-slate-100"
+        title="Edit the project: name, repositories, default profile"
+        data-test="edit-project-link"
+        >edit</RouterLink
+      >
       <ProjectTabs :id="id" />
     </template>
     <div class="flex h-full">

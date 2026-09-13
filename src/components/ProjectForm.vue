@@ -51,7 +51,8 @@ function move(i: number, d: -1 | 1) {
     </div>
     <p class="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
       The first one is the primary repository: agents start there by default and new features are
-      created there. The name defaults to the directory name.
+      created there. The name defaults to the directory name. Running agents keep the repositories
+      they were started with until they are restarted.
     </p>
     <div
       v-for="(repo, i) in model.repos"

@@ -371,7 +371,10 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   const card = page.locator('[data-item="permission"]').last()
   await expect(card).toContainText('Remove the build directory')
   await expect(card).toContainText('rm -rf dist')
-  await expect(page.getByTestId('turn-input')).toHaveAttribute('placeholder', /waiting for your answer/)
+  await expect(page.getByTestId('turn-input')).toHaveAttribute(
+    'placeholder',
+    /waiting for your answer/,
+  )
   await expect(page.getByTestId('send')).toBeDisabled()
   await card.getByTestId('permission-allow').click()
   await expect(card).toHaveAttribute('data-decision', 'allow')
@@ -387,7 +390,9 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   await expect(page.locator('[data-item="text"]').last()).toContainText('not removing it')
 })
 
-test('users: create with a shown-once password, rename yourself, reset, remove', async ({ page }) => {
+test('users: create with a shown-once password, rename yourself, reset, remove', async ({
+  page,
+}) => {
   await login(page)
   await page.getByTestId('settings').click()
   await page.getByTestId('users-link').click()
@@ -422,7 +427,9 @@ test('users: create with a shown-once password, rename yourself, reset, remove',
   page.once('dialog', (d) => d.accept())
   await page.locator('[data-test=user-row][data-name="bob"]').getByTestId('remove-user').click()
   await expect(page.getByTestId('user-row')).toHaveCount(1)
-  await expect(page.locator('[data-test=user-row][data-name="admin"]').getByTestId('remove-user')).toHaveCount(0)
+  await expect(
+    page.locator('[data-test=user-row][data-name="admin"]').getByTestId('remove-user'),
+  ).toHaveCount(0)
 })
 
 test('presence: another user on the same agent shows as here and as typing', async ({
@@ -453,7 +460,9 @@ test('presence: another user on the same agent shows as here and as typing', asy
   await expect(page.getByTestId('presence-typing')).toHaveCount(0)
   await other.close()
   await expect(page.getByTestId('presence')).toHaveCount(0)
-  await page.request.delete(`/api/users/${((await created.json()) as { user: { id: string } }).user.id}`)
+  await page.request.delete(
+    `/api/users/${((await created.json()) as { user: { id: string } }).user.id}`,
+  )
 })
 
 test('changes view: unread files since the cursor, a diff, mark as read', async ({ page }) => {
@@ -530,7 +539,10 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'in-progress', {
     timeout: 10000,
   })
-  fs.writeFileSync(file, front('review') + '\n## Report (2026-09-12)\n\nSaid hello. Left open: nothing.\n')
+  fs.writeFileSync(
+    file,
+    front('review') + '\n## Report (2026-09-12)\n\nSaid hello. Left open: nothing.\n',
+  )
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'review', {
     timeout: 10000,
   })
@@ -547,11 +559,29 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await row.getByTestId('feature-respond').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await expect(row.getByTestId('feature-body')).toContainText('Also wave.')
-  expect(fs.readFileSync(file, 'utf8')).toMatch(/## Response \(\d{4}-\d{2}-\d{2}, admin\)\n\nAlso wave\./)
+  expect(fs.readFileSync(file, 'utf8')).toMatch(
+    /## Response \(\d{4}-\d{2}-\d{2}, admin\)\n\nAlso wave\./,
+  )
   await row.getByTestId('feature-block').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'blocked')
   await row.getByTestId('feature-reopen').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'planned')
   await row.getByTestId('feature-done').click()
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
+})
+
+test('edit a project from inside it; save and restart resumes its idle agents', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await expect(page.getByTestId('project-title')).toHaveText('Demo')
+  await page.getByTestId('edit-project-link').click()
+  await expect(page.getByRole('heading', { name: 'Edit project' })).toBeVisible()
+  await expect(page.getByTestId('project-name')).toHaveValue('Demo')
+  await page.getByTestId('add-repo').click()
+  await expect(page.getByTestId('repo-row')).toHaveCount(2)
+  await page.getByTestId('repo-row').nth(1).getByTestId('repo-path').fill('') // left empty: ignored
+  await page.getByTestId('form-secondary').click()
+  await expect(page.getByRole('status')).toContainText(/restarted \d+ agent/)
 })

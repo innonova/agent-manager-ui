@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
 import type { Profile, Project } from '@/api/types'
 import AgentCountBadges from '@/components/AgentCountBadges.vue'
@@ -8,8 +8,12 @@ import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectForm, { type ProjectFormValue } from '@/components/ProjectForm.vue'
 import { useProjectsStore } from '@/stores/projects'
+import { useAgentsStore } from '@/stores/agents'
+import { useNotificationsStore } from '@/stores/notifications'
 
 const projects = useProjectsStore()
+const route = useRoute()
+const router = useRouter()
 const showForm = ref(false)
 const editing = ref<Project | null>(null)
 const form = ref<ProjectFormValue>(empty())
@@ -26,6 +30,12 @@ onMounted(async () => {
   profiles.value = (await api.profiles().catch(() => ({ profiles: [] }))).profiles.filter(
     (p) => p.supported,
   )
+  // ?edit=<id>: sent here from inside a project to edit it
+  const wanted = typeof route.query.edit === 'string' ? projects.byId.get(route.query.edit) : null
+  if (wanted) {
+    openEdit(wanted.project)
+    void router.replace({ query: {} })
+  }
 })
 
 function openNew() {
@@ -46,7 +56,8 @@ function openEdit(p: Project) {
   showForm.value = true
 }
 
-async function submit() {
+/** Saves; with `restart`, then stops and resumes the project's idle agents so they see the change. */
+async function submit(restart = false) {
   error.value = null
   busy.value = true
   try {
@@ -62,6 +73,15 @@ async function submit() {
     }
     if (editing.value) await projects.update(editing.value.id, input)
     else await projects.create(input)
+    if (restart && editing.value) {
+      const { restarted, skipped } = await api.restartAgents(editing.value.id)
+      const agents = useAgentsStore()
+      const name = (id: string) => agents.byId.get(id)?.agent.name ?? id.slice(0, 8)
+      const parts = [`restarted ${restarted.length} agent${restarted.length === 1 ? '' : 's'}`]
+      if (skipped.length)
+        parts.push(`skipped ${skipped.map((s) => `${name(s.id)} (${s.why})`).join(', ')}`)
+      useNotificationsStore().push('info', parts.join('; '))
+    }
     showForm.value = false
   } catch (e) {
     error.value = e instanceof ApiError ? e.message : String(e)
@@ -136,8 +156,10 @@ async function submit() {
       :error="error"
       :busy="busy"
       :submit-label="editing ? 'save' : 'create'"
+      :secondary-label="editing ? 'save and restart agents' : undefined"
       @close="showForm = false"
-      @submit="submit"
+      @submit="submit()"
+      @secondary="submit(true)"
     >
       <ProjectForm v-model="form" :profiles="profiles" />
     </ModalForm>

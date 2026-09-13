@@ -65,6 +65,13 @@ export const api = {
     input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
   ) => call<{ project: Project; agentCounts: AgentCounts }>('PATCH', `/api/projects/${id}`, input),
   deleteProject: (id: string) => call<{ ok: true }>('DELETE', `/api/projects/${id}`),
+  /** Stops and resumes the project's idle agents so they see its current settings. */
+  restartAgents: (id: string) =>
+    call<{ restarted: string[]; skipped: { id: string; why: string }[] }>(
+      'POST',
+      `/api/projects/${id}/agents/restart`,
+      {},
+    ),
 
   agents: (projectId: string) =>
     call<{ agent: Agent; status: AgentStatus }[]>('GET', `/api/projects/${projectId}/agents`),
