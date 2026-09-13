@@ -247,6 +247,19 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Uploads and new folders
+
+The files tree can take files: "upload" opens a picker and a drop on
+the tree does the same; "new folder" creates one. Both land in the
+target directory: the focused directory, else the directory of the
+focused or open file, else the first repository (the buttons' tooltips
+name it). A name already in use asks before replacing. After an upload
+the toast offers "mention to agent": it appends `See <path>` to the
+draft of the agent last opened in this project and goes there, so the
+next thing you type tells the agent what to do with the file. Uploads
+are raw bytes, at most 25 MB each; the file is then simply in the
+working tree, untracked, as the changes view shows.
+
 ## Images with a turn
 
 Paste an image into the composer, or drop one on it, and it shows as a

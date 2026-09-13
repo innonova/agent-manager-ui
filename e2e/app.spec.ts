@@ -677,3 +677,29 @@ test('an image pasted into the composer goes with the turn and shows in the tran
     timeout: 20000,
   })
 })
+
+test('files view: a new folder and an uploaded file land in the tree and can be mentioned to the agent', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await page.getByTestId('tab-files').click()
+  await expect(page.getByTestId('file-tree')).toBeVisible()
+  // a folder in the first repository
+  await page.getByTestId('files-new-folder').click()
+  await page.getByTestId('new-folder-name').fill('logs')
+  await page.getByTestId('new-folder-name').press('Enter')
+  await expect(page.getByTestId('file-tree')).toContainText('logs')
+  // an upload into it (the new folder is focused)
+  await page.getByTestId('files-upload-input').setInputFiles({
+    name: 'app.log',
+    mimeType: 'text/plain',
+    buffer: Buffer.from('error: something happened\n'),
+  })
+  await expect(page.getByTestId('file-tree')).toContainText('app.log')
+  await expect(page.getByRole('status')).toContainText('uploaded')
+  await page.getByTestId('toast-action').click()
+  await expect(page).toHaveURL(/\/agents\//)
+  await expect(page.getByTestId('turn-input')).toHaveValue(/See .*logs\/app\.log/)
+})

@@ -9,15 +9,17 @@ export interface Toast {
   id: number
   level: 'info' | 'error'
   text: string
+  /** A button on the toast. */
+  action?: { label: string; run: () => void }
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const toasts = ref<Toast[]>([])
   let next = 1
 
-  function push(level: Toast['level'], text: string, ttlMs = 8000): void {
+  function push(level: Toast['level'], text: string, ttlMs = 8000, action?: Toast['action']): void {
     const id = next++
-    toasts.value.push({ id, level, text })
+    toasts.value.push({ id, level, text, ...(action ? { action } : {}) })
     setTimeout(() => dismiss(id), ttlMs)
   }
 

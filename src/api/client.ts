@@ -137,6 +137,25 @@ export const api = {
       'GET',
       `/api/projects/${projectId}/files?path=${encodeURIComponent(path)}`,
     ),
+  /** Uploads a file as its raw bytes into a repository of the project. */
+  upload: async (projectId: string, path: string, file: File, overwrite = false) => {
+    const q = `path=${encodeURIComponent(path)}${overwrite ? '&overwrite=1' : ''}`
+    const res = await fetch(`/api/projects/${projectId}/file?${q}`, {
+      method: 'PUT',
+      headers: { 'content-type': file.type || 'application/octet-stream' },
+      body: file,
+      credentials: 'same-origin',
+    })
+    const body = (await res.json().catch(() => ({}))) as { message?: string; code?: string }
+    if (!res.ok) {
+      const err = new ApiError(res.status, body.message ?? res.statusText)
+      if (body.code) (err as ApiError & { code?: string }).code = body.code
+      throw err
+    }
+    return body as unknown as { path: string; size: number; replaced: boolean }
+  },
+  mkdir: (projectId: string, path: string) =>
+    call<{ path: string; created: boolean }>('POST', `/api/projects/${projectId}/dir`, { path }),
   file: (projectId: string, path: string) =>
     call<FileContent>('GET', `/api/projects/${projectId}/file?path=${encodeURIComponent(path)}`),
 

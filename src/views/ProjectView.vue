@@ -107,7 +107,10 @@ watch(
 watch(
   () => props.agentId,
   async (id) => {
-    if (id) await agents.loadItems(id)
+    if (id) {
+      agents.lastAgent.set(props.id, id)
+      await agents.loadItems(id)
+    }
   },
   { immediate: true },
 )

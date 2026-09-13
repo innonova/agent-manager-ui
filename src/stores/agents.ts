@@ -26,6 +26,8 @@ export const useAgentsStore = defineStore('agents', () => {
   const byId = reactive(new Map<string, AgentRow>())
   const items = reactive(new Map<string, StoredItem[]>())
   const loaded = reactive(new Set<string>())
+  /** The agent last opened in each project, for actions elsewhere that want "the" agent. */
+  const lastAgent = reactive(new Map<string, string>())
 
   events.on((f) => {
     if (f.type === 'agent.state') {
@@ -244,6 +246,7 @@ export const useAgentsStore = defineStore('agents', () => {
     loadItems,
     loadEarlier,
     hasEarlier,
+    lastAgent,
     loadingEarlier,
     create,
     archive,

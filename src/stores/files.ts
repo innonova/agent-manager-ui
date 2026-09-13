@@ -195,6 +195,51 @@ export const useFilesStore = defineStore('files', () => {
     }
   }
 
+  /**
+   * Where an upload or a new folder goes: the focused directory, else the
+   * directory of the focused or open file, else the first repository.
+   */
+  function targetDir(): string | null {
+    const isDir = (p: string) => {
+      const parent = p.includes('/') ? p.slice(0, p.lastIndexOf('/')) : ''
+      return (dirs.get(parent) ?? []).some((e) => e.path === p && e.type === 'dir')
+    }
+    const pick = focused.value ?? openPath.value
+    if (pick) {
+      if (isDir(pick)) return pick
+      if (pick.includes('/')) return pick.slice(0, pick.lastIndexOf('/'))
+      return pick
+    }
+    return (dirs.get('') ?? [])[0]?.path ?? null
+  }
+
+  /** Uploads files into `dir`; a name in use is not replaced unless `overwrite`. Returns the paths written. */
+  async function upload(dir: string, list: File[], overwrite = false): Promise<string[]> {
+    if (!projectId.value) return []
+    const done: string[] = []
+    for (const f of list) {
+      const r = await api.upload(projectId.value, `${dir}/${f.name}`, f, overwrite)
+      done.push(r.path)
+    }
+    await loadDir(dir)
+    if (!expanded.has(dir)) {
+      expanded.add(dir)
+      remember()
+    }
+    return done
+  }
+
+  async function mkdir(dir: string, name: string): Promise<string> {
+    if (!projectId.value) throw new Error('no project')
+    const r = await api.mkdir(projectId.value, `${dir}/${name}`)
+    await loadDir(dir)
+    if (!expanded.has(dir)) expanded.add(dir)
+    if (!dirs.has(r.path)) await loadDir(r.path)
+    remember()
+    focus(r.path)
+    return r.path
+  }
+
   /** Re-read every expanded directory and the open file (only if it changed). */
   async function refresh(): Promise<void> {
     if (!projectId.value) return
@@ -229,5 +274,8 @@ export const useFilesStore = defineStore('files', () => {
     collapseAll,
     openFile,
     refresh,
+    targetDir,
+    upload,
+    mkdir,
   }
 })

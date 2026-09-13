@@ -6,6 +6,9 @@ import FileTreeNode from '@/components/FileTreeNode.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
 import { useChangesStore } from '@/stores/changes'
 import { useFeaturesStore } from '@/stores/features'
+import { useDraftsStore } from '@/stores/drafts'
+import { useAgentsStore } from '@/stores/agents'
+import { ApiError } from '@/api/client'
 import { useFilesStore } from '@/stores/files'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
@@ -19,6 +22,8 @@ const route = useRoute()
 const router = useRouter()
 const projects = useProjectsStore()
 const files = useFilesStore()
+const agents = useAgentsStore()
+const drafts = useDraftsStore()
 const changes = useChangesStore()
 const features = useFeaturesStore()
 /** "tree" or "changes"; changes take a base: "read", "feature:<slug>" or a commit. */
@@ -181,6 +186,73 @@ watch(
       void router.replace({ query: p ? { path: p } : {} })
   },
 )
+
+// ---- writing into the tree: uploads and new folders
+const filePicker = ref<HTMLInputElement | null>(null)
+const newFolder = ref<string | null>(null)
+const dragging = ref(false)
+function pickFiles() {
+  filePicker.value?.click()
+}
+function onPicked(e: Event) {
+  const input = e.target as HTMLInputElement
+  const list = [...(input.files ?? [])]
+  input.value = ''
+  void uploadFiles(list)
+}
+function onDrop(e: DragEvent) {
+  dragging.value = false
+  const list = [...(e.dataTransfer?.files ?? [])]
+  if (list.length) void uploadFiles(list)
+}
+/** Uploads into the target directory; a name in use asks before replacing; the toast offers to mention the path to the agent. */
+async function uploadFiles(list: File[]) {
+  const dir = files.targetDir()
+  if (!dir) return notifications.push('error', 'select a folder in the tree first')
+  const done: string[] = []
+  for (const f of list) {
+    try {
+      done.push(...(await files.upload(dir, [f])))
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        if (!confirm(`${f.name} exists in ${dir}. Replace it?`)) continue
+        try {
+          done.push(...(await files.upload(dir, [f], true)))
+        } catch (e2) {
+          notifications.push('error', e2 instanceof ApiError ? e2.message : String(e2))
+        }
+      } else notifications.push('error', e instanceof ApiError ? e.message : String(e))
+    }
+  }
+  if (!done.length) return
+  const agentId = agents.lastAgent.get(props.id)
+  notifications.push(
+    'info',
+    `uploaded ${done.length === 1 ? done[0] : `${done.length} files into ${dir}`}`,
+    12000,
+    agentId
+      ? {
+          label: 'mention to agent',
+          run: () => {
+            const current = drafts.get(agentId)
+            drafts.set(agentId, `${current ? current + '\n' : ''}See ${done.join(', ')}`)
+            void router.push({ name: 'agent', params: { id: props.id, agentId } })
+          },
+        }
+      : undefined,
+  )
+}
+async function createFolder() {
+  const dir = files.targetDir()
+  const name = (newFolder.value ?? '').trim()
+  if (!dir || !name) return
+  try {
+    await files.mkdir(dir, name)
+    newFolder.value = null
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
 </script>
 
 <template>
@@ -225,6 +297,32 @@ watch(
             >
           </button>
           <span class="grow" />
+          <template v-if="mode === 'tree'">
+            <button
+              class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
+              :title="`Upload files into ${files.targetDir() ?? 'the project'}`"
+              data-test="files-upload"
+              @click="pickFiles()"
+            >
+              upload
+            </button>
+            <input
+              ref="filePicker"
+              type="file"
+              multiple
+              class="hidden"
+              data-test="files-upload-input"
+              @change="onPicked"
+            />
+            <button
+              class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
+              :title="`New folder in ${files.targetDir() ?? 'the project'}`"
+              data-test="files-new-folder"
+              @click="newFolder = newFolder === null ? '' : null"
+            >
+              new folder
+            </button>
+          </template>
           <button
             v-if="mode === 'tree'"
             class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
@@ -313,6 +411,27 @@ watch(
             {{ changes.error }}
           </p>
         </template>
+        <form
+          v-if="mode === 'tree' && newFolder !== null"
+          class="flex items-center gap-2 px-3 pb-1 text-xs"
+          data-test="new-folder-form"
+          @submit.prevent="createFolder()"
+        >
+          <span class="truncate text-slate-500 dark:text-slate-400"
+            >{{ files.targetDir() ?? '' }}/</span
+          >
+          <input
+            v-model="newFolder"
+            class="min-w-0 grow rounded border border-slate-300 px-2 py-1 font-mono dark:border-slate-700"
+            placeholder="folder name"
+            data-test="new-folder-name"
+            autofocus
+            @keydown.escape="newFolder = null"
+          />
+          <button type="submit" class="text-blue-700 hover:underline dark:text-blue-300">
+            create
+          </button>
+        </form>
         <input
           v-if="mode === 'tree'"
           v-model="files.filter"
@@ -327,6 +446,9 @@ watch(
           class="min-h-0 grow overflow-auto pb-4 outline-none"
           tabindex="0"
           data-test="file-tree"
+          @dragover.prevent="dragging = true"
+          @dragleave="dragging = false"
+          @drop.prevent="onDrop"
           @focus="treeFocused = true"
           @blur="treeFocused = false"
           @keydown="onTreeKey"

@@ -18,6 +18,14 @@ const notifications = useNotificationsStore()
       @click="notifications.dismiss(t.id)"
     >
       {{ t.text }}
+      <button
+        v-if="t.action"
+        class="ml-2 rounded border border-current px-2 py-0.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+        data-test="toast-action"
+        @click.stop="(t.action.run(), notifications.dismiss(t.id))"
+      >
+        {{ t.action.label }}
+      </button>
     </div>
   </div>
 </template>
