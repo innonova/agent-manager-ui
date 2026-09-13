@@ -51,6 +51,7 @@ export const useAgentsStore = defineStore('agents', () => {
       items.set(f.agentId, [])
       loaded.delete(f.agentId)
       earliest.delete(f.agentId)
+      arriving.delete(f.agentId) // held items carry the old numbering
       void loadItems(f.agentId)
       return
     }
@@ -121,14 +122,25 @@ export const useAgentsStore = defineStore('agents', () => {
     failed.delete(agentId)
     if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
-    if (loaded.has(agentId) && fetched.length && fetched[0]!.index > list.length)
-      return void loadItems(agentId) // a gap: start over
+    if (loaded.has(agentId) && (total < list.length || (fetched[0]?.index ?? 0) > list.length)) {
+      // the manager renumbered (a rebuild whose reset this tab missed): start over
+      items.set(agentId, [])
+      loaded.delete(agentId)
+      earliest.delete(agentId)
+      arriving.delete(agentId)
+      return void loadItems(agentId)
+    }
     if (total > list.length) list.length = total // holes below the tail are earlier history
+    let first = fetched[0]?.index ?? total
     for (const it of fetched) list[it.index] = it
-    for (const it of arriving.get(agentId) ?? []) if (it.index <= list.length) list[it.index] = it
+    for (const it of arriving.get(agentId) ?? [])
+      if (it.index <= list.length) {
+        list[it.index] = it
+        first = Math.min(first, it.index)
+      }
     arriving.delete(agentId)
     items.set(agentId, list)
-    if (!loaded.has(agentId)) earliest.set(agentId, fetched[0]?.index ?? 0)
+    if (!loaded.has(agentId)) earliest.set(agentId, Math.min(first, total))
     loaded.add(agentId)
     if (!byId.has(agentId)) {
       const row = await api.agent(agentId)

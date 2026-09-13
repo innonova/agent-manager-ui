@@ -73,6 +73,22 @@ describe('agents store transcript paging', () => {
     expect(items).toHaveBeenLastCalledWith('a', { from: total })
   })
 
+  it('a refetch that comes back shorter starts over from the tail', async () => {
+    items.mockResolvedValueOnce({ items: range(0, 10), total: 10 })
+    const store = useAgentsStore()
+    store.byId.set('a', { agent: { id: 'a' } as never, status: {} as never })
+    await store.loadItems('a')
+    expect(store.items.get('a')!.length).toBe(10)
+    // the manager rebuilt meanwhile: fewer items, and this tab missed the reset
+    items.mockResolvedValueOnce({ items: [], total: 4 })
+    items.mockResolvedValueOnce({ items: range(0, 4), total: 4 })
+    await store.loadItems('a')
+    expect(items).toHaveBeenNthCalledWith(2, 'a', { from: 10 })
+    expect(items).toHaveBeenNthCalledWith(3, 'a', { tail: PAGE })
+    expect(store.items.get('a')!.length).toBe(4)
+    expect(store.items.get('a')![3]?.index).toBe(3)
+  })
+
   it('a short transcript has nothing earlier', async () => {
     items.mockResolvedValue({ items: range(0, 5), total: 5 })
     const store = useAgentsStore()
