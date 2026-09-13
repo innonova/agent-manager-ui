@@ -99,6 +99,7 @@ describe('agents store transcript paging', () => {
     list[5] = { ...item(5), item: { kind: 'text', text: 'partial', streaming: true } }
     items.mockResolvedValueOnce({
       items: [
+        item(4), // the server answers from the requested index
         { ...item(5), item: { kind: 'text', text: 'partial and done', streaming: false } },
         { ...item(6), item: { kind: 'turn_end' } },
       ],
