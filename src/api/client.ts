@@ -147,6 +147,7 @@ export const api = {
       credentials: 'same-origin',
     })
     const body = (await res.json().catch(() => ({}))) as { message?: string; code?: string }
+    if (res.status === 401) unauthorized.dispatchEvent(new Event('unauthorized'))
     if (!res.ok) {
       const err = new ApiError(res.status, body.message ?? res.statusText)
       if (body.code) (err as ApiError & { code?: string }).code = body.code

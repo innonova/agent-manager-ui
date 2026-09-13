@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
@@ -190,6 +190,11 @@ watch(
 // ---- writing into the tree: uploads and new folders
 const filePicker = ref<HTMLInputElement | null>(null)
 const newFolder = ref<string | null>(null)
+const newFolderInput = ref<HTMLInputElement | null>(null)
+function toggleNewFolder() {
+  newFolder.value = newFolder.value === null ? '' : null
+  if (newFolder.value !== null) void nextTick(() => newFolderInput.value?.focus())
+}
 const dragging = ref(false)
 function pickFiles() {
   filePicker.value?.click()
@@ -205,12 +210,25 @@ function onDrop(e: DragEvent) {
   const list = [...(e.dataTransfer?.files ?? [])]
   if (list.length) void uploadFiles(list)
 }
+/** A name the manager would place somewhere else: a path, a dot entry, a backslash, nothing. */
+const BAD_NAME = /[/\\]|^\.\.?$|^\s*$/
 /** Uploads into the target directory; a name in use asks before replacing; the toast offers to mention the path to the agent. */
 async function uploadFiles(list: File[]) {
   const dir = files.targetDir()
   if (!dir) return notifications.push('error', 'select a folder in the tree first')
   const done: string[] = []
   for (const f of list) {
+    if (f.size === 0 && !f.type) {
+      notifications.push(
+        'error',
+        `${f.name || 'that'} is a folder or empty; folders cannot be dropped`,
+      )
+      continue
+    }
+    if (BAD_NAME.test(f.name)) {
+      notifications.push('error', `${f.name}: a file name cannot contain a slash or backslash`)
+      continue
+    }
     try {
       done.push(...(await files.upload(dir, [f])))
     } catch (e) {
@@ -225,7 +243,12 @@ async function uploadFiles(list: File[]) {
     }
   }
   if (!done.length) return
-  const agentId = agents.lastAgent.get(props.id)
+  // the agent last opened here, else the project's first: the one a mention goes to
+  const remembered = agents.lastAgent.get(props.id)
+  const agentId =
+    remembered && agents.byId.has(remembered)
+      ? remembered
+      : agents.byProject.get(props.id)?.[0]?.agent.id
   notifications.push(
     'info',
     `uploaded ${done.length === 1 ? done[0] : `${done.length} files into ${dir}`}`,
@@ -246,6 +269,10 @@ async function createFolder() {
   const dir = files.targetDir()
   const name = (newFolder.value ?? '').trim()
   if (!dir || !name) return
+  if (BAD_NAME.test(name)) {
+    notifications.push('error', 'a folder name cannot contain a slash or be . or ..')
+    return
+  }
   try {
     await files.mkdir(dir, name)
     newFolder.value = null
@@ -353,7 +380,7 @@ async function createFolder() {
             :title="`New folder in ${files.targetDir() ?? 'the project'}`"
             :aria-label="`New folder in ${files.targetDir() ?? 'the project'}`"
             data-test="files-new-folder"
-            @click="newFolder = newFolder === null ? '' : null"
+            @click="toggleNewFolder()"
           >
             <svg
               class="h-4 w-4"
@@ -497,8 +524,8 @@ async function createFolder() {
             v-model="newFolder"
             class="min-w-0 grow rounded border border-slate-300 px-2 py-1 font-mono dark:border-slate-700"
             placeholder="folder name"
+            ref="newFolderInput"
             data-test="new-folder-name"
-            autofocus
             @keydown.escape="newFolder = null"
           />
           <button type="submit" class="text-blue-700 hover:underline dark:text-blue-300">

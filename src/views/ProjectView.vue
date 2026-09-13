@@ -333,6 +333,7 @@ async function archive() {
         </div>
         <TurnInput
           ref="turnInput"
+          :key="current.agent.id"
           :agent-id="current.agent.id"
           :state="current.status.state"
           :queued="current.status.queued"

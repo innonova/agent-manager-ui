@@ -256,9 +256,11 @@ folder, collapse all, refresh. Both land in the
 target directory: the focused directory, else the directory of the
 focused or open file, else the first repository; the header says "into
 <dir>" so the target is never a guess, and the selected row stays
-marked while the tree is not the focused element. A name already in use asks before replacing. After an upload
-the toast offers "mention to agent": it appends `See <path>` to the
-draft of the agent last opened in this project and goes there, so the
+marked while the tree is not the focused element. A name already in use asks before replacing; a name with a slash or a
+dot entry, and a dropped folder, are refused with a toast. After an
+upload the toast offers "mention to agent": it appends `See <path>` to
+the draft of the agent last opened in this project (else its first
+agent) and goes there, so the
 next thing you type tells the agent what to do with the file. Uploads
 are raw bytes, at most 25 MB each; the file is then simply in the
 working tree, untracked, as the changes view shows.
@@ -272,8 +274,12 @@ the manager accepted the turn. A message may be images alone (sent as
 "(image)"). The same limits as the manager's apply in the box (four
 images, three megabytes each; png, jpeg, gif, webp), said inline when
 exceeded. A user item shows its images as thumbnails that open full
-size in a new tab. Pasted images are not part of the draft: they are
-lost on navigation, unlike the text.
+size in a new tab (through a blob URL, since browsers refuse to open a
+data URL from a page). The composer is keyed on the agent, so pasted
+images belong to the agent they were pasted for and are dropped on
+leaving it; sending waits for a paste still being read. Pasted images
+are not part of the draft: they are lost on navigation, unlike the
+text.
 
 ## Steering a working agent
 

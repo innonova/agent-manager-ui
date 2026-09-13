@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { AgentState, TurnImage } from '@/api/types'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePreferencesStore } from '@/stores/preferences'
@@ -28,15 +28,19 @@ const emit = defineEmits<{
 }>()
 
 /** Images pasted or dropped into the box, shown as thumbnails until sent. Not part of the draft. */
-const attachments = ref<{ mediaType: string; data: string; url: string; name: string }[]>([])
+const attachments = ref<
+  { mediaType: string; data: string; size: number; url: string; name: string }[]
+>([])
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
 const MAX_IMAGES = 4
 const MAX_BYTES = 3 * 1024 * 1024
+const MAX_TOTAL = 6 * 1024 * 1024
+/** Files still being read: sending waits for them, so a paste followed by a quick Enter is not lost. */
+const reading = ref(0)
 async function attach(files: File[]) {
   for (const f of files) {
     if (!IMAGE_TYPES.includes(f.type)) continue
     if (attachments.value.length >= MAX_IMAGES) {
-      emit('stoppedTyping')
       attachError.value = `at most ${MAX_IMAGES} images per message`
       return
     }
@@ -44,19 +48,30 @@ async function attach(files: File[]) {
       attachError.value = `${f.name || 'image'} is over ${MAX_BYTES / 1024 / 1024} MB`
       continue
     }
-    const data = await new Promise<string>((resolve, reject) => {
-      const r = new FileReader()
-      r.onload = () => resolve(String(r.result).split(',')[1] ?? '')
-      r.onerror = () => reject(r.error)
-      r.readAsDataURL(f)
-    })
-    attachments.value.push({
-      mediaType: f.type,
-      data,
-      url: URL.createObjectURL(f),
-      name: f.name || 'pasted image',
-    })
-    attachError.value = null
+    const total = attachments.value.reduce((n, x) => n + x.size, 0) + f.size
+    if (total > MAX_TOTAL) {
+      attachError.value = `images may total at most ${MAX_TOTAL / 1024 / 1024} MB per message`
+      continue
+    }
+    reading.value++
+    try {
+      const data = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(String(r.result).split(',')[1] ?? '')
+        r.onerror = () => reject(r.error)
+        r.readAsDataURL(f)
+      })
+      attachments.value.push({
+        mediaType: f.type,
+        data,
+        size: f.size,
+        url: URL.createObjectURL(f),
+        name: f.name || 'pasted image',
+      })
+      attachError.value = null
+    } finally {
+      reading.value--
+    }
   }
 }
 const attachError = ref<string | null>(null)
@@ -70,7 +85,8 @@ function onPaste(e: ClipboardEvent) {
     .map((it) => it.getAsFile())
     .filter((f): f is File => !!f)
   if (files.length === 0) return
-  e.preventDefault()
+  // text alongside the image still pastes as text; the image alone would paste as nothing
+  if (!e.clipboardData?.getData('text/plain')) e.preventDefault()
   void attach(files)
 }
 function onDrop(e: DragEvent) {
@@ -79,11 +95,13 @@ function onDrop(e: DragEvent) {
   e.preventDefault()
   void attach(files)
 }
-/** The parent calls this once the manager accepted the turn. */
+/** The parent calls this once the manager accepted the turn; also on leaving, so nothing pasted for one agent goes to another. */
 function clearAttachments() {
   for (const a of attachments.value) URL.revokeObjectURL(a.url)
   attachments.value = []
+  attachError.value = null
 }
+onUnmounted(clearAttachments)
 defineExpose({ clearAttachments })
 const prefs = usePreferencesStore()
 const drafts = useDraftsStore()
@@ -118,7 +136,7 @@ const hint = computed(() =>
 
 function send() {
   const t = text.value.trim()
-  if ((!t && attachments.value.length === 0) || busy.value) return
+  if ((!t && attachments.value.length === 0) || busy.value || reading.value > 0) return
   // the parent clears the draft and the attachments once the manager accepted the turn
   emit(
     'send',
@@ -209,7 +227,7 @@ function onKey(e: KeyboardEvent) {
       <button
         type="submit"
         class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-        :disabled="busy || (!text.trim() && attachments.length === 0)"
+        :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
         data-test="send"
         :title="steering ? 'Delivered during the turn, at the agent\'s next step' : undefined"
       >

@@ -224,6 +224,7 @@ export const useAgentsStore = defineStore('agents', () => {
 
   async function archive(agentId: string): Promise<void> {
     await api.archive(agentId)
+    for (const [pid, aid] of lastAgent) if (aid === agentId) lastAgent.delete(pid)
     items.delete(agentId)
     loaded.delete(agentId)
     failed.delete(agentId)

@@ -10,6 +10,13 @@ const time = computed(() => (props.at ? when(props.at) : ''))
 const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 /** Set on the first click; the manager's item update replaces the card with the decision. */
 const deciding = ref(false)
+/** Browsers refuse to navigate to a data: URL from a page; a blob URL opens fine. */
+function openImage(img: { mediaType: string; data: string }) {
+  const bytes = Uint8Array.from(atob(img.data), (c) => c.charCodeAt(0))
+  const url = URL.createObjectURL(new Blob([bytes], { type: img.mediaType }))
+  window.open(url, '_blank', 'noopener')
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}
 let decidingTimer: number | null = null
 function decide(requestId: string, option: string) {
   if (deciding.value) return
@@ -84,10 +91,9 @@ const cost = computed(() =>
         <a
           v-for="(img, i) in item.images"
           :key="i"
-          :href="`data:${img.mediaType};base64,${img.data}`"
-          target="_blank"
-          rel="noopener"
+          href="#"
           title="Open full size"
+          @click.prevent="openImage(img)"
         >
           <img
             :src="`data:${img.mediaType};base64,${img.data}`"
