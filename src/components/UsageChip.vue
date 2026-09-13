@@ -6,13 +6,13 @@ import { when } from '@/time'
 /** The account's rolling windows as "5h 33% · 7d 41%", coloured by how close to the limit they are. */
 const props = defineProps<{ usage: AccountUsage; compact?: boolean }>()
 const worst = computed(() => Math.max(0, ...props.usage.windows.map((w) => w.usedPercent)))
-// muted like the rest of the facts line; only the text warms up as a limit nears, so it reads, not shouts
+// plain text in the facts line's own grey; near a limit it tints, lightly, so it can be found but does not shout
 const tone = computed(() =>
   props.usage.status === 'rejected' || worst.value >= 100
-    ? 'bg-slate-100 text-red-700 dark:bg-slate-800 dark:text-red-400'
+    ? 'text-red-600/70 dark:text-red-400/70'
     : props.usage.status === 'warning' || worst.value >= 80
-      ? 'bg-slate-100 text-amber-700 dark:bg-slate-800 dark:text-amber-400'
-      : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+      ? 'text-amber-600/70 dark:text-amber-400/70'
+      : 'text-slate-400 dark:text-slate-500',
 )
 const tokens = (n: number) =>
   n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n)
@@ -53,7 +53,7 @@ const title = computed(() => {
 <template>
   <span
     v-if="text"
-    class="rounded px-1.5 py-0.5 font-mono text-xs whitespace-nowrap"
+    class="font-mono text-xs whitespace-nowrap"
     :class="tone"
     :title="title"
     data-test="usage-chip"

@@ -251,9 +251,10 @@ could not be loaded instead of looping.
 
 The agent header has two lines: the name, state and error with the
 presence, unread and actions on the first; the model, usage, permission
-mode and the background-wait note on the second, muted, with the
-profile and working directory right-aligned there. The usage chip stays
-muted too: only its text turns amber near a limit and red at one. An agent whose vendor reports the account's limits
+mode and the background-wait note on the left of the second, the usage
+centred, the profile and working directory on the right. The usage is
+plain text in the line's own grey, tinted lightly amber near a limit
+and red at one, so it can be found without drawing the eye. An agent whose vendor reports the account's limits
 gets a chip on that second line, "5h 33% · 7d 41% · 7d fable 66%" with
 every window the vendor names (Claude's "overage included" window is
 the Fable one, as Claude Desktop labels it) (Copilot: "ctx N%", its context window; with no windows, as on

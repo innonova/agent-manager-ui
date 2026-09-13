@@ -292,36 +292,37 @@ async function archive() {
               archive
             </button>
           </div>
-          <!-- line two: the facts about the session, muted -->
-          <div
-            class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400"
-          >
-            <span
-              v-if="current.status.model"
-              class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-              :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
-              data-test="agent-model-chip"
-              >{{ current.status.model }}</span
-            >
-            <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
-            <span
-              v-if="current.agent.permissions === 'ask'"
-              class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
-              title="Gated tools wait for your answer"
-              >asks</span
-            >
-            <span
-              v-if="current.status.state === 'idle' && current.status.background"
-              class="text-blue-700 dark:text-blue-300"
-              :title="`no activity since ${when(current.status.lastActivityAt)}`"
-              data-test="waiting-since"
-              >waiting on {{ current.status.background }} background job{{
-                current.status.background === 1 ? '' : 's'
-              }}
-              for {{ since(current.status.lastActivityAt) }}</span
-            >
-            <span class="grow" />
-            <span class="truncate font-mono" data-test="agent-cwd-label"
+          <!-- line two: the facts about the session, muted: chips left, usage centred, place right -->
+          <div class="mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div class="flex shrink-0 items-center gap-2">
+              <span
+                v-if="current.status.model"
+                class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
+                data-test="agent-model-chip"
+                >{{ current.status.model }}</span
+              >
+              <span
+                v-if="current.agent.permissions === 'ask'"
+                class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
+                title="Gated tools wait for your answer"
+                >asks</span
+              >
+              <span
+                v-if="current.status.state === 'idle' && current.status.background"
+                class="text-blue-700 dark:text-blue-300"
+                :title="`no activity since ${when(current.status.lastActivityAt)}`"
+                data-test="waiting-since"
+                >waiting on {{ current.status.background }} background job{{
+                  current.status.background === 1 ? '' : 's'
+                }}
+                for {{ since(current.status.lastActivityAt) }}</span
+              >
+            </div>
+            <div class="flex min-w-0 grow justify-center">
+              <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
+            </div>
+            <span class="shrink-0 truncate font-mono" data-test="agent-cwd-label"
               >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
             >
           </div>
