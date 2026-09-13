@@ -36,7 +36,12 @@ const projects = useProjectsStore()
 const agents = useAgentsStore()
 const notifications = useNotificationsStore()
 const hosts = useHostsStore()
-const host = computed(() => hosts.byName(project.value?.host))
+/** The project's machine: from the row, or from the id's prefix when the row is gone (its machine is down). */
+const hostName = computed(
+  () =>
+    project.value?.host ?? (props.id.includes(':') ? props.id.split(':')[0] : hosts.local?.name),
+)
+const host = computed(() => hosts.byName(hostName.value))
 
 const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
@@ -46,7 +51,10 @@ const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?
 const showNew = ref(false)
 /** "+ new" under a project in the tree: go there first when it is not the current one. */
 async function openNew(projectId: string) {
-  if (projectId !== props.id) await router.push({ name: 'project', params: { id: projectId } })
+  if (projectId !== props.id) {
+    await router.push({ name: 'project', params: { id: projectId } })
+    await loadProject() // the form's profiles and cwd must be the new project's
+  }
   showNew.value = true
 }
 const form = ref({
@@ -62,12 +70,23 @@ const busy = ref(false)
 const profiles = ref<Profile[]>([])
 
 onMounted(() => void changes.countUnread(props.id))
+let loadGen = 0
 async function loadProject() {
+  const gen = ++loadGen // a newer load (fast tree clicks) wins; a stale one changes nothing
   if (!projects.loaded) await projects.load()
-  await agents.load(props.id)
-  profiles.value = (
+  try {
+    await agents.load(props.id)
+  } catch (e) {
+    notifications.push(
+      'error',
+      `could not load the agents: ${e instanceof ApiError ? e.message : String(e)}`,
+    )
+  }
+  const fetched = (
     await api.projectProfiles(props.id).catch(() => ({ profiles: [] }))
   ).profiles.filter((p) => p.supported)
+  if (gen !== loadGen) return
+  profiles.value = fetched
   form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
   form.value.cwd = project.value?.repos[0]?.name ?? ''
   if (!props.agentId && rows.value[0])
@@ -168,19 +187,25 @@ async function archive() {
   <AppShell>
     <template #title>
       <span class="text-slate-400 dark:text-slate-500">/</span>
-      <span data-test="project-title">{{ project?.name ?? '…' }}</span>
+      <span data-test="project-title">{{
+        project?.name ?? (host && !host.connected ? '(unreachable)' : '…')
+      }}</span>
       <span
-        v-if="hosts.several && project?.host"
+        v-if="hosts.several && hostName"
         class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
         data-test="project-host"
-        >{{ project.host }}</span
+        >{{ hostName }}</span
       >
       <span
-        v-if="host && (!host.connected || !host.daemon)"
+        v-if="host && (!host.connected || !host.daemon || host.error)"
         class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100"
         data-test="host-warning"
         >{{
-          !host.connected ? `${host.name} unreachable` : `${host.name}: daemon disconnected`
+          !host.connected
+            ? `${host.name} unreachable`
+            : host.error
+              ? `${host.name}: ${host.error}`
+              : `${host.name}: daemon disconnected`
         }}</span
       >
       <RouterLink

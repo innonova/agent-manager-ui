@@ -276,7 +276,13 @@ project list and the project header show it as a badge, struck through
 when the hub cannot reach that machine, and the project header warns
 when the host is unreachable or its daemon is down. The new-project form
 offers the machine to create on. Profiles for a new agent come from
-`/api/projects/:id/profiles`, the machine the project is on. Nothing
+`/api/projects/:id/profiles`, the machine the project is on. The hosts
+store is created at startup and also asks `/api/health`, so it has the
+picture even when `hello` passed before a view mounted. On
+`host.reconnected` the agents and projects stores refetch what they hold
+of that machine, as after their own reconnect. When a spoke's projects
+are missing from the list (the spoke is down), the project view derives
+the host from the id's prefix so the warning still names it. Nothing
 else changes: ids are opaque, and every route works the same for a
 remote project.
 

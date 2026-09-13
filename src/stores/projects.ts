@@ -29,6 +29,9 @@ export const useProjectsStore = defineStore('projects', () => {
     prev?.()
     if (loaded.value) void load() // counts may have moved while the socket was down
   })(events.onReconnect)
+  events.on((f) => {
+    if (f.type === 'host.reconnected' && loaded.value) void load() // that machine's projects are listed again
+  })
 
   const sorted = (list: ProjectRow[]) =>
     [...list].sort((a, b) => a.project.name.localeCompare(b.project.name))

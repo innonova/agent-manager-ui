@@ -75,8 +75,17 @@ export const useAgentsStore = defineStore('agents', () => {
   events.onReconnect = ((prev) => () => {
     prev?.()
     for (const id of new Set([...loaded, ...failed])) void loadItems(id)
-    for (const projectId of byProject.keys()) void load(projectId)
+    for (const projectId of byProject.keys()) load(projectId).catch(() => undefined) // a spoke down: nothing to do here
   })(events.onReconnect)
+  // A spoke's stream came back on the hub: what we show of that machine may
+  // have missed events, so refetch it like after our own reconnect.
+  events.on((f) => {
+    if (f.type !== 'host.reconnected') return
+    const mine = (id: string) => id.startsWith(`${f.name}:`)
+    for (const id of new Set([...loaded, ...failed])) if (mine(id)) void loadItems(id)
+    for (const projectId of byProject.keys())
+      if (mine(projectId)) load(projectId).catch(() => undefined)
+  })
 
   async function load(projectId: string): Promise<void> {
     const rows = await api.agents(projectId)

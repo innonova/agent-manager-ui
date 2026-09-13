@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { ApiError } from '@/api/client'
 import { useAgentsStore } from '@/stores/agents'
+import { useNotificationsStore } from '@/stores/notifications'
 import { useAttentionStore } from '@/stores/attention'
 import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
@@ -29,14 +31,25 @@ async function toggle(id: string) {
   if (expanded.value.has(id)) expanded.value.delete(id)
   else {
     expanded.value.add(id)
-    if (!agents.byProject.has(id)) await agents.load(id)
+    if (!agents.byProject.has(id)) await loadAgents(id)
+  }
+}
+/** A project on a machine that is down, or one deleted meanwhile, is a toast, not an unhandled rejection. */
+async function loadAgents(id: string) {
+  try {
+    await agents.load(id)
+  } catch (e) {
+    useNotificationsStore().push(
+      'error',
+      `could not load the agents: ${e instanceof ApiError ? e.message : String(e)}`,
+    )
   }
 }
 watch(
   () => props.projectId,
   (id) => {
     expanded.value.delete(id)
-    if (!agents.byProject.has(id)) void agents.load(id)
+    if (!agents.byProject.has(id)) void loadAgents(id)
   },
   { immediate: true },
 )
@@ -73,7 +86,12 @@ const agentsOf = (id: string) => agents.byProject.get(id) ?? []
           <span
             v-if="hosts.several && r.project.host"
             class="rounded bg-slate-100 px-1 text-[10px] font-normal text-slate-500 dark:bg-slate-800 dark:text-slate-400"
-            :class="hosts.byName(r.project.host)?.connected === false ? 'line-through' : ''"
+            :class="
+              hosts.byName(r.project.host)?.connected === false ||
+              hosts.byName(r.project.host)?.error
+                ? 'line-through'
+                : ''
+            "
             >{{ r.project.host }}</span
           >
         </RouterLink>

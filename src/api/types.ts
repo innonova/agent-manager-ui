@@ -58,6 +58,8 @@ export interface HostStatus {
   connected: boolean
   /** The host's link to its own daemon. */
   daemon: boolean
+  /** The hub's last request to it failed; what it said. */
+  error?: string
 }
 
 export interface PresenceUser {
@@ -130,6 +132,7 @@ export type EventFrame =
     }
   | { type: 'ui.build'; id: string | null }
   | { type: 'hosts'; hosts: HostStatus[] }
+  | { type: 'host.reconnected'; name: string }
   | { type: 'daemon'; connected: boolean }
   | { type: 'project.counts'; projectId: string; counts: AgentCounts }
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }

@@ -138,11 +138,18 @@ async function submit(restart = false) {
                 <span
                   v-if="hosts.several && r.project.host"
                   class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                  :class="hosts.byName(r.project.host)?.connected === false ? 'line-through' : ''"
+                  :class="
+                    hosts.byName(r.project.host)?.connected === false ||
+                    hosts.byName(r.project.host)?.error
+                      ? 'line-through'
+                      : ''
+                  "
                   :title="
                     hosts.byName(r.project.host)?.connected === false
-                      ? 'unreachable'
-                      : 'on this machine'
+                      ? `${r.project.host} is unreachable`
+                      : hosts.byName(r.project.host)?.local
+                        ? 'on this machine'
+                        : `on ${r.project.host}`
                   "
                   data-test="project-host"
                   >{{ r.project.host }}</span
