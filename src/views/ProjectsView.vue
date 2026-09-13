@@ -30,8 +30,12 @@ async function loadUsage() {
   usage.value = (await api.usage().catch(() => ({ hosts: [] }))).hosts
 }
 let usageTimer: number | null = null
+/** The report time last seen per agent: a state frame carries the usage forever, only a new report matters. */
+const usageSeen = new Map<string, number>()
 const offUsage = events.on((f) => {
   if (f.type !== 'agent.state' || !f.status.usage) return
+  if (usageSeen.get(f.agentId) === f.status.usage.at) return
+  usageSeen.set(f.agentId, f.status.usage.at)
   if (usageTimer) clearTimeout(usageTimer)
   usageTimer = window.setTimeout(() => void loadUsage(), 500)
 })

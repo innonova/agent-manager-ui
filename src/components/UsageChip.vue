@@ -15,7 +15,7 @@ const tone = computed(() =>
       : 'text-slate-400 dark:text-slate-500',
 )
 const tokens = (n: number) =>
-  n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n)
+  n >= 999_500 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n)
 const text = computed(() => {
   const parts = props.usage.windows.map((w) => `${w.name} ${w.usedPercent}%`)
   if (props.usage.context)
