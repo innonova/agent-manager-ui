@@ -6,11 +6,12 @@ import { when } from '@/time'
 /** The account's rolling windows as "5h 33% · 7d 41%", coloured by how close to the limit they are. */
 const props = defineProps<{ usage: AccountUsage; compact?: boolean }>()
 const worst = computed(() => Math.max(0, ...props.usage.windows.map((w) => w.usedPercent)))
+// muted like the rest of the facts line; only the text warms up as a limit nears, so it reads, not shouts
 const tone = computed(() =>
   props.usage.status === 'rejected' || worst.value >= 100
-    ? 'bg-red-100 text-red-900 dark:bg-red-900 dark:text-red-100'
+    ? 'bg-slate-100 text-red-700 dark:bg-slate-800 dark:text-red-400'
     : props.usage.status === 'warning' || worst.value >= 80
-      ? 'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100'
+      ? 'bg-slate-100 text-amber-700 dark:bg-slate-800 dark:text-amber-400'
       : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
 )
 const tokens = (n: number) =>

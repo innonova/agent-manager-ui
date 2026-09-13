@@ -310,9 +310,6 @@ async function archive() {
               title="Gated tools wait for your answer"
               >asks</span
             >
-            <span class="font-mono" data-test="agent-cwd-label"
-              >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
-            >
             <span
               v-if="current.status.state === 'idle' && current.status.background"
               class="text-blue-700 dark:text-blue-300"
@@ -322,6 +319,10 @@ async function archive() {
                 current.status.background === 1 ? '' : 's'
               }}
               for {{ since(current.status.lastActivityAt) }}</span
+            >
+            <span class="grow" />
+            <span class="truncate font-mono" data-test="agent-cwd-label"
+              >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
             >
           </div>
         </div>
