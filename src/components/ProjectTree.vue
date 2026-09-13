@@ -23,8 +23,26 @@ const agents = useAgentsStore()
 const attention = useAttentionStore()
 const hosts = useHostsStore()
 
-/** Expanded besides the current project; toggled by the user, kept for the session. */
-const expanded = ref(new Set<string>())
+/**
+ * Expanded besides the current project: toggled by the user, kept across
+ * reloads, and a project you leave stays open, so several can be unfolded
+ * at once.
+ */
+const KEY = 'tree-expanded'
+const expanded = ref(
+  new Set<string>(
+    (() => {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) ?? '[]') as string[]
+      } catch {
+        return []
+      }
+    })(),
+  ),
+)
+function remember() {
+  localStorage.setItem(KEY, JSON.stringify([...expanded.value]))
+}
 const isOpen = (id: string) => id === props.projectId || expanded.value.has(id)
 async function toggle(id: string) {
   if (id === props.projectId) return
@@ -33,7 +51,9 @@ async function toggle(id: string) {
     expanded.value.add(id)
     if (!agents.byProject.has(id)) await loadAgents(id)
   }
+  remember()
 }
+for (const id of expanded.value) if (!agents.byProject.has(id)) void loadAgents(id)
 /** A project on a machine that is down, or one deleted meanwhile, is a toast, not an unhandled rejection. */
 async function loadAgents(id: string) {
   try {
@@ -47,8 +67,10 @@ async function loadAgents(id: string) {
 }
 watch(
   () => props.projectId,
-  (id) => {
-    expanded.value.delete(id)
+  (id, was) => {
+    expanded.value.delete(id) // open as the current one; back in the set once left
+    if (was) expanded.value.add(was)
+    remember()
     if (!agents.byProject.has(id)) void loadAgents(id)
   },
   { immediate: true },

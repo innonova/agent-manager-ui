@@ -628,7 +628,18 @@ test('the sidebar is a tree of every project: switch projects and agents without
   await files.getByTestId('agent-row').first().click()
   await expect(page.getByTestId('project-title')).toHaveText('Files demo')
   await expect(page).toHaveURL(/\/projects\/[^/]+\/agents\//)
-  // the previous project is now the collapsed one, with its counts
+  // the previous project stays open: several can be unfolded at once, and it survives a reload
+  await expect(demo).toHaveAttribute('data-open', 'true')
+  await expect(demo.getByTestId('agent-row').filter({ hasText: 'worker' })).toBeVisible()
+  await demo.getByTestId('tree-toggle').click()
   await expect(demo).not.toHaveAttribute('data-open', 'true')
   await expect(demo.locator('[data-count]').first()).toBeVisible()
+  await page.reload()
+  await expect(
+    page
+      .getByTestId('project-tree')
+      .getByTestId('tree-project')
+      .filter({ hasText: 'Demo' })
+      .first(),
+  ).not.toHaveAttribute('data-open', 'true')
 })

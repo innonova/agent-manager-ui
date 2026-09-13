@@ -263,8 +263,10 @@ Inside a project, the sidebar lists every project (with a host badge
 when there are several), the current one expanded with its agents and
 their states and attention marks, the others collapsed to their agent
 counts. A collapsed project expands in place with a chevron, loading its
-agents then; clicking a project or an agent opens it, so switching
-context is one click from anywhere. "+ new" sits on each expanded
+agents then; a project you leave stays open, so several can be unfolded
+at once, and the set is kept in local storage across reloads. Clicking a
+project or an agent opens it, so switching context is one click from
+anywhere. "+ new" sits on each expanded
 project. The projects page is for creating and editing projects, reached
 by "manage".
 
