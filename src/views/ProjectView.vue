@@ -228,14 +228,17 @@ async function archive() {
         </div>
         <div class="relative min-h-0 grow">
           <TranscriptView :items="items" @decide="decide" />
-        </div>
-        <!-- typing goes where the eye is when typing, not in the header -->
-        <div
-          v-if="othersTyping.length"
-          class="animate-pulse border-t border-slate-200 bg-white px-4 pt-2 text-xs text-violet-700 dark:border-slate-800 dark:bg-slate-900 dark:text-violet-300"
-          data-test="presence-typing"
-        >
-          {{ othersTyping.map((u) => `${u.name} is typing…`).join(' · ') }}
+          <!-- typing floats over the bottom of the transcript, right above the
+               input, without moving anything -->
+          <div
+            v-if="othersTyping.length"
+            class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-xs text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
+            data-test="presence-typing"
+          >
+            <span class="animate-pulse">{{
+              othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
+            }}</span>
+          </div>
         </div>
         <TurnInput
           :agent-id="current.agent.id"
