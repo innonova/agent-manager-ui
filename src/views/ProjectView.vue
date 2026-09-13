@@ -7,6 +7,7 @@ import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
 import StateBadge from '@/components/StateBadge.vue'
+import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
@@ -43,6 +44,11 @@ const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) :
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 
 const showNew = ref(false)
+/** "+ new" under a project in the tree: go there first when it is not the current one. */
+async function openNew(projectId: string) {
+  if (projectId !== props.id) await router.push({ name: 'project', params: { id: projectId } })
+  showNew.value = true
+}
 const form = ref({
   name: '',
   profile: '',
@@ -188,42 +194,22 @@ async function archive() {
     </template>
     <div class="flex h-full">
       <aside
-        class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
           <span
             class="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
-            >Agents</span
+            >Projects</span
           >
           <span class="grow" />
-          <button
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
-            data-test="new-agent"
-            @click="showNew = true"
+          <RouterLink
+            :to="{ name: 'projects' }"
+            class="text-xs text-slate-500 hover:underline dark:text-slate-400"
+            title="Create or edit projects"
+            >manage</RouterLink
           >
-            + new
-          </button>
         </div>
-        <ul class="min-h-0 grow overflow-y-auto">
-          <li v-for="r in rows" :key="r.agent.id" data-test="agent-row">
-            <RouterLink
-              :to="{ name: 'agent', params: { id, agentId: r.agent.id } }"
-              class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
-              :class="r.agent.id === agentId ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''"
-            >
-              <span class="truncate">{{ r.agent.name }}</span>
-              <span class="grow" />
-              <StateBadge
-                :state="r.status.state"
-                :background="r.status.background"
-                :title="r.status.error ?? undefined"
-              />
-            </RouterLink>
-          </li>
-        </ul>
-        <p v-if="rows.length === 0" class="px-3 py-2 text-xs text-slate-400 dark:text-slate-500">
-          No agents. Create one to start a conversation.
-        </p>
+        <ProjectTree :project-id="id" :agent-id="agentId" @new-agent="openNew" />
       </aside>
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">

@@ -85,5 +85,5 @@ export const useAttentionStore = defineStore('attention', () => {
 
   watch(count, draw, { immediate: true })
 
-  return { count, needing, finished }
+  return { count, needing, finished, finishedAway }
 })

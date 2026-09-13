@@ -605,3 +605,30 @@ test('a message while the agent works steers the turn instead of being refused',
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
   await expect(page.getByTestId('send')).toHaveText('send')
 })
+
+test('the sidebar is a tree of every project: switch projects and agents without going back', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await expect(page.getByTestId('project-title')).toHaveText('Demo')
+  const tree = page.getByTestId('project-tree')
+  await expect(tree.getByTestId('tree-project')).toHaveCount(2)
+  const demo = tree.getByTestId('tree-project').filter({ hasText: 'Demo' }).first()
+  const files = tree.getByTestId('tree-project').filter({ hasText: 'Files demo' })
+  await expect(demo).toHaveAttribute('data-open', 'true')
+  await expect(files).not.toHaveAttribute('data-open', 'true')
+  await expect(demo.getByTestId('agent-row').filter({ hasText: 'worker' })).toBeVisible()
+  // expand another project in place: its agents load, the view stays
+  await files.getByTestId('tree-toggle').click()
+  await expect(files).toHaveAttribute('data-open', 'true')
+  await expect(files.getByTestId('agent-row').first()).toBeVisible()
+  await expect(page.getByTestId('project-title')).toHaveText('Demo')
+  // open an agent of the other project straight from the tree
+  await files.getByTestId('agent-row').first().click()
+  await expect(page.getByTestId('project-title')).toHaveText('Files demo')
+  await expect(page).toHaveURL(/\/projects\/[^/]+\/agents\//)
+  // the previous project is now the collapsed one, with its counts
+  await expect(demo).not.toHaveAttribute('data-open', 'true')
+  await expect(demo.locator('[data-count]').first()).toBeVisible()
+})
