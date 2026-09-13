@@ -33,7 +33,8 @@ Deploying: `npm run build` here, then `npm run install:ui` in
 
 ## Working here
 
-- Sibling repositories: `../agent-manager` and `../agent-daemon`.
+- Sibling repositories: `../agent-manager`, `../agent-daemon` and
+  `../agent-manager-cli` (a terminal client of the same API).
 - Develop against the fake adapter; real agents cost tokens.
 - Review loop as in `../agent-daemon/docs/reviewing.md`.
 
@@ -61,7 +62,7 @@ part of the work: commit and push them with it (see Features).
 
 ## You may be running inside this system
 
-These three repositories are registered as one project in the installed
+These four repositories are registered as one project in the installed
 agent-manager, and agents started from it work on this very code
 (dogfooding). Keep that in mind:
 
@@ -73,10 +74,12 @@ agent-manager, and agents started from it work on this very code
 - Restarting the installed `agent-manager` (`npm run install:service` in
   `agent-manager`) is safe: agents live in the daemon and are re-adopted.
 - `agent-manager-ui`'s Playwright suite starts its own daemon and manager
-  on the fixed port 4299; only one run at a time on this machine.
+  on the fixed port 4299 and Vite on 5173 (so it collides with a running
+  `npm run dev`); only one run at a time on this machine.
 - One writing agent per repository. Other repositories of the project are
   reachable at the sibling paths (`../agent-daemon`, `../agent-manager`,
-  `../agent-manager-ui`); prefer editing them only when the task needs it,
+  `../agent-manager-ui`, `../agent-manager-cli`); prefer editing them only
+  when the task needs it,
   and say so in your summary.
 
 ## Features

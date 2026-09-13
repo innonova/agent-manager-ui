@@ -1,12 +1,10 @@
 # agent-manager-ui design
 
-Status: draft, 2026-09-12, written before implementation.
-
 ## Purpose
 
 The browser front end for `agent-manager`. It shows projects, the agents
 in them and what those agents are doing, lets the user talk to an agent,
-and later browse the project's files and features. It is the layer meant
+browse the project's files and changes, and work its features. It is the layer meant
 to be rebuilt most often; nothing of value lives only in it.
 
 See `../agent-manager/docs/design.md` for the system, the API and the
@@ -37,9 +35,11 @@ end-to-end against a manager running with the fake adapter.
 ```
 /login                          name + password
 /                               project list: name, repositories, agent counts by state; new/edit project form with repo rows
-/projects/:id                   project: agents sidebar + selected agent transcript   (milestone 1)
-/projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL (milestone 2, done)
-/projects/:id/features          features grouped by status, queue/dequeue/done/reopen, new feature form (milestone 3, done)
+/users                          accounts: create (password shown once), rename yourself, reset, remove
+/projects/:id                   project: agents sidebar, no agent selected
+/projects/:id/agents/:agentId   the selected agent's transcript and composer
+/projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL; a changes mode with diffs
+/projects/:id/features          features grouped by status; done, block, reopen, edit, respond; new feature form
 ```
 
 Project view layout: left column lists agents with a state badge; main
@@ -182,8 +182,10 @@ following when they scroll up.
 ## State
 
 Pinia stores: `session` (current user), `projects` (list with counts),
-`agents` (per project, with state), `transcript` (per agent, items by
-index). The websocket client updates the stores; components only read.
+`agents` (per project with state, and per agent the transcript as an
+index-keyed array), `presence`, `features`, `files`, `changes`, `drafts`,
+`preferences`, `notifications`, `attention`, `update`. The websocket
+client updates the stores; components only read.
 
 Websocket client: connects to `/api/events` after login, reconnects with
 backoff, and on reconnect refetches projects and the open agent's items
@@ -293,15 +295,17 @@ clicking it brings the window up on that agent.
 
 ## Testing
 
-- Unit: item components, stores, the reconnect logic.
-- End-to-end: Playwright against a manager with the fake profile: login,
-  create project, create agent, send a turn, see items stream, see counts
-  change on the project list, reconnect after the socket drops.
+- Unit: the agents store's transcript paging (`src/stores/agents.spec.ts`).
+- End-to-end: Playwright against a real daemon (fake profile) and
+  manager: login, project and agent creation, a streamed turn, an error
+  turn and counts, reload, stop and resume, display and Enter-key
+  preferences, desktop notifications, the update badge, drafts, the files
+  and changes views, permissions, users, presence, features, editing a
+  project with a restart, and steering. There is no test for a dropped
+  socket; the store's reconnect refetch is covered by the unit test.
 
 ## Milestones
 
 Matches the manager's: 1 login, project list, agent view; 2 files with
-Monaco; 3 features. A diff view is a later feature needing its own
-discussion; "what did the last turn change" (highlighting entries whose
-mtime moved since the tree's previous refresh) belongs to that
-discussion rather than to the tree, see the manager's milestones.
+Monaco; 3 features; 4 the changes view (what changed since you last
+looked, as a diff), which settled the earlier "diff view" question.

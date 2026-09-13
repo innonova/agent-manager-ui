@@ -2,8 +2,9 @@
 
 Browser front end for `agent-manager`: a project list with live agent
 states, per-project agent transcripts with a turn input, a read-only file
-browser (Monaco) and a features board that queues `features/*.md` work on
-agents. It never talks to the daemon or parses agent output; everything
+browser (Monaco) with a diff view, and a features board over the
+project's `features/*.md` files (read the agent's report, respond, set
+the status; the agent is asked to work on one in its conversation). It never talks to the daemon or parses agent output; everything
 comes from the manager's REST and websocket API.
 
 - What it shows and how: [docs/design.md](docs/design.md)
@@ -47,9 +48,9 @@ instead: it rebuilds and restarts the manager and copies the UI along.
   the manager's ping interval (it announces the new build). Restarting the manager (`install:service`) is safe
   at any time too: agents live in the daemon and are re-adopted on
   start. The daemon is never touched.
-- The install does not touch the manager's database or its
-  `systemd` drop-ins (`admin.conf`, `proxy.conf`); it rewrites only the
-  unit file, the code, the UI and the daemon's `fake` profile.
+- The install does not touch the manager's database or `proxy.conf`;
+  it rewrites the unit file, the code, the UI, the daemon's `fake`
+  profile, and `admin.conf` when `AGENT_MANAGER_ADMIN_PASSWORD` is set.
 - Check: `curl -s http://127.0.0.1:4268/ | grep -o '/assets/index-[^"]*\.css'`
   should name a new hash, and `journalctl --user -u agent-manager -n 5`
   should show it connected to the daemon and resynced its agents. Browsers
