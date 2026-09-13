@@ -151,7 +151,7 @@ export const useAgentsStore = defineStore('agents', () => {
     failed.delete(agentId)
     if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
-    if (loaded.has(agentId) && (total < list.length || (fetched[0]?.index ?? from) > list.length)) {
+    if (loaded.has(agentId) && (total < list.length || (fetched[0]?.index ?? from) > from)) {
       // the manager renumbered (a rebuild whose reset this tab missed): start over
       items.set(agentId, [])
       loaded.delete(agentId)
