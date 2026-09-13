@@ -13,6 +13,7 @@ import { useAgentsStore } from '@/stores/agents'
 import { useChangesStore } from '@/stores/changes'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
+import { since, when } from '@/time'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
@@ -207,6 +208,16 @@ async function archive() {
             class="font-mono text-xs text-slate-400 dark:text-slate-500"
             data-test="agent-cwd-label"
             >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
+          >
+          <span
+            v-if="current.status.state === 'idle' && current.status.background"
+            class="text-xs text-blue-700 dark:text-blue-300"
+            :title="`no activity since ${when(current.status.lastActivityAt)}`"
+            data-test="waiting-since"
+            >waiting on {{ current.status.background }} background job{{
+              current.status.background === 1 ? '' : 's'
+            }}
+            for {{ since(current.status.lastActivityAt) }}</span
           >
           <span
             v-if="othersHere.length"

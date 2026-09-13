@@ -10,7 +10,7 @@ const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 type ToolUse = Extract<Item, { kind: 'tool_use' }>
 type ToolResult = Extract<Item, { kind: 'tool_result' }>
 type Row =
-  | { key: number; kind: 'item'; item: Item }
+  | { key: number; kind: 'item'; item: Item; at: number }
   | { key: number; kind: 'tool'; call: ToolUse; result: ToolResult | null }
 
 /**
@@ -30,9 +30,9 @@ const rows = computed<Row[]>(() => {
     } else if (it.kind === 'tool_result' && calls.has(it.toolUseId)) {
       const row = calls.get(it.toolUseId)!
       if (!row.result) row.result = it
-      else out.push({ key: s.index, kind: 'item', item: it }) // a second result for the same call
+      else out.push({ key: s.index, kind: 'item', item: it, at: s.at }) // a second result for the same call
     } else {
-      out.push({ key: s.index, kind: 'item', item: it })
+      out.push({ key: s.index, kind: 'item', item: it, at: s.at })
     }
   }
   return out
@@ -70,7 +70,12 @@ onMounted(follow)
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
       <template v-for="r in rows" :key="r.key">
         <ToolCallItem v-if="r.kind === 'tool'" :call="r.call" :result="r.result" />
-        <TranscriptItem v-else :item="r.item" @decide="(id, o) => emit('decide', id, o)" />
+        <TranscriptItem
+          v-else
+          :item="r.item"
+          :at="r.at"
+          @decide="(id, o) => emit('decide', id, o)"
+        />
       </template>
       <p v-if="items.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
         No transcript yet.

@@ -3,8 +3,10 @@ import { computed, ref, watch } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { Item } from '@/api/types'
+import { when } from '@/time'
 
-const props = defineProps<{ item: Item }>()
+const props = defineProps<{ item: Item; at?: number }>()
+const time = computed(() => (props.at ? when(props.at) : ''))
 const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 /** Set on the first click; the manager's item update replaces the card with the decision. */
 const deciding = ref(false)
@@ -75,6 +77,7 @@ const cost = computed(() =>
     >
     <div
       class="max-w-[80%] rounded-lg bg-blue-600 px-3 py-2 text-sm whitespace-pre-wrap text-white"
+      :title="time"
     >
       {{ item.text }}
     </div>
@@ -111,7 +114,7 @@ const cost = computed(() =>
         decidedLabel
       }}</span>
       <span v-else class="animate-pulse text-xs text-amber-800 dark:text-amber-200"
-        >waiting for you</span
+        >waiting for you<template v-if="time"> since {{ time }}</template></span
       >
     </div>
     <pre
@@ -199,7 +202,8 @@ const cost = computed(() =>
     class="text-xs text-slate-400 dark:text-slate-500"
     data-item="system"
   >
-    {{ item.text }}
+    <span v-if="time" class="mr-2 tabular-nums">{{ time }}</span
+    >{{ item.text }}
   </div>
 
   <div
@@ -208,6 +212,7 @@ const cost = computed(() =>
     data-item="turn_end"
   >
     <span class="h-px grow bg-slate-200 dark:bg-slate-700" />
+    <span v-if="time" data-test="turn-end-time">{{ time }}</span>
     <span v-if="duration">{{ duration }}</span>
     <span v-if="cost">{{ cost }}</span>
     <span class="h-px grow bg-slate-200 dark:bg-slate-700" />

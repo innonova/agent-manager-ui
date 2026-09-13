@@ -166,7 +166,12 @@ Items from the manager map onto components:
 | `tool_use` + its `tool_result` | one collapsed line: tool name, what the call is for (Claude's Bash `description`, a file tool's path, a search's pattern, else the command or a compact input), and the result's size or "error" or "running…"; unfolding shows the command (or the input as JSON) and the result. The pairing is by tool id, done in the view; a result whose call is missing renders on its own |
 | `error` | red banner with the vendor message verbatim |
 | `system` | grey note (session started, resumed, daemon notice) |
-| `turn_end` | thin rule with duration and cost when present |
+| `turn_end` | thin rule with the time it ended, duration and cost when present |
+
+Every item carries the time of its daemon record: system notes show it
+inline, a permission card says since when it waits, a user bubble shows
+it on hover. The agent header says how long the agent has been waiting
+on background jobs when it is idle with some pending.
 
 The transcript auto-follows while the user is at the bottom and stops
 following when they scroll up.

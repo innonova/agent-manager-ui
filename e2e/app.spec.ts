@@ -57,6 +57,7 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(call.getByTestId('tool-input')).toContainText('example.txt')
   await expect(call.locator('[data-item="tool_result"]')).toBeVisible()
   await expect(page.locator('[data-item="turn_end"]')).toHaveCount(1)
+  await expect(page.getByTestId('turn-end-time')).toHaveText(/\d{1,2}:\d{2}/)
   await expect(page.locator('[data-item="text"]')).toContainText('You said: use a tool please')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 

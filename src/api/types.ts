@@ -88,6 +88,8 @@ export type Item =
 export interface StoredItem {
   index: number
   sessionId: string
+  /** When the item first appeared, unix ms. */
+  at: number
   seqFrom: number
   seqTo: number
   item: Item
