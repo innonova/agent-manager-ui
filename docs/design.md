@@ -237,6 +237,14 @@ different id from the one running shows an "update available · reload"
 button in the header. Nothing reloads by itself, since a draft or a
 scroll position may be in play, and the page never polls for this.
 
+One exception: a deploy replaces the hashed chunk files, so the first
+lazy route a stale tab opens fails to load its module. That is caught
+in the router (and Vite's `vite:preloadError`) and the tab reloads
+straight into the new build at the requested address; drafts survive
+since they are persisted. If the same failure recurs within fifteen
+seconds of such a reload it is not staleness, and a toast says the page
+could not be loaded instead of looping.
+
 ## Attention badge
 
 The tab title gets a count and the favicon a red badge with it, for the
