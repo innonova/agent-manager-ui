@@ -107,8 +107,9 @@ the spec followed by the agent's `## Report` sections and the human's
 agent in its conversation, and the manager's `feature.changed` events,
 fed by its poll of the files, show the feature going in progress and
 landing in review. Under an expanded feature a response box appends a
-dated `## Response` and sends it back to planned; rows offer done and
-reopen, and an edit dialog for title, body and priority on anything
+dated `## Response` and sends it back to planned; rows offer done,
+block (park it: agents leave blocked features alone) and reopen, and an
+edit dialog for title, body and priority on anything
 not in progress (the agent may be writing the file then). The response text and the new-feature form are kept in the
 drafts store (see Display preferences, Drafts), so switching tab or
 reloading does not lose them.

@@ -236,6 +236,15 @@ async function create() {
                     done
                   </button>
                   <button
+                    v-if="f.status === 'planned' || f.status === 'review'"
+                    class="rounded border border-red-400 px-2 py-0.5 text-red-800 dark:border-red-700 dark:text-red-200"
+                    title="Park it: agents leave blocked features alone until it is reopened"
+                    data-test="feature-block"
+                    @click="act(() => features.setStatus(id, f.slug, 'blocked'))"
+                  >
+                    block
+                  </button>
+                  <button
                     v-if="f.status === 'done' || f.status === 'blocked' || f.status === 'review'"
                     class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
                     data-test="feature-reopen"
