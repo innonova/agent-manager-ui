@@ -193,12 +193,12 @@ test('desktop notifications: opt in, then a finished turn notifies when the page
 test('a newer build on the server shows an update badge that reloads', async ({ page }) => {
   await login(page)
   await expect(page.getByTestId('update-available')).toHaveCount(0)
-  await page.route('**/build.json*', (route) =>
-    route.fulfill({ contentType: 'application/json', body: JSON.stringify({ id: 'newer' }) }),
+  // a UI-only deploy swaps build.json under the manager, which announces it on its ping tick
+  fs.writeFileSync(
+    path.join('/tmp/agent-manager-ui-e2e/ui', 'build.json'),
+    JSON.stringify({ id: `e2e-build-${Date.now()}` }),
   )
-  // a check runs when the tab becomes visible
-  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
-  await expect(page.getByTestId('update-available')).toBeVisible()
+  await expect(page.getByTestId('update-available')).toBeVisible({ timeout: 10000 })
   await Promise.all([page.waitForLoadState('load'), page.getByTestId('update-available').click()])
   await expect(page.getByTestId('login-name').or(page.getByTestId('new-project'))).toBeVisible()
 })

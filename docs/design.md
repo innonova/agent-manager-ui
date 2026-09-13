@@ -219,12 +219,12 @@ the SVG changes.
 ## Updates
 
 Each build carries an id (`__BUILD_ID__`, also written as `build.json`
-next to the bundle). The page fetches `build.json` when the events
-socket reconnects (a manager deploy restarts it), when the tab becomes
-visible or focused, and every minute (a UI-only deploy swaps the build
-without a restart, so there is nothing else to notice it by); a different id shows an "update
-available · reload" button in the header. Nothing reloads by itself,
-since a draft or a scroll position may be in play.
+next to the bundle). The manager reports the id of the build it serves
+in `hello` and announces a change with a `ui.build` event, which it
+notices on its ping tick after a UI-only deploy swaps the directory. A
+different id from the one running shows an "update available · reload"
+button in the header. Nothing reloads by itself, since a draft or a
+scroll position may be in play, and the page never polls for this.
 
 ## Attention badge
 

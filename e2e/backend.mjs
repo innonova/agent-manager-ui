@@ -52,6 +52,9 @@ fs.writeFileSync(
   path.join(daemonConfig, 'profiles', 'fake.json'),
   JSON.stringify({ command: process.execPath, args: [FAKE_AGENT], description: 'fake agent' }),
 )
+fs.mkdirSync(path.join(E2E_ROOT, 'ui'), { recursive: true })
+fs.writeFileSync(path.join(E2E_ROOT, 'ui', 'index.html'), '<html></html>')
+fs.writeFileSync(path.join(E2E_ROOT, 'ui', 'build.json'), JSON.stringify({ id: 'e2e-build-1' }))
 const env = { ...process.env }
 delete env.ELECTRON_RUN_AS_NODE
 
@@ -91,6 +94,8 @@ const manager = spawn(process.execPath, [MANAGER_MAIN], {
     AGENT_MANAGER_DATA_DIR: path.join(E2E_ROOT, 'manager-data'),
     AGENT_MANAGER_ADMIN_PASSWORD: ADMIN_PASSWORD,
     AGENT_MANAGER_LOGIN_ATTEMPTS_PER_MINUTE: '1000', // every test logs in; the throttle is for the real thing
+    AGENT_MANAGER_UI_DIR: path.join(E2E_ROOT, 'ui'), // pages come from Vite; this is only for build.json
+    AGENT_MANAGER_EVENTS_PING_MS: '500',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })

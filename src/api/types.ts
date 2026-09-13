@@ -105,7 +105,9 @@ export type EventFrame =
       user: string
       daemon: { connected: boolean }
       presence?: Record<string, PresenceUser[]>
+      uiBuild?: string | null
     }
+  | { type: 'ui.build'; id: string | null }
   | { type: 'daemon'; connected: boolean }
   | { type: 'project.counts'; projectId: string; counts: AgentCounts }
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }
