@@ -29,7 +29,11 @@ export const useChangesStore = defineStore('changes', () => {
     }
   })
 
+  /** Set by the files view while it shows changes; the unread count is kept regardless. */
+  const active = ref(false)
+
   function scheduleRefresh(): void {
+    if (!active.value) return
     if (refreshTimer) clearTimeout(refreshTimer)
     refreshTimer = window.setTimeout(() => void load(), 300)
   }
@@ -72,6 +76,7 @@ export const useChangesStore = defineStore('changes', () => {
       open.value = d
       error.value = null
     } catch (e) {
+      if (projectId.value !== forProject || openPath.value !== path) return
       open.value = null
       error.value = String((e as Error).message ?? e)
     }
@@ -98,6 +103,7 @@ export const useChangesStore = defineStore('changes', () => {
   }
 
   return {
+    active,
     projectId,
     base,
     repos,

@@ -50,7 +50,13 @@ export const useAgentsStore = defineStore('agents', () => {
     }
     if (f.type === 'agent.item') {
       const list = items.get(f.agentId)
-      if (!list) return
+      if (!list) {
+        // the first load is in flight: keep the item and apply it after
+        const held = arriving.get(f.agentId) ?? []
+        held.push(f.item)
+        arriving.set(f.agentId, held)
+        return
+      }
       if (f.item.index < list.length) list[f.item.index] = f.item
       else if (f.item.index === list.length) list.push(f.item)
       else void loadItems(f.agentId) // a gap: refetch rather than guess
@@ -71,6 +77,8 @@ export const useAgentsStore = defineStore('agents', () => {
 
   /** Bumped on agent.reset so a load started before the reset is discarded. */
   const generation = new Map<string, number>()
+  /** Items that arrived before the first load of their agent resolved. */
+  const arriving = new Map<string, StoredItem[]>()
   async function loadItems(agentId: string): Promise<void> {
     const gen = generation.get(agentId) ?? 0
     const from = loaded.has(agentId) ? (items.get(agentId)?.length ?? 0) : 0
@@ -79,6 +87,8 @@ export const useAgentsStore = defineStore('agents', () => {
     const list = items.get(agentId) ?? []
     if (fetched.length && fetched[0]!.index > list.length) return void loadItems(agentId) // a gap: start over
     for (const it of fetched) list[it.index] = it
+    for (const it of arriving.get(agentId) ?? []) if (it.index <= list.length) list[it.index] = it
+    arriving.delete(agentId)
     items.set(agentId, list)
     loaded.add(agentId)
     if (!byId.has(agentId)) {

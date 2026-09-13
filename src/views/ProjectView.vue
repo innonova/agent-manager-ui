@@ -11,12 +11,14 @@ import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
 import { useChangesStore } from '@/stores/changes'
+import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
 const changes = useChangesStore()
+const drafts = useDraftsStore()
 const presence = usePresenceStore()
 watch(
   () => props.agentId ?? null,
@@ -105,8 +107,10 @@ async function decide(requestId: string, option: string) {
 
 async function send(text: string) {
   if (!props.agentId) return
+  const agentId = props.agentId
   try {
-    await api.turn(props.agentId, text)
+    await api.turn(agentId, text)
+    drafts.set(agentId, '') // accepted: the draft is done; refused: it stays
   } catch (e) {
     notifications.push('error', e instanceof ApiError ? e.message : String(e))
   }

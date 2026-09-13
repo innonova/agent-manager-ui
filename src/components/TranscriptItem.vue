@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { Item } from '@/api/types'
@@ -8,11 +8,22 @@ const props = defineProps<{ item: Item }>()
 const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
 /** Set on the first click; the manager's item update replaces the card with the decision. */
 const deciding = ref(false)
+let decidingTimer: number | null = null
 function decide(requestId: string, option: string) {
   if (deciding.value) return
   deciding.value = true
+  // the manager's item update normally replaces the card; if the decision
+  // was refused (a toast says so) the buttons come back after a moment
+  decidingTimer = window.setTimeout(() => (deciding.value = false), 4000)
   emit('decide', requestId, option)
 }
+watch(
+  () => props.item,
+  () => {
+    deciding.value = false // a different item under this index
+    if (decidingTimer) clearTimeout(decidingTimer)
+  },
+)
 const open = ref(false)
 const permissionInput = computed(() =>
   props.item.kind === 'permission'

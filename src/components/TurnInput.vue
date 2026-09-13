@@ -53,8 +53,7 @@ const hint = computed(() =>
 function send() {
   const t = text.value.trim()
   if (!t || busy.value) return
-  emit('send', t)
-  text.value = ''
+  emit('send', t) // the parent clears the draft once the manager accepted the turn
   emit('stoppedTyping')
 }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
@@ -142,8 +142,13 @@ onMounted(async () => {
   if (!projects.loaded) await projects.load()
   if (!features.byProject.has(props.id)) void features.load(props.id)
   void changes.countUnread(props.id)
+  files.active = true
+  changes.active = mode.value === 'changes'
   const p = route.query.path // before select(), which resets the open path and the URL follows
   await files.select(props.id)
+  // remounted with a file still open (tab switch and back): put it back in the URL
+  if (mode.value === 'tree' && files.openPath && !p)
+    void router.replace({ query: { path: files.openPath } })
   if (mode.value === 'changes') {
     await changes.select(props.id, base.value)
     if (typeof p === 'string' && p) await changes.openFile(p)
@@ -156,9 +161,14 @@ onMounted(async () => {
 watch(
   () => [mode.value, base.value] as const,
   async ([m, b]) => {
+    changes.active = m === 'changes'
     if (m === 'changes') await changes.select(props.id, b)
   },
 )
+onUnmounted(() => {
+  files.active = false
+  changes.active = false
+})
 
 watch(
   () => files.openPath,

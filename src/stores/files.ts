@@ -109,7 +109,11 @@ export const useFilesStore = defineStore('files', () => {
     scheduleRefresh()
   })(events.onReconnect)
 
+  /** Set by the files view while it is mounted; nothing refreshes for a view nobody is looking at. */
+  const active = ref(false)
+
   function scheduleRefresh(): void {
+    if (!active.value) return
     if (refreshTimer) clearTimeout(refreshTimer)
     refreshTimer = window.setTimeout(() => void refresh(), 300)
   }
@@ -185,6 +189,7 @@ export const useFilesStore = defineStore('files', () => {
       open.value = content
       error.value = null
     } catch (e) {
+      if (projectId.value !== forProject || openPath.value !== path) return
       open.value = null
       error.value = String((e as Error).message ?? e)
     }
@@ -195,13 +200,17 @@ export const useFilesStore = defineStore('files', () => {
     if (!projectId.value) return
     await Promise.all([...dirs.keys()].map((d) => loadDir(d)))
     if (openPath.value) {
+      const forProject = projectId.value
+      const forPath = openPath.value
       const before = open.value?.mtime
-      const fresh = await api.file(projectId.value, openPath.value).catch(() => null)
+      const fresh = await api.file(forProject, forPath).catch(() => null)
+      if (projectId.value !== forProject || openPath.value !== forPath) return
       if (fresh && fresh.mtime !== before) open.value = fresh
     }
   }
 
   return {
+    active,
     projectId,
     dirs,
     expanded,
