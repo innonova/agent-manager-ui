@@ -114,12 +114,21 @@ const cost = computed(() =>
     </div>
   </div>
 
+  <!-- Summarised thinking is short, curated commentary, worth reading in
+       place; only a long block is folded. -->
+  <div
+    v-else-if="item.kind === 'thinking' && item.text.length <= 600"
+    class="text-sm whitespace-pre-wrap text-slate-500 italic dark:text-slate-400"
+    data-item="thinking"
+  >
+    {{ item.text }}
+  </div>
   <details
     v-else-if="item.kind === 'thinking'"
     class="text-xs text-slate-500 dark:text-slate-400"
     data-item="thinking"
   >
-    <summary class="cursor-pointer select-none">thinking</summary>
+    <summary class="cursor-pointer select-none">thinking · {{ item.text.length }} chars</summary>
     <div class="mt-1 border-l-2 border-slate-200 pl-2 whitespace-pre-wrap dark:border-slate-800">
       {{ item.text }}
     </div>

@@ -106,8 +106,8 @@ agent in its conversation, and the manager's `feature.changed` events,
 fed by its poll of the files, show the feature going in progress and
 landing in review. Under an expanded feature a response box appends a
 dated `## Response` and sends it back to planned; rows offer done and
-reopen, and planned features an edit dialog for title, body and
-priority. The response text and the new-feature form are kept in the
+reopen, and an edit dialog for title, body and priority on anything
+not in progress (the agent may be writing the file then). The response text and the new-feature form are kept in the
 drafts store (see Display preferences, Drafts), so switching tab or
 reloading does not lose them.
 
@@ -158,7 +158,7 @@ Items from the manager map onto components:
 |---|---|
 | `user` | right-aligned bubble, with the sender's name above it when the manager knows it (`by`) |
 | `text` | markdown, grows while `streaming` |
-| `thinking` | collapsed, expandable |
+| `thinking` | shown inline as muted italic text: with summarised thinking these are short, curated remarks the CLI would show anyway; only a long one (over ~600 characters) is folded |
 | `permission` | an amber card while undecided: tool, what the agent wants, the command or input, and a button per option the vendor offers (Allow, Always allow, Deny); once decided, a plain card noting the choice. The turn input is disabled meanwhile. Only agents created with `permissions: ask` produce these |
 | `tool_use` + its `tool_result` | one collapsed line: tool name, what the call is for (Claude's Bash `description`, a file tool's path, a search's pattern, else the command or a compact input), and the result's size or "error" or "running…"; unfolding shows the command (or the input as JSON) and the result. The pairing is by tool id, done in the view; a result whose call is missing renders on its own |
 | `error` | red banner with the vendor message verbatim |

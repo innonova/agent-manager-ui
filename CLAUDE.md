@@ -27,9 +27,9 @@ npm run test:e2e     # Playwright against a manager running with the fake adapte
 npm run lint && npm run format
 ```
 
-Deploying: `npm run build` here, then `npm run install:service` in
-`../agent-manager` (it copies `dist/` and restarts the manager; agents
-are unaffected). Details in `README.md` (Deploying).
+Deploying: `npm run build` here, then `npm run install:ui` in
+`../agent-manager` (swaps the served UI, no restart). Details in
+`README.md` (Deploying).
 
 ## Working here
 
@@ -48,8 +48,10 @@ change, `README.md` for an operator-facing one). Then:
 - commit on the branch you are on (these repositories work on `main`)
   with a message that says what changed and why;
 - push;
-- deploy: `npm run build` here, then `npm run install:service` in
-  `../agent-manager` (`README.md`, Deploying). Safe at any time.
+- deploy: `npm run build` here, then `npm run install:ui` in
+  `../agent-manager` (`README.md`, Deploying); it swaps the served UI
+  without restarting the manager. Use `install:service` there only when
+  the manager changed too.
 - say in the summary what was committed, pushed and deployed.
 
 Still ask first for force-pushes, history rewrites, deleting branches,

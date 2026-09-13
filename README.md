@@ -33,13 +33,19 @@ There is no separate UI service.
 
 ```
 cd ../agent-manager-ui && npm run build          # type-check + vite build -> dist/
-cd ../agent-manager   && npm run install:service # rebuilds the manager, copies dist/ to ~/.local/lib/agent-manager/ui, restarts the manager
+cd ../agent-manager   && npm run install:ui      # swaps ~/.local/lib/agent-manager/ui in place; the manager keeps running
 ```
+
+When the manager changed too, use `npm run install:service` there
+instead: it rebuilds and restarts the manager and copies the UI along.
 
 - Build the UI first. The install script copies whatever is in `dist/`;
   a stale build ships silently.
-- Restarting the manager is safe at any time: agents live in the daemon
-  and are re-adopted on start. The daemon is never touched.
+- `install:ui` never restarts anything; open tabs offer a reload when
+  they next check for a new build (on reconnect, on becoming visible, or
+  every ten minutes). Restarting the manager (`install:service`) is safe
+  at any time too: agents live in the daemon and are re-adopted on
+  start. The daemon is never touched.
 - The install does not touch the manager's database or its
   `systemd` drop-ins (`admin.conf`, `proxy.conf`); it rewrites only the
   unit file, the code, the UI and the daemon's `fake` profile.

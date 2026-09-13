@@ -212,7 +212,7 @@ async function create() {
                 <FeatureStatusBadge :status="f.status" data-test="feature-status" />
                 <div class="flex gap-2 text-xs">
                   <button
-                    v-if="f.status === 'planned'"
+                    v-if="f.status !== 'in-progress'"
                     class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
                     data-test="feature-edit"
                     @click="startEdit(f)"
