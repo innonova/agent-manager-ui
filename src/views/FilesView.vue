@@ -73,6 +73,9 @@ function setMode(m: 'tree' | 'changes', b?: string) {
   if (m === 'changes') {
     query.mode = 'changes'
     if (b && b !== 'read') query.base = b
+    if (changes.openPath) query.path = changes.openPath
+  } else if (files.openPath) {
+    query.path = files.openPath
   }
   void router.replace({ query })
 }

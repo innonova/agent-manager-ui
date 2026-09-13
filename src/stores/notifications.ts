@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import router from '@/router'
 import type { AgentState } from '@/api/types'
-import type { AgentRow } from '@/stores/agents'
+import { useAgentsStore, type AgentRow } from '@/stores/agents'
 import { usePreferencesStore } from '@/stores/preferences'
 
 export interface Toast {
@@ -69,8 +69,10 @@ export const useNotificationsStore = defineStore('notifications', () => {
       id,
       window.setTimeout(() => {
         pendingDone.delete(id)
-        if (document.hasFocus() || row.status.state !== 'idle') return
-        show(row, 'finished its background work')
+        // the row may have been replaced by a reload meanwhile: read the current one
+        const current = useAgentsStore().byId.get(id) ?? row
+        if (document.hasFocus() || current.status.state !== 'idle') return
+        show(current, 'finished its background work')
       }, 3000),
     )
   }

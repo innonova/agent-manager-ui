@@ -20,7 +20,11 @@ export const usePresenceStore = defineStore('presence', () => {
 
   events.on((f) => {
     if (f.type === 'presence') agents.value = f.agents
-    if (f.type === 'hello' && f.presence) agents.value = f.presence
+    if (f.type === 'hello') {
+      if (f.presence) agents.value = f.presence
+      // the page may have opened an agent before the socket was up
+      if (viewing.value) events.send({ type: 'presence', agentId: viewing.value, typing: false })
+    }
   })
   events.onReconnect = ((prev) => () => {
     prev?.()

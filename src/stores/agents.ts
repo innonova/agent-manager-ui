@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
-import { api } from '@/api/client'
+import { api, ApiError } from '@/api/client'
 import { events } from '@/api/events'
 import type { Agent, AgentStatus, StoredItem } from '@/api/types'
 import { useNotificationsStore } from './notifications'
@@ -50,10 +50,12 @@ export const useAgentsStore = defineStore('agents', () => {
     }
     if (f.type === 'agent.item') {
       const list = items.get(f.agentId)
-      if (!list) {
-        // the first load is in flight: keep the item and apply it after
+      if (!list || fetching.has(f.agentId)) {
+        // a load is in flight: keep the item and apply it after the snapshot,
+        // so an older snapshot cannot overwrite a newer live item
         const held = arriving.get(f.agentId) ?? []
         held.push(f.item)
+        if (held.length > 5000) held.splice(0, held.length - 5000)
         arriving.set(f.agentId, held)
         return
       }
@@ -65,7 +67,7 @@ export const useAgentsStore = defineStore('agents', () => {
 
   events.onReconnect = ((prev) => () => {
     prev?.()
-    for (const id of loaded) void loadItems(id)
+    for (const id of new Set([...loaded, ...failed])) void loadItems(id)
     for (const projectId of byProject.keys()) void load(projectId)
   })(events.onReconnect)
 
@@ -77,12 +79,31 @@ export const useAgentsStore = defineStore('agents', () => {
 
   /** Bumped on agent.reset so a load started before the reset is discarded. */
   const generation = new Map<string, number>()
-  /** Items that arrived before the first load of their agent resolved. */
+  /** Items that arrived while a load of their agent was in flight. */
   const arriving = new Map<string, StoredItem[]>()
+  const fetching = new Set<string>()
+  /** Loads that failed; retried on reconnect. */
+  const failed = new Set<string>()
   async function loadItems(agentId: string): Promise<void> {
+    if (fetching.has(agentId)) return
     const gen = generation.get(agentId) ?? 0
     const from = loaded.has(agentId) ? (items.get(agentId)?.length ?? 0) : 0
-    const { items: fetched } = await api.items(agentId, from)
+    fetching.add(agentId)
+    let fetched: StoredItem[]
+    try {
+      fetched = (await api.items(agentId, from)).items
+    } catch (e) {
+      fetching.delete(agentId)
+      arriving.delete(agentId)
+      failed.add(agentId)
+      useNotificationsStore().push(
+        'error',
+        `could not load the transcript: ${e instanceof ApiError ? e.message : String(e)}`,
+      )
+      return
+    }
+    fetching.delete(agentId)
+    failed.delete(agentId)
     if ((generation.get(agentId) ?? 0) !== gen) return void loadItems(agentId)
     const list = items.get(agentId) ?? []
     if (fetched.length && fetched[0]!.index > list.length) return void loadItems(agentId) // a gap: start over
@@ -112,6 +133,10 @@ export const useAgentsStore = defineStore('agents', () => {
 
   async function archive(agentId: string): Promise<void> {
     await api.archive(agentId)
+    items.delete(agentId)
+    loaded.delete(agentId)
+    failed.delete(agentId)
+    arriving.delete(agentId)
     const row = byId.get(agentId)
     if (row)
       byProject.set(
