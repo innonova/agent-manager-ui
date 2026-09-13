@@ -16,18 +16,22 @@ const tone = computed(() =>
 )
 const tokens = (n: number) =>
   n >= 999_500 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n)
+/** What the agent has spent over all its sessions, or this one's when it has had only one. */
+const spent = computed(() => props.usage.total ?? props.usage.spend)
+const spendLine = (s: NonNullable<AccountUsage['spend']>) =>
+  `${s.turns} turn${s.turns === 1 ? '' : 's'}, ${tokens(s.inputTokens)} in / ${tokens(s.outputTokens)} out${s.costUsd !== undefined ? `, $${s.costUsd.toFixed(2)}` : ''}`
 const text = computed(() => {
   const parts = props.usage.windows.map((w) => `${w.name} ${w.usedPercent}%`)
   if (props.usage.context)
     parts.push(
       `ctx ${Math.round((100 * props.usage.context.used) / Math.max(1, props.usage.context.size))}%`,
     )
-  // no windows (Bedrock, Vertex, Copilot): the session's spend is what there is
-  if (props.usage.spend && props.usage.windows.length === 0)
+  // no windows (Bedrock, Vertex, Copilot): the agent's spend is what there is
+  if (spent.value && props.usage.windows.length === 0)
     parts.push(
-      props.usage.spend.costUsd !== undefined
-        ? `$${props.usage.spend.costUsd.toFixed(2)}`
-        : `${tokens(props.usage.spend.inputTokens + props.usage.spend.outputTokens)} tok`,
+      spent.value.costUsd !== undefined
+        ? `$${spent.value.costUsd.toFixed(2)}`
+        : `${tokens(spent.value.inputTokens + spent.value.outputTokens)} tok`,
     )
   return parts.join(' · ')
 })
@@ -39,9 +43,11 @@ const title = computed(() => {
     lines.push(
       `context: ${props.usage.context.used.toLocaleString()} of ${props.usage.context.size.toLocaleString()} tokens`,
     )
+  // the vendor's counters start over at a restart: the total is the agent's, the session line is since the last restart
+  if (props.usage.total) lines.push(`all sessions: ${spendLine(props.usage.total)}`)
   if (props.usage.spend)
     lines.push(
-      `this session: ${props.usage.spend.turns} turn${props.usage.spend.turns === 1 ? '' : 's'}, ${tokens(props.usage.spend.inputTokens)} in / ${tokens(props.usage.spend.outputTokens)} out${props.usage.spend.costUsd !== undefined ? `, $${props.usage.spend.costUsd.toFixed(2)}` : ''}`,
+      `${props.usage.total ? 'since the last restart' : 'this session'}: ${spendLine(props.usage.spend)}`,
     )
   if (props.usage.provider) lines.push(`provider: ${props.usage.provider}`)
   if (props.usage.plan) lines.push(`plan: ${props.usage.plan}`)

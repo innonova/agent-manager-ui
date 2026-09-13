@@ -258,9 +258,12 @@ and red at one, so it can be found without drawing the eye. An agent whose vendo
 gets a chip on that second line, "5h 33% · 7d 41% · fable 66%" with
 every window the vendor names (Claude's "overage included" window is
 the Fable one, as Claude Desktop labels it) (Copilot: "ctx N%", its context window; with no windows, as on
-Bedrock or Vertex, the session's cost or tokens instead), amber from
-80% and red when the vendor refuses, with the reset times, the
-session's spend, the provider and the plan in the tooltip. The projects page shows an "Account usage"
+Bedrock or Vertex, the agent's cost or tokens instead), amber from
+80% and red when the vendor refuses, with the reset times, the spend,
+the provider and the plan in the tooltip. The vendors' spend counters
+start over when an agent is restarted, so the spend shown is the
+manager's `total` across the agent's sessions when it has one, and the
+tooltip gives both that and the part since the last restart. The projects page shows an "Account usage"
 block with the latest report per machine and vendor from `/api/usage`,
 refreshed half a second after any agent reports new usage. Only what
 agents report while working: nothing polls the vendors.

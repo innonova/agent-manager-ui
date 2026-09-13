@@ -94,6 +94,8 @@ export interface AccountUsage {
   plan?: string
   context?: { used: number; size: number }
   spend?: { inputTokens: number; outputTokens: number; costUsd?: number; turns: number }
+  /** The agent's spend across all its sessions; only once it has been restarted (the vendor's counters start over). */
+  total?: { inputTokens: number; outputTokens: number; costUsd?: number; turns: number }
   provider?: string
   at: number
 }
