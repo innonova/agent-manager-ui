@@ -252,8 +252,9 @@ could not be loaded instead of looping.
 The files tree can take files: "upload" opens a picker and a drop on
 the tree does the same; "new folder" creates one. Both land in the
 target directory: the focused directory, else the directory of the
-focused or open file, else the first repository (the buttons' tooltips
-name it). A name already in use asks before replacing. After an upload
+focused or open file, else the first repository; the header says "into
+<dir>" so the target is never a guess, and the selected row stays
+marked while the tree is not the focused element. A name already in use asks before replacing. After an upload
 the toast offers "mention to agent": it appends `See <path>` to the
 draft of the agent last opened in this project and goes there, so the
 next thing you type tells the agent what to do with the file. Uploads

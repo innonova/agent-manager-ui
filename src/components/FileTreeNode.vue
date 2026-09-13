@@ -58,7 +58,13 @@ const title = computed(() => {
       :class="[
         files.openPath === entry.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : '',
         entry.ignored ? 'opacity-50' : '',
-        focused && treeFocused ? 'ring-1 ring-blue-500 ring-inset' : '',
+        // the selected row stays marked when the tree is not the focused element (a
+        // button in the header is), with the ring only while it is
+        focused
+          ? treeFocused
+            ? 'bg-slate-100 ring-1 ring-blue-500 ring-inset dark:bg-slate-800'
+            : 'bg-slate-100 dark:bg-slate-800'
+          : '',
       ]"
       :style="{ paddingLeft: `${depth * 0.9 + 0.5}rem` }"
       :title="title"

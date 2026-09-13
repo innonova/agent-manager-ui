@@ -298,6 +298,13 @@ async function createFolder() {
           </button>
           <span class="grow" />
           <template v-if="mode === 'tree'">
+            <span
+              v-if="files.targetDir()"
+              class="mr-2 max-w-48 truncate font-mono text-[11px] text-slate-500 dark:text-slate-400"
+              :title="`Uploads and new folders go into ${files.targetDir()}; select a folder or a file in the tree to change it`"
+              data-test="files-target"
+              >into {{ files.targetDir() }}</span
+            >
             <button
               class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
               :title="`Upload files into ${files.targetDir() ?? 'the project'}`"
