@@ -249,9 +249,13 @@ could not be loaded instead of looping.
 
 ## Account usage
 
-An agent whose vendor reports the account's limits gets a chip in its
-header, "5h 33% · 7d 41% · 7d+overage 66%" with every window the vendor
-names (Copilot: "ctx N%", its context window; with no windows, as on
+The agent header has two lines: the name, state and error with the
+presence, unread and actions on the first; the model, usage, permission
+mode, profile and working directory and the background-wait note on
+the second, muted. An agent whose vendor reports the account's limits
+gets a chip on that second line, "5h 33% · 7d 41% · 7d fable 66%" with
+every window the vendor names (Claude's "overage included" window is
+the Fable one, as Claude Desktop labels it) (Copilot: "ctx N%", its context window; with no windows, as on
 Bedrock or Vertex, the session's cost or tokens instead), amber from
 80% and red when the vendor refuses, with the reset times, the
 session's spend, the provider and the plan in the tooltip. The projects page shows an "Account usage"

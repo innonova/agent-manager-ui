@@ -245,73 +245,85 @@ async function archive() {
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">
         <div
-          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+          class="border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
         >
-          <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
-          <StateBadge
-            :state="current.status.state"
-            :background="current.status.background"
-            data-test="agent-state"
-          />
-          <span
-            v-if="current.status.model"
-            class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-            :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
-            data-test="agent-model-chip"
-            >{{ current.status.model }}</span
+          <!-- line one: who and how it is doing, and what you can do about it -->
+          <div class="flex items-center gap-3">
+            <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
+            <StateBadge
+              :state="current.status.state"
+              :background="current.status.background"
+              data-test="agent-state"
+            />
+            <span
+              v-if="current.status.error"
+              class="truncate text-red-700 dark:text-red-300"
+              data-test="agent-error"
+              >{{ current.status.error }}</span
+            >
+            <span class="grow" />
+            <span
+              v-if="othersHere.length"
+              class="text-xs text-violet-700 dark:text-violet-300"
+              data-test="presence"
+            >
+              {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
+            </span>
+            <RouterLink
+              v-if="changes.unread.get(id)"
+              :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
+              class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+              data-test="unread-link"
+              >{{ changes.unread.get(id) }} changed since you last looked</RouterLink
+            >
+            <button
+              v-if="current.status.state !== 'exited'"
+              class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              data-test="stop"
+              @click="stop"
+            >
+              stop
+            </button>
+            <button
+              class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
+              data-test="archive"
+              @click="archive"
+            >
+              archive
+            </button>
+          </div>
+          <!-- line two: the facts about the session, muted -->
+          <div
+            class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 dark:text-slate-400"
           >
-          <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
-          <span
-            v-if="current.status.error"
-            class="truncate text-red-700 dark:text-red-300"
-            data-test="agent-error"
-            >{{ current.status.error }}</span
-          >
-          <span class="grow" />
-          <span
-            class="font-mono text-xs text-slate-400 dark:text-slate-500"
-            data-test="agent-cwd-label"
-            >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
-          >
-          <span
-            v-if="current.status.state === 'idle' && current.status.background"
-            class="text-xs text-blue-700 dark:text-blue-300"
-            :title="`no activity since ${when(current.status.lastActivityAt)}`"
-            data-test="waiting-since"
-            >waiting on {{ current.status.background }} background job{{
-              current.status.background === 1 ? '' : 's'
-            }}
-            for {{ since(current.status.lastActivityAt) }}</span
-          >
-          <span
-            v-if="othersHere.length"
-            class="text-xs text-violet-700 dark:text-violet-300"
-            data-test="presence"
-          >
-            {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
-          </span>
-          <RouterLink
-            v-if="changes.unread.get(id)"
-            :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
-            data-test="unread-link"
-            >{{ changes.unread.get(id) }} changed since you last looked</RouterLink
-          >
-          <button
-            v-if="current.status.state !== 'exited'"
-            class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-            data-test="stop"
-            @click="stop"
-          >
-            stop
-          </button>
-          <button
-            class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
-            data-test="archive"
-            @click="archive"
-          >
-            archive
-          </button>
+            <span
+              v-if="current.status.model"
+              class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
+              data-test="agent-model-chip"
+              >{{ current.status.model }}</span
+            >
+            <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
+            <span
+              v-if="current.agent.permissions === 'ask'"
+              class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
+              title="Gated tools wait for your answer"
+              >asks</span
+            >
+            <span class="font-mono" data-test="agent-cwd-label"
+              >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
+            >
+            <span
+              v-if="current.status.state === 'idle' && current.status.background"
+              class="text-blue-700 dark:text-blue-300"
+              :title="`no activity since ${when(current.status.lastActivityAt)}`"
+              data-test="waiting-since"
+              >waiting on {{ current.status.background }} background job{{
+                current.status.background === 1 ? '' : 's'
+              }}
+              for {{ since(current.status.lastActivityAt) }}</span
+            >
+          </div>
         </div>
         <div class="relative min-h-0 grow">
           <TranscriptView
