@@ -15,6 +15,7 @@ import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { since, when } from '@/time'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
@@ -33,6 +34,8 @@ const router = useRouter()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
 const notifications = useNotificationsStore()
+const hosts = useHostsStore()
+const host = computed(() => hosts.byName(project.value?.host))
 
 const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
@@ -56,9 +59,9 @@ onMounted(() => void changes.countUnread(props.id))
 async function loadProject() {
   if (!projects.loaded) await projects.load()
   await agents.load(props.id)
-  profiles.value = (await api.profiles().catch(() => ({ profiles: [] }))).profiles.filter(
-    (p) => p.supported,
-  )
+  profiles.value = (
+    await api.projectProfiles(props.id).catch(() => ({ profiles: [] }))
+  ).profiles.filter((p) => p.supported)
   form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
   form.value.cwd = project.value?.repos[0]?.name ?? ''
   if (!props.agentId && rows.value[0])
@@ -160,6 +163,20 @@ async function archive() {
     <template #title>
       <span class="text-slate-400 dark:text-slate-500">/</span>
       <span data-test="project-title">{{ project?.name ?? '…' }}</span>
+      <span
+        v-if="hosts.several && project?.host"
+        class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+        data-test="project-host"
+        >{{ project.host }}</span
+      >
+      <span
+        v-if="host && (!host.connected || !host.daemon)"
+        class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+        data-test="host-warning"
+        >{{
+          !host.connected ? `${host.name} unreachable` : `${host.name}: daemon disconnected`
+        }}</span
+      >
       <RouterLink
         :to="{ name: 'projects', query: { edit: id } }"
         class="text-xs text-slate-400 hover:text-slate-900 hover:underline dark:text-slate-500 dark:hover:text-slate-100"

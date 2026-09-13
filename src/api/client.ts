@@ -58,8 +58,13 @@ export const api = {
   projects: () => call<{ project: Project; agentCounts: AgentCounts }[]>('GET', '/api/projects'),
   project: (id: string) =>
     call<{ project: Project; agentCounts: AgentCounts }>('GET', `/api/projects/${id}`),
-  createProject: (input: { name: string; repos: RepoInput[]; defaultProfile?: string | null }) =>
-    call<{ project: Project; agentCounts: AgentCounts }>('POST', '/api/projects', input),
+  createProject: (input: {
+    name: string
+    repos: RepoInput[]
+    defaultProfile?: string | null
+    /** The machine to create it on (a hub); absent means this one. */
+    host?: string
+  }) => call<{ project: Project; agentCounts: AgentCounts }>('POST', '/api/projects', input),
   updateProject: (
     id: string,
     input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
@@ -109,6 +114,9 @@ export const api = {
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
+  /** The profiles a project's agents can use: those of the machine it is on. */
+  projectProfiles: (projectId: string) =>
+    call<{ profiles: Profile[] }>('GET', `/api/projects/${projectId}/profiles`),
 
   users: () => call<{ users: User[] }>('GET', '/api/users'),
   createUser: (name: string) =>

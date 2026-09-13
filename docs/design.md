@@ -257,6 +257,18 @@ message shows as "N queued" beside the button and a toast says so.
 Starting and waiting on a permission still block sending. Interrupt is
 unchanged.
 
+## Several machines (a hub)
+
+When the manager is a hub, `hello` and `hosts` frames list the machines
+(`hosts` store). Projects carry `host`; with more than one host the
+project list and the project header show it as a badge, struck through
+when the hub cannot reach that machine, and the project header warns
+when the host is unreachable or its daemon is down. The new-project form
+offers the machine to create on. Profiles for a new agent come from
+`/api/projects/:id/profiles`, the machine the project is on. Nothing
+else changes: ids are opaque, and every route works the same for a
+remote project.
+
 ## Editing a project
 
 The projects list's "edit" and the "edit" link in a project's header

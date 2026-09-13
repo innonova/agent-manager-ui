@@ -37,6 +37,7 @@ export const useProjectsStore = defineStore('projects', () => {
     name: string
     repos: RepoInput[]
     defaultProfile?: string | null
+    host?: string
   }): Promise<Project> {
     const row = await api.createProject(input)
     rows.value = sorted([...rows.value, row])

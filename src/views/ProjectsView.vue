@@ -8,10 +8,12 @@ import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectForm, { type ProjectFormValue } from '@/components/ProjectForm.vue'
 import { useProjectsStore } from '@/stores/projects'
+import { useHostsStore } from '@/stores/hosts'
 import { useAgentsStore } from '@/stores/agents'
 import { useNotificationsStore } from '@/stores/notifications'
 
 const projects = useProjectsStore()
+const hosts = useHostsStore()
 const route = useRoute()
 const router = useRouter()
 const showForm = ref(false)
@@ -22,7 +24,12 @@ const busy = ref(false)
 const profiles = ref<Profile[]>([])
 
 function empty(): ProjectFormValue {
-  return { name: '', repos: [{ name: '', path: '' }], defaultProfile: '' }
+  return {
+    name: '',
+    repos: [{ name: '', path: '' }],
+    defaultProfile: '',
+    host: hosts.local?.name ?? '',
+  }
 }
 
 onMounted(async () => {
@@ -51,6 +58,7 @@ function openEdit(p: Project) {
     name: p.name,
     repos: p.repos.map((r) => ({ ...r })),
     defaultProfile: p.defaultProfile ?? '',
+    host: p.host ?? '',
   }
   error.value = null
   showForm.value = true
@@ -72,7 +80,10 @@ async function submit(restart = false) {
       defaultProfile: form.value.defaultProfile || null,
     }
     if (editing.value) await projects.update(editing.value.id, input)
-    else await projects.create(input)
+    else
+      await projects.create(
+        hosts.several && form.value.host ? { ...input, host: form.value.host } : input,
+      )
     if (restart && editing.value) {
       const { restarted, skipped } = await api.restartAgents(editing.value.id)
       const agents = useAgentsStore()
@@ -122,7 +133,21 @@ async function submit(restart = false) {
             class="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             <div class="min-w-0 grow">
-              <div class="font-medium">{{ r.project.name }}</div>
+              <div class="font-medium">
+                {{ r.project.name }}
+                <span
+                  v-if="hosts.several && r.project.host"
+                  class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  :class="hosts.byName(r.project.host)?.connected === false ? 'line-through' : ''"
+                  :title="
+                    hosts.byName(r.project.host)?.connected === false
+                      ? 'unreachable'
+                      : 'on this machine'
+                  "
+                  data-test="project-host"
+                  >{{ r.project.host }}</span
+                >
+              </div>
               <div
                 v-for="repo in r.project.repos"
                 :key="repo.name"
@@ -161,7 +186,7 @@ async function submit(restart = false) {
       @submit="submit()"
       @secondary="submit(true)"
     >
-      <ProjectForm v-model="form" :profiles="profiles" />
+      <ProjectForm v-model="form" :profiles="profiles" :hosts="editing ? [] : hosts.list" />
     </ModalForm>
   </AppShell>
 </template>

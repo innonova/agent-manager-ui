@@ -20,6 +20,8 @@ export interface RepoInput {
 export interface Project {
   id: string
   name: string
+  /** The machine the project is on; a hub shows several. */
+  host?: string
   /** Path of the primary repository (repos[0]). */
   path: string
   repos: Repo[]
@@ -47,6 +49,15 @@ export interface Agent {
   /** Vendor model and effort names passed at session start; null is the vendor's default. */
   model: string | null
   effort: string | null
+}
+
+export interface HostStatus {
+  name: string
+  local: boolean
+  /** The hub's link to this host's event stream. */
+  connected: boolean
+  /** The host's link to its own daemon. */
+  daemon: boolean
 }
 
 export interface PresenceUser {
@@ -115,8 +126,10 @@ export type EventFrame =
       daemon: { connected: boolean }
       presence?: Record<string, PresenceUser[]>
       uiBuild?: string | null
+      hosts?: HostStatus[]
     }
   | { type: 'ui.build'; id: string | null }
+  | { type: 'hosts'; hosts: HostStatus[] }
   | { type: 'daemon'; connected: boolean }
   | { type: 'project.counts'; projectId: string; counts: AgentCounts }
   | { type: 'agent.state'; agentId: string; projectId: string; status: AgentStatus }

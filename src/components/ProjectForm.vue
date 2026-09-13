@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import type { Profile } from '@/api/types'
+import type { HostStatus, Profile } from '@/api/types'
 
 export interface ProjectFormValue {
   name: string
   repos: { name: string; path: string }[]
   defaultProfile: string
+  /** The machine to create it on; only offered when there are several. */
+  host: string
 }
 
 const model = defineModel<ProjectFormValue>({ required: true })
-defineProps<{ profiles: Profile[] }>()
+defineProps<{ profiles: Profile[]; hosts?: HostStatus[] }>()
 
 function addRepo() {
   model.value.repos.push({ name: '', path: '' })
@@ -25,6 +27,18 @@ function move(i: number, d: -1 | 1) {
 </script>
 
 <template>
+  <label v-if="hosts && hosts.length > 1" class="text-sm">
+    <span class="text-slate-600 dark:text-slate-300">Machine</span>
+    <select
+      v-model="model.host"
+      class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+      data-test="project-host-select"
+    >
+      <option v-for="h in hosts" :key="h.name" :value="h.name" :disabled="!h.connected">
+        {{ h.name }}{{ h.local ? ' (this machine)' : '' }}{{ h.connected ? '' : ' (unreachable)' }}
+      </option>
+    </select>
+  </label>
   <label class="text-sm">
     <span class="text-slate-600 dark:text-slate-300">Name</span>
     <input
