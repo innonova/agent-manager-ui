@@ -118,7 +118,7 @@ const cost = computed(() =>
        place; only a long block is folded. -->
   <div
     v-else-if="item.kind === 'thinking' && item.text.length <= 600"
-    class="text-sm whitespace-pre-wrap text-slate-800 italic dark:text-slate-200"
+    class="text-sm whitespace-pre-wrap"
     data-item="thinking"
   >
     {{ item.text }}
