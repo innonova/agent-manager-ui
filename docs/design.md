@@ -99,7 +99,8 @@ view never writes to the tree.
 ## Features view
 
 Features grouped by status in working order (in progress, review,
-blocked, planned, done), each expandable to its markdown body, which is
+blocked, planned, done; done newest first with its date on the row,
+the rest by priority), each expandable to its markdown body, which is
 the spec followed by the agent's `## Report` sections and the human's
 `## Response` sections. Nothing here starts work: the human asks an
 agent in its conversation, and the manager's `feature.changed` events,

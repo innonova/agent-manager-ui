@@ -186,7 +186,15 @@ async function create() {
                 <button class="min-w-0 grow text-left" @click="toggle(f.slug)">
                   <span class="font-medium" data-test="feature-title">{{ f.title }}</span>
                   <span class="ml-2 font-mono text-xs text-slate-400"
-                    >{{ f.slug }} · p{{ f.priority }}</span
+                    >{{ f.slug
+                    }}<template v-if="f.status !== 'done'"> · p{{ f.priority }}</template></span
+                  >
+                  <span
+                    v-if="f.status === 'done'"
+                    class="ml-2 text-xs text-slate-400"
+                    :title="new Date(f.mtime).toLocaleString()"
+                    data-test="feature-done-at"
+                    >{{ new Date(f.mtime).toLocaleDateString() }}</span
                   >
                   <span
                     v-if="multiRepo"
