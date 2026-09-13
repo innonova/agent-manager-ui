@@ -473,7 +473,10 @@ test('changes view: unread files since the cursor, a diff, mark as read', async 
   await expect(page.getByTestId('diff-path')).toHaveText('project/src/index.ts')
   await expect(page.getByTestId('diff-editor')).toBeVisible()
   await expect(page.getByTestId('diff-editor')).toContainText('touched')
+  // no cursor yet: marking read sets one; afterwards nothing is committed since it, so the button rests
+  await expect(page.getByTestId('mark-read')).toBeEnabled()
   await page.getByTestId('mark-read').click()
+  await expect(page.getByTestId('mark-read')).toBeDisabled()
   // uncommitted work still shows after marking read; nothing is lost
   await expect(files.filter({ hasText: 'src/index.ts' })).toHaveAttribute('data-status', 'modified')
   await expect(notes.filter({ hasText: 'nothing marked read yet' })).toHaveCount(0)

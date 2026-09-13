@@ -7,6 +7,7 @@ import ProjectTabs from '@/components/ProjectTabs.vue'
 import { useChangesStore } from '@/stores/changes'
 import { useFeaturesStore } from '@/stores/features'
 import { useFilesStore } from '@/stores/files'
+import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 // Monaco is several megabytes; it loads only when a file is opened.
@@ -34,6 +35,25 @@ const baseLabel = computed(() => {
   return `since ${base.value.slice(0, 8)}`
 })
 const changedCount = computed(() => changes.repos.reduce((n, r) => n + r.files.length, 0))
+/** Meaningful when a cursor is missing or commits exist since it; uncommitted work is never "read". */
+const canMarkRead = computed(
+  () =>
+    base.value === 'read' &&
+    changes.repos.some(
+      (r) => r.head && (r.base !== r.head || r.note?.startsWith('nothing marked read')),
+    ),
+)
+const notifications = useNotificationsStore()
+async function markRead() {
+  await changes.markRead()
+  const left = changedCount.value
+  notifications.push(
+    'info',
+    left
+      ? `Marked as read. ${left} uncommitted change${left === 1 ? '' : 's'} still show${left === 1 ? 's' : ''}.`
+      : 'Marked as read; nothing left to look at.',
+  )
+}
 const STATUS_LETTER: Record<string, string> = {
   modified: 'M',
   added: 'A',
@@ -193,6 +213,7 @@ watch(
           </button>
           <span class="grow" />
           <button
+            v-if="mode === 'tree'"
             class="mr-2 text-xs text-blue-700 hover:underline dark:text-blue-300"
             data-test="files-collapse"
             @click="files.collapseAll()"
@@ -202,7 +223,7 @@ watch(
           <button
             class="text-xs text-blue-700 hover:underline dark:text-blue-300"
             data-test="files-refresh"
-            @click="files.refresh()"
+            @click="mode === 'tree' ? files.refresh() : changes.load()"
           >
             refresh
           </button>
@@ -219,9 +240,15 @@ watch(
               since last read
             </button>
             <button
-              class="text-blue-700 hover:underline dark:text-blue-300"
+              class="text-blue-700 hover:underline disabled:cursor-default disabled:text-slate-400 disabled:no-underline dark:text-blue-300 dark:disabled:text-slate-500"
+              :disabled="!canMarkRead"
+              :title="
+                canMarkRead
+                  ? 'Move your read cursor to the current commit'
+                  : 'Nothing committed since you last looked; uncommitted work always shows'
+              "
               data-test="mark-read"
-              @click="changes.markRead()"
+              @click="markRead()"
             >
               mark as read
             </button>
