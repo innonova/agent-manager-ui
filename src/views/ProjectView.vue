@@ -298,9 +298,16 @@ async function archive() {
               <span
                 v-if="current.status.model"
                 class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                :title="`model reported by the agent${current.agent.effort ? `; effort ${current.agent.effort}` : ''}`"
+                title="model reported by the agent"
                 data-test="agent-model-chip"
                 >{{ current.status.model }}</span
+              >
+              <span
+                v-if="current.agent.effort"
+                class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
+                title="effort level the agent was started with"
+                data-test="agent-effort-chip"
+                >effort {{ current.agent.effort }}</span
               >
               <span
                 v-if="current.agent.permissions === 'ask'"
