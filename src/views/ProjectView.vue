@@ -57,11 +57,28 @@ const liveThinkingText = computed(() => {
   const last = items.value[items.value.length - 1]
   return last?.item.kind === 'thinking' ? last.item.text : null
 })
-const activeToolName = computed(() => {
-  if (activity.value?.kind !== 'tool') return null
+/**
+ * A tool call whose result has not arrived: the manager's own activity
+ * broadcast for it is throttled to at most once a second and can lag a
+ * turn that just started one, but the transcript already has it the
+ * instant the item does.
+ */
+const pendingToolUse = computed(() => {
   const last = items.value[items.value.length - 1]
-  return last?.item.kind === 'tool_use' ? last.item.name : null
+  return last?.item.kind === 'tool_use' ? { name: last.item.name, since: last.at } : null
 })
+/** What status.activity says, corrected for that lag. */
+const effectiveActivity = computed(() => {
+  const a = activity.value
+  const pending = pendingToolUse.value
+  if (!a || !pending || a.kind === 'tool' || a.kind === 'waiting') return a
+  return { kind: 'tool' as const, tokens: a.tokens, since: pending.since }
+})
+const activeToolName = computed(() =>
+  effectiveActivity.value?.kind === 'tool' ? (pendingToolUse.value?.name ?? null) : null,
+)
+/** The activity overlay's measured height, so the transcript's floating buttons can clear it. */
+const activityHeight = ref(0)
 
 const showNew = ref(false)
 /** "+ new" under a project in the tree: go there first when it is not the current one. */
@@ -400,6 +417,7 @@ async function archive() {
             :items="items"
             :has-earlier="!!props.agentId && agents.hasEarlier(props.agentId)"
             :loading-earlier="!!props.agentId && agents.loadingEarlier.has(props.agentId)"
+            :activity-height="activityHeight"
             @decide="decide"
             @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"
           />
@@ -414,12 +432,14 @@ async function archive() {
               othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
             }}</span>
           </div>
+          <!-- also an overlay, not inserted in flow: see ActivityLine.vue -->
+          <ActivityLine
+            :activity="effectiveActivity"
+            :thinking-text="liveThinkingText"
+            :tool-name="activeToolName"
+            @resize="activityHeight = $event"
+          />
         </div>
-        <ActivityLine
-          :activity="activity"
-          :thinking-text="liveThinkingText"
-          :tool-name="activeToolName"
-        />
         <TurnInput
           ref="turnInput"
           :key="current.agent.id"

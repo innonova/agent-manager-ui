@@ -355,33 +355,48 @@ it (the session id, the harness note it was given).
 
 The manager's `status.activity` (`{ kind: 'thinking' | 'writing' | 'tool' |
 'waiting', detail?, tokens?, since } | null`) says what the last thing on
-the stream was doing; a line right above the composer shows it, muted,
-while it is not null. `writing` just says "writing" and `waiting` says
-"waiting for your answer" — both already show themselves elsewhere (the
-growing reply, the permission card). `thinking` and `tool` are open-ended,
-so they get more: a left-aligned word and, right-aligned on the same
-line, the elapsed time ticking locally from `since` ("12 s", then
-"3 min", `src/time.ts`'s `since`). `thinking`'s word is not always
-"thinking": one of a small set of quiet synonyms (thinking, musing,
-pondering, weighing, considering) is picked once per thinking stretch —
-keyed on `since`, so a `tokens`-only update to the same stretch does not
-reroll it — not per tick, so it holds still while the seconds advance.
-`tool` says what kind of thing the last `tool_use` item's name is
-("running a command", "reading a file", "editing a file", "searching",
-else "waiting for a tool"), never the raw command or path: the
-transcript already has that (`Transcript rendering`). When `tokens` (the
-turn's output so far, absent until a vendor has said anything usable) is
-present, it sits between the word and the elapsed time: "musing · 340
-tokens · 12 s". While `activity.kind` is `thinking`, the tail of the
-current transcript's last item (when it is itself a `thinking` item)
-streams in under the line, three or four lines, monospace, muted, pinned
-to the bottom as it grows so older text scrolls away; it is the live
-view of the same item the transcript already shows, nothing new is kept.
-The line and the streamed text disappear together the moment `activity`
-goes back to `null` (a turn ending, or any other state change), so the
-layout only holds the extra height while a turn is actually running. The
-state badge and header stay as they are; this is additional, not a
-replacement.
+the stream was doing; a line shows it, muted, while it is not null.
+It overlays the bottom of the transcript pane (`ActivityLine.vue`,
+translucent, the same technique as the "is typing…" note) rather than
+being inserted between the transcript and the composer: reflowing either
+one on every turn start and end would move a reader's scroll position and
+the composer itself. Sized and centred like the transcript's own item
+column (same max width, same edges), not the pane's full width, so its
+label and elapsed time line up with what is above them; the transcript's
+own "↓ latest" button shifts up to clear it while it shows (its measured
+height, via a `ResizeObserver`, reaches `TranscriptView` as a prop).
+`writing` just says "writing" and `waiting` says "waiting for your
+answer" — both already show themselves elsewhere (the growing reply, the
+permission card). `thinking` and `tool` are open-ended, so they get more:
+a left-aligned word and, right-aligned on the same line, the elapsed time
+ticking locally from `since` ("12 s", then "3 min", `src/time.ts`'s
+`since`). `thinking`'s word is not always "thinking": one of a small set
+of quiet synonyms (thinking, musing, pondering, weighing, considering) is
+picked once per thinking stretch — keyed on `since`, so a `tokens`-only
+update to the same stretch does not reroll it — not per tick, so it
+holds still while the seconds advance. `tool` says what kind of thing
+the last `tool_use` item's name is ("running a command", "reading a
+file", "editing a file", "searching", else "waiting for a tool"), never
+the raw command or path: the transcript already has that (`Transcript
+rendering`). That `tool` phase is read from the transcript itself, not
+`status.activity.kind`, whenever the last item is a `tool_use` without
+its result yet: the manager throttles `activity`-only announcements to
+at most one a second, which can otherwise leave the line saying
+"thinking" for a moment after the transcript already shows the call
+running. When `tokens` (the turn's output so far, absent until a vendor
+has said anything usable) is present, it sits between the word and the
+elapsed time: "musing · 340 tokens · 12 s". While `activity.kind` is
+`thinking`, the tail of the current transcript's last item streams in
+under the line — but only when that item is longer than what the
+transcript already shows inline (`THINKING_FOLD_CHARS`, `src/constants.ts`,
+also `TranscriptItem`'s own fold cutoff): a short thinking item is on
+screen twice otherwise, once in the transcript and once in the live box.
+Capped at three lines, monospace, muted, pinned to the bottom as it grows
+so older text scrolls away; it is the live view of the same item the
+transcript already shows, nothing new is kept. The line and the streamed
+text disappear together the moment `activity` goes back to `null` (a
+turn ending, or any other state change). The state badge and header stay
+as they are; this is additional, not a replacement.
 
 ## The sidebar is a tree of projects
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { Activity } from '@/api/types'
+import { THINKING_FOLD_CHARS } from '@/constants'
 import { since } from '@/time'
 
 const props = defineProps<{
@@ -10,6 +11,8 @@ const props = defineProps<{
   /** The name of the tool call under way, while `activity.kind === 'tool'`, for the phrase. */
   toolName?: string | null
 }>()
+/** Its own measured height, so the transcript's floating buttons can shift up to clear it. */
+const emit = defineEmits<{ resize: [height: number] }>()
 
 /** Quiet words for a thinking stretch; one is picked per stretch, not per tick. */
 const THINKING_WORDS = ['thinking', 'musing', 'pondering', 'weighing', 'considering']
@@ -81,6 +84,14 @@ const leftText = computed(() => {
   }
 })
 
+/** Only for text the transcript doesn't already show inline (it folds above this length); nothing would be gained by repeating a short one twice. */
+const showThinkingBox = computed(
+  () =>
+    props.activity?.kind === 'thinking' &&
+    !!props.thinkingText &&
+    props.thinkingText.length > THINKING_FOLD_CHARS,
+)
+
 // Pinned to the bottom as the thinking text grows, so older lines scroll
 // away and the newest is always visible without a scrollbar to operate.
 const box = ref<HTMLDivElement | null>(null)
@@ -91,30 +102,55 @@ watch(
       if (box.value) box.value.scrollTop = box.value.scrollHeight
     }),
 )
+
+// An overlay, not laid out in flow (see the root wrapper below): its
+// height still has to be known outside, so the transcript's own floating
+// buttons can be nudged up clear of it while it shows.
+const root = ref<HTMLDivElement | null>(null)
+let observer: ResizeObserver | undefined
+watch(root, (el, prev) => {
+  if (prev && observer) observer.unobserve(prev)
+  if (el && observer) observer.observe(el)
+  if (!el) emit('resize', 0)
+})
+onMounted(() => {
+  // borderBoxSize (not contentRect, which excludes padding) is the full
+  // footprint the overlay actually covers, padding included.
+  observer = new ResizeObserver((entries) =>
+    emit('resize', entries[0]?.target.getBoundingClientRect().height ?? 0),
+  )
+  if (root.value) observer.observe(root.value)
+})
+onUnmounted(() => observer?.disconnect())
 </script>
 
 <template>
-  <div
-    v-if="activity"
-    class="border-t border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900"
-    data-test="activity-line"
-  >
+  <!-- An overlay over the bottom of the transcript, not inserted above the
+       composer: reflowing either on every turn start/end would move a
+       reader's scroll position and the composer itself. Full width so its
+       inner column can centre and align with the transcript's items. -->
+  <div v-if="activity" ref="root" class="pointer-events-none absolute inset-x-0 bottom-0 px-4 pb-2">
     <div
-      class="flex items-baseline justify-between gap-2 text-xs text-slate-500 dark:text-slate-400"
-      data-test="activity-label"
+      class="mx-auto max-w-3xl rounded bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-sm dark:bg-slate-900/90"
+      data-test="activity-line"
     >
-      <span>{{ leftText }}</span>
-      <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
-        durationText
-      }}</span>
-    </div>
-    <div
-      v-if="activity.kind === 'thinking' && thinkingText"
-      ref="box"
-      class="mt-1 max-h-20 overflow-y-auto rounded bg-slate-50 px-2 py-1 font-mono text-[11px] leading-4 text-slate-400 whitespace-pre-wrap dark:bg-slate-950/40 dark:text-slate-500"
-      data-test="activity-thinking"
-    >
-      {{ thinkingText }}
+      <div
+        class="flex items-baseline justify-between gap-2 text-xs text-slate-500 dark:text-slate-400"
+        data-test="activity-label"
+      >
+        <span>{{ leftText }}</span>
+        <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
+          durationText
+        }}</span>
+      </div>
+      <div
+        v-if="showThinkingBox"
+        ref="box"
+        class="mt-1 max-h-12 overflow-y-auto rounded bg-slate-50 px-2 py-1 font-mono text-[11px] leading-4 text-slate-400 whitespace-pre-wrap dark:bg-slate-950/40 dark:text-slate-500"
+        data-test="activity-thinking"
+      >
+        {{ thinkingText }}
+      </div>
     </div>
   </div>
 </template>

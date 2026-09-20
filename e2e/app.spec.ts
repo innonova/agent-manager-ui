@@ -42,7 +42,13 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
   await expect(page.locator('[data-item="system"]')).toContainText('session started')
 
-  // a turn streams and finishes
+  // a turn streams and finishes; the activity line overlays the transcript
+  // rather than being inserted above the composer, so neither moves when
+  // it appears
+  const transcript = page.getByTestId('transcript')
+  const composerBox = page.getByTestId('turn-input')
+  const transcriptHeightBefore = await transcript.evaluate((el) => el.clientHeight)
+  const composerTopBefore = await composerBox.evaluate((el) => el.getBoundingClientRect().top)
   await page.getByTestId('turn-input').fill('use a tool please')
   await page.getByTestId('send').click()
   await expect(page.locator('[data-item="user"]')).toContainText('use a tool please')
@@ -50,17 +56,25 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
   // the activity line: thinking first (its first stretch this session, so
   // the rotating word starts at "thinking"), with the elapsed time
-  // right-aligned and its live text streamed in above the composer
+  // right-aligned; the live thinking box stays hidden because this canned
+  // thinking text is short enough that the transcript already shows it inline
   await expect(page.getByTestId('activity-line')).toContainText('thinking')
   await expect(page.getByTestId('activity-duration')).toBeVisible()
-  await expect(page.getByTestId('activity-thinking')).toContainText(
+  await expect(page.getByTestId('activity-thinking')).toHaveCount(0)
+  await expect(page.locator('[data-item="thinking"]')).toContainText(
     'I should look at the file first.',
+  )
+  expect(await transcript.evaluate((el) => el.clientHeight)).toBe(transcriptHeightBefore)
+  expect(await composerBox.evaluate((el) => el.getBoundingClientRect().top)).toBe(
+    composerTopBefore,
   )
   // a tool call is one collapsed line with its result folded under it
   const call = page.locator('[data-item="tool_use"]').first()
   await expect(call).toContainText('Read')
   // then the tool: what kind of thing it is, timed the same way, no raw
-  // command or path (the transcript already has it) and the thinking text is gone
+  // command or path (the transcript already has it), derived from the
+  // transcript's own tool_use item rather than waiting on the manager's
+  // throttled status
   await expect(page.getByTestId('activity-line')).toContainText('reading a file')
   await expect(page.getByTestId('activity-line')).not.toContainText('example.txt')
   await expect(page.getByTestId('activity-duration')).toBeVisible()

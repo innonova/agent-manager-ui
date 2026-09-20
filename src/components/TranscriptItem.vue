@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import type { Item } from '@/api/types'
+import { THINKING_FOLD_CHARS } from '@/constants'
 import { when } from '@/time'
 
 const props = defineProps<{ item: Item; at?: number }>()
@@ -161,7 +162,7 @@ const cost = computed(() =>
   <!-- Summarised thinking is short, curated commentary, worth reading in
        place; only a long block is folded. -->
   <div
-    v-else-if="item.kind === 'thinking' && item.text.length <= 600"
+    v-else-if="item.kind === 'thinking' && item.text.length <= THINKING_FOLD_CHARS"
     class="text-sm whitespace-pre-wrap"
     data-item="thinking"
   >

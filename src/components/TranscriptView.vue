@@ -9,6 +9,8 @@ const props = defineProps<{
   /** Older history exists that is not loaded. */
   hasEarlier?: boolean
   loadingEarlier?: boolean
+  /** The activity overlay's current height, so the "latest" button shifts up clear of it. */
+  activityHeight?: number
 }>()
 const emit = defineEmits<{ decide: [requestId: string, option: string]; loadEarlier: [] }>()
 
@@ -117,6 +119,7 @@ onMounted(follow)
   <button
     v-if="!following"
     class="absolute right-6 bottom-24 rounded-full bg-slate-800 px-3 py-1 text-xs text-white shadow"
+    :style="activityHeight ? { bottom: `calc(6rem + ${activityHeight}px)` } : undefined"
     @click="((following = true), follow())"
   >
     ↓ latest
