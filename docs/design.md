@@ -127,7 +127,11 @@ Features grouped by status in working order (in progress, review,
 blocked, planned, done; done newest first with its date on the row,
 the rest by priority), each expandable to its markdown body, which is
 the spec followed by the agent's `## Report` sections and the human's
-`## Response` sections. Nothing here starts work: the human asks an
+`## Response` sections. A row that is not done carries a second, muted
+line: which of report or response came last, its date, and the first
+real paragraph of it (headings and list markers stripped, one line,
+the whole paragraph in the tooltip), so the list says where each
+feature stands without opening every one. Nothing here starts work: the human asks an
 agent in its conversation, and the manager's `feature.changed` events,
 fed by its poll of the files, show the feature going in progress and
 landing in review. Under an expanded feature a response box appends a
@@ -298,10 +302,13 @@ under a "Models" heading. Same shipped-or-custom-or-off states, at
 most 8 KB, and the page's footer says so instead of listing
 placeholders.
 
-The projects page has a "Harness note" block: per machine, whether
-agents there get the shipped note (no file, or one equal to the shipped
-text), a custom one or none, with a link
-to `/harness`, a page that is the template in the files view's Monaco
+The machine page (`/machine`, from the projects page) has, under the
+account usage, one block of rows per machine: the harness note, the
+models file, the method, the framing and the learnings log, each with
+what it is for, what is in force (the shipped text: no file, or one
+equal to the shipped text; a custom one; or none) and a link to its
+page. One block of rows rather than a card per text, so what a machine
+runs on is a glance down one column. The harness link goes to `/harness`, a page that is the template in the files view's Monaco
 editor (editable, wrapped, no bracket auto-closing since it is prose)
 with a host picker when there are several machines. Its toolbar:
 "save" (enabled once the text differs from what is in force), "load
@@ -469,7 +476,7 @@ counts. A collapsed project expands in place with a chevron, loading its
 agents then; a project you leave stays open, so several can be unfolded
 at once, and the set is kept in local storage across reloads. Clicking a
 project or an agent opens it, so switching context is one click from
-anywhere. "+ new" sits on each expanded
+anywhere. "+ agent", a small bordered button, sits on each expanded
 project. The projects page is for creating and editing projects, reached
 by "manage".
 

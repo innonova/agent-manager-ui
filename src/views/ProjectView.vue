@@ -78,7 +78,7 @@ const activeToolName = computed(() =>
 const activityHeight = ref(0)
 
 const showNew = ref(false)
-/** "+ new" under a project in the tree: go there first when it is not the current one. */
+/** "+ agent" under a project in the tree: go there first when it is not the current one. */
 async function openNew(projectId: string) {
   if (projectId !== props.id) {
     await router.push({ name: 'project', params: { id: projectId } })

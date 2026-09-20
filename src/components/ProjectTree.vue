@@ -195,12 +195,12 @@ events.on((f) => {
         <AgentCountBadges v-if="!isOpen(r.project.id)" :counts="r.agentCounts" class="shrink-0" />
         <button
           v-else
-          class="shrink-0 text-sm text-blue-700 hover:underline dark:text-blue-300"
+          class="shrink-0 rounded border border-slate-300 px-2 py-0.5 text-sm text-slate-700 hover:border-blue-500 hover:text-blue-700 dark:border-slate-700 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-300"
           :data-test="r.project.id === projectId ? 'new-agent' : 'tree-new-agent'"
           title="New agent in this project"
           @click="emit('newAgent', r.project.id)"
         >
-          + new
+          + agent
         </button>
       </div>
       <ul v-if="isOpen(r.project.id)">

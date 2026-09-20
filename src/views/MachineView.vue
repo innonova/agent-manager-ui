@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
 import { api } from '@/api/client'
 import type { AccountUsageRow, HarnessRow } from '@/api/types'
@@ -47,10 +47,78 @@ async function loadHarness() {
   method.value = (await api.noteFile('method').catch(() => ({ hosts: [] }))).hosts
   framing.value = (await api.noteFile('framing').catch(() => ({ hosts: [] }))).hosts
 }
-/** The framing row of a host, so the Method block can offer both documents on one line. */
-const framingOf = (host: string) => framing.value.find((r) => r.host === host) ?? null
-const sourceLabel = (s: HarnessRow['source']) =>
-  s === 'built-in' ? 'the shipped text' : s === 'custom' ? 'a custom text' : 'off'
+const sourceLabel = (s: HarnessRow['source'], what: 'note' | 'text') =>
+  s === 'built-in' ? `the shipped ${what}` : s === 'custom' ? `a custom ${what}` : 'off'
+/**
+ * The four texts and the log, one row each, per machine: what it is,
+ * what it is for, what is in force, and where to read or edit it. One
+ * block of rows rather than a card per text: the answer to "what is this
+ * machine running on" is a glance down one column.
+ */
+const rows = computed(() => {
+  const hostNames = [...new Set(harness.value.map((r) => r.host))]
+  const of = (list: HarnessRow[], host: string) => list.find((r) => r.host === host) ?? null
+  return hostNames.map((host) => {
+    const items: {
+      key: string
+      name: string
+      what: string
+      source: string | null
+      route: string
+      link: string
+    }[] = []
+    const h = of(harness.value, host)
+    if (h)
+      items.push({
+        key: 'harness',
+        name: 'Harness note',
+        what: 'What every agent is told about running here, at session start; a change reaches an agent at its next restart.',
+        source: sourceLabel(h.source, 'note'),
+        route: 'harness',
+        link: 'view / edit',
+      })
+    const m = of(models.value, host)
+    if (m)
+      items.push({
+        key: 'models',
+        name: 'Models',
+        what: 'Which model suits which work, as we have learned it; rendered into every note, so an agent that starts a helper chooses with it in front of it.',
+        source: sourceLabel(m.source, 'text'),
+        route: 'models',
+        link: 'view / edit',
+      })
+    const me = of(method.value, host)
+    if (me)
+      items.push({
+        key: 'method',
+        name: 'Method',
+        what: 'How work is run here: features, the gate, helpers, reviews.',
+        source: sourceLabel(me.source, 'text'),
+        route: 'method',
+        link: 'view / edit',
+      })
+    const fr = of(framing.value, host)
+    if (fr)
+      items.push({
+        key: 'framing',
+        name: 'Framing',
+        what: 'How a feature and a brief are written; the method’s companion.',
+        source: sourceLabel(fr.source, 'text'),
+        route: 'framing',
+        link: 'view / edit',
+      })
+    if (me)
+      items.push({
+        key: 'learnings',
+        name: 'Learnings',
+        what: 'What anyone learned, recorded at the moment of noticing; the method and the framing are curated from it now and then.',
+        source: null,
+        route: 'learnings',
+        link: 'read',
+      })
+    return { host, items }
+  })
+})
 
 onMounted(() => {
   void loadUsage()
@@ -97,126 +165,42 @@ onMounted(() => {
           >
         </div>
       </div>
-      <!-- the harness note's template, per machine: what every agent is told at session start -->
+      <!-- the four texts an operator keeps, and the log, per machine -->
       <div
-        v-if="harness.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
-        data-test="harness"
+        v-if="rows.length"
+        class="rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
+        data-test="texts"
       >
         <div
           class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
         >
-          Harness note
+          What agents are told, and how work runs
         </div>
-        <div
-          v-for="h in harness"
-          :key="h.host"
-          class="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5"
-        >
-          <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
-          <span class="text-slate-500 dark:text-slate-400" data-test="harness-source">{{
-            h.source === 'built-in'
-              ? 'the shipped note'
-              : h.source === 'custom'
-                ? 'a custom note'
-                : 'off'
-          }}</span>
-          <RouterLink
-            :to="{ name: 'harness', query: { host: h.host } }"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="harness-edit"
-            >view / edit</RouterLink
+        <template v-for="h in rows" :key="h.host">
+          <div v-if="hosts.several" class="mt-2 font-medium" data-test="texts-host">
+            {{ h.host }}
+          </div>
+          <div
+            v-for="it in h.items"
+            :key="it.key"
+            class="grid grid-cols-[7rem_1fr_auto_auto] items-baseline gap-x-4 border-t border-slate-100 py-2 first:border-t-0 dark:border-slate-800"
+            :data-test="it.key"
           >
-        </div>
-        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
-          What every agent is told about running here, at session start; a change reaches an agent
-          at its next restart.
-        </p>
-      </div>
-      <!-- the models file, per machine: the house view rendered into every note -->
-      <div
-        v-if="models.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
-        data-test="models"
-      >
-        <div
-          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
-        >
-          Models
-        </div>
-        <div
-          v-for="h in models"
-          :key="h.host"
-          class="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5"
-        >
-          <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
-          <span class="text-slate-500 dark:text-slate-400" data-test="models-source">{{
-            sourceLabel(h.source)
-          }}</span>
-          <RouterLink
-            :to="{ name: 'models', query: { host: h.host } }"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="models-edit"
-            >view / edit</RouterLink
-          >
-        </div>
-        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
-          Which model suits which work, as we have learned it; every agent gets it in its note, so
-          one that starts a helper chooses with it in front of it.
-        </p>
-      </div>
-      <!-- the method and its framing, per machine, with the log both are curated from -->
-      <div
-        v-if="method.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
-        data-test="method"
-      >
-        <div
-          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
-        >
-          Method
-        </div>
-        <div
-          v-for="h in method"
-          :key="h.host"
-          class="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5"
-        >
-          <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
-          <span class="text-slate-500 dark:text-slate-400" data-test="method-source">{{
-            sourceLabel(h.source)
-          }}</span>
-          <RouterLink
-            :to="{ name: 'method', query: { host: h.host } }"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="method-edit"
-            >view / edit</RouterLink
-          >
-          <span v-if="framingOf(h.host)" class="text-slate-400 dark:text-slate-500">framing</span>
-          <span
-            v-if="framingOf(h.host)"
-            class="text-slate-500 dark:text-slate-400"
-            data-test="framing-source"
-            >{{ sourceLabel(framingOf(h.host)!.source) }}</span
-          >
-          <RouterLink
-            v-if="framingOf(h.host)"
-            :to="{ name: 'framing', query: { host: h.host } }"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="framing-edit"
-            >view / edit</RouterLink
-          >
-          <RouterLink
-            :to="{ name: 'learnings', query: { host: h.host } }"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="learnings-link"
-            >learnings</RouterLink
-          >
-        </div>
-        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
-          How work is run here: features, the gate, helpers, reviews — and, beside it, the framing:
-          how a feature and a brief are written. Both are curated now and then from the learnings
-          log, where anyone records what was learned at the moment of noticing.
-        </p>
+            <span class="font-medium">{{ it.name }}</span>
+            <span class="text-sm text-slate-500 dark:text-slate-400">{{ it.what }}</span>
+            <span
+              class="text-sm whitespace-nowrap text-slate-500 dark:text-slate-400"
+              :data-test="`${it.key}-source`"
+              >{{ it.source ?? '' }}</span
+            >
+            <RouterLink
+              :to="{ name: it.route, query: { host: h.host } }"
+              class="text-sm whitespace-nowrap text-blue-700 hover:underline dark:text-blue-300"
+              :data-test="it.key === 'learnings' ? 'learnings-link' : `${it.key}-edit`"
+              >{{ it.link }}</RouterLink
+            >
+          </div>
+        </template>
       </div>
     </div>
   </AppShell>

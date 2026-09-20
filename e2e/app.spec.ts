@@ -724,9 +724,8 @@ test('the left panes resize by their handle and remember the width', async ({ pa
     },
     [x, box.y + 100],
   )
-  await page.waitForTimeout(100)
+  await expect.poll(async () => (await aside.boundingBox())!.width).toBeGreaterThan(before + 100)
   const after = (await aside.boundingBox())!.width
-  expect(after).toBeGreaterThan(before + 100)
   await page.reload()
   await expect(page.getByTestId('agent-row').first()).toBeVisible()
   expect((await page.locator('aside').first().boundingBox())!.width).toBeCloseTo(after, 0)
@@ -747,8 +746,7 @@ test('the left panes resize by their handle and remember the width', async ({ pa
     },
     [b.x + 1, b.y + 100],
   )
-  await page.waitForTimeout(100)
-  expect((await list.boundingBox())!.width).toBeGreaterThan(w0 + 60)
+  await expect.poll(async () => (await list.boundingBox())!.width).toBeGreaterThan(w0 + 60)
 })
 
 test('the sidebar is a tree of every project: switch projects and agents without going back', async ({
