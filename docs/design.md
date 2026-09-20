@@ -154,7 +154,10 @@ one), and the agent header shows the model the vendor reports as active
 as a chip on its second line, with an "effort <level>" chip after it
 when one was set, an "asks" chip in ask mode, and the profile and
 working directory on the right: everything the agent was created with
-is on that line, since there is no editing. The new-agent form also has a permissions choice: `bypass` (default, the agent
+is on that line, since there is no editing. A "harness" link before
+the profile opens what the agent was told about running here at its
+last session start (the manager's harness note, see its design doc);
+it is absent when the operator turned the note off. The new-agent form also has a permissions choice: `bypass` (default, the agent
 acts without asking) or `ask` (the vendor's gated tools wait for the
 human). It is fixed at creation and applied when the agent's session
 starts.

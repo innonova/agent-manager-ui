@@ -49,6 +49,8 @@ export interface Agent {
   /** Vendor model and effort names passed at session start; null is the vendor's default. */
   model: string | null
   effort: string | null
+  /** What the agent was told about running here at its last session start; null when the note is off. */
+  harnessNote?: string | null
 }
 
 export interface HostStatus {

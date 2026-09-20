@@ -47,6 +47,7 @@ const host = computed(() => hosts.byName(hostName.value))
 const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
+const showNote = ref(false)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 
 const showNew = ref(false)
@@ -329,6 +330,16 @@ async function archive() {
             <div class="flex min-w-0 grow justify-center">
               <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
             </div>
+            <button
+              v-if="current.agent.harnessNote"
+              type="button"
+              class="shrink-0 hover:underline"
+              title="what the agent was told about running here, at its last session start"
+              data-test="harness-note-link"
+              @click="showNote = true"
+            >
+              harness
+            </button>
             <span class="shrink-0 truncate font-mono" data-test="agent-cwd-label"
               >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
             >
@@ -374,6 +385,21 @@ async function archive() {
       </section>
     </div>
 
+    <ModalForm
+      v-if="showNote && current?.agent.harnessNote"
+      title="What the agent was told"
+      submit-label="close"
+      @close="showNote = false"
+      @submit="showNote = false"
+    >
+      <pre
+        class="max-h-96 overflow-auto rounded bg-slate-50 p-3 text-xs whitespace-pre-wrap dark:bg-slate-800"
+        data-test="harness-note"
+        >{{ current.agent.harnessNote }}</pre>
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Given at session start; a changed template reaches the agent at its next restart.
+      </p>
+    </ModalForm>
     <ModalForm
       v-if="showNew"
       title="New agent"
