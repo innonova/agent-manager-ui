@@ -76,6 +76,19 @@ export interface PermissionOption {
   label: string
 }
 
+export type ActivityKind = 'thinking' | 'writing' | 'tool' | 'waiting'
+
+export interface ActivityInfo {
+  kind: ActivityKind
+  /** What runs: a shell tool's command, a read/edit's path, else the tool's name. */
+  detail?: string
+  /** The record time the activity started, so a client can say "thinking for 12 s". */
+  since: number
+}
+
+/** Null outside a turn. */
+export type Activity = ActivityInfo | null
+
 export interface AgentStatus {
   state: AgentState
   error: string | null
@@ -88,6 +101,8 @@ export interface AgentStatus {
   queued: number
   /** The vendor account's limits as last reported through this agent. */
   usage: AccountUsage | null
+  /** What the last thing on the stream was doing; null outside a turn. */
+  activity: Activity
 }
 
 export interface AccountUsage {

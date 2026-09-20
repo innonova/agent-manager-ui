@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
 import type { Profile, TurnImage } from '@/api/types'
+import ActivityLine from '@/components/ActivityLine.vue'
 import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
@@ -49,6 +50,18 @@ const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
 const showNote = ref(false)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
+const activity = computed(() => current.value?.status.activity ?? null)
+/** The current thinking item's live text: only the last item counts, since nothing else appends while it streams. */
+const liveThinkingText = computed(() => {
+  if (activity.value?.kind !== 'thinking') return null
+  const last = items.value[items.value.length - 1]
+  return last?.item.kind === 'thinking' ? last.item.text : null
+})
+const activeToolName = computed(() => {
+  if (activity.value?.kind !== 'tool') return null
+  const last = items.value[items.value.length - 1]
+  return last?.item.kind === 'tool_use' ? last.item.name : null
+})
 
 const showNew = ref(false)
 /** "+ new" under a project in the tree: go there first when it is not the current one. */
@@ -402,6 +415,11 @@ async function archive() {
             }}</span>
           </div>
         </div>
+        <ActivityLine
+          :activity="activity"
+          :thinking-text="liveThinkingText"
+          :tool-name="activeToolName"
+        />
         <TurnInput
           ref="turnInput"
           :key="current.agent.id"

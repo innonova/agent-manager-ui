@@ -351,6 +351,25 @@ when that is meant. An exited agent is simply started. A session frame
 makes the store refetch the agent's record, since a new session changes
 it (the session id, the harness note it was given).
 
+## What the agent is doing
+
+The manager's `status.activity` (`{ kind: 'thinking' | 'writing' | 'tool' |
+'waiting', detail?, since } | null`) says what the last thing on the
+stream was doing; a line right above the composer shows it, muted, while
+it is not null: "thinking for 12 s" (the duration ticks locally from
+`since`), "writing", a tool's `detail` with a verb guessed from the last
+`tool_use` item's name ("reading", "editing", "running", "searching",
+"fetching"), or "waiting for your answer". While `activity.kind` is
+`thinking`, the tail of the current transcript's last item (when it is
+itself a `thinking` item) streams in under the line, three or four lines,
+monospace, muted, pinned to the bottom as it grows so older text scrolls
+away; it is the live view of the same item the transcript already shows
+(`Transcript rendering`), nothing new is kept. The line and the streamed
+text disappear together the moment `activity` goes back to `null` (a turn
+ending, or any other state change), so the layout only holds the extra
+height while a turn is actually running. The state badge and header stay
+as they are; this is additional, not a replacement.
+
 ## The sidebar is a tree of projects
 
 Inside a project, the sidebar lists every project (with a host badge
@@ -426,8 +445,10 @@ clicking it brings the window up on that agent.
   turn and counts, reload, stop and resume, display and Enter-key
   preferences, desktop notifications, the update badge, drafts, the files
   and changes views, permissions, users, presence, features, editing a
-  project with a restart, and steering. There is no test for a dropped
-  socket; the store's reconnect refetch is covered by the unit test.
+  project with a restart, steering, and the activity line (thinking then
+  a tool call, streamed and gone at the turn's end). There is no test for
+  a dropped socket; the store's reconnect refetch is covered by the unit
+  test.
 
 ## Milestones
 
