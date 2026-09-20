@@ -48,7 +48,7 @@ const THINKING_WORDS = [
   'turning it over',
   'working it out',
   'connecting the dots',
-  'scratching its head',
+  'scratching my head',
   'gathering wool',
   'wondering',
   'reckoning',
