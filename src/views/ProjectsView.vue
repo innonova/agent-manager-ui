@@ -67,7 +67,7 @@ async function saveHarness(template: string | null) {
     await api.saveHarness(harnessEditing.value.host, template)
     harnessEditing.value = null
     await loadHarness()
-    notifications.push('info', 'saved; agents get it at their next restart')
+    useNotificationsStore().push('info', 'saved; agents get it at their next restart')
   } catch (e) {
     harnessError.value = e instanceof ApiError ? e.message : String(e)
   } finally {
