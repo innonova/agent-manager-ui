@@ -112,9 +112,10 @@ The marker is the per-user, per-project read cursor. It moves to HEAD
 when the reader leaves the view (a route change or an unmount), not when
 they open it, so "you last looked here" means the last time they had it
 open; a tab simply closed on the view has not looked away. The changes
-tab and the agent page's "N new since you last looked" link both count
-commits since the marker (`GET .../commits?count=1`); the count clears
-when the reader leaves. Data comes from `GET .../commits` (list and
+tab's badge counts commits since the marker (`GET .../commits?count=1`)
+and clears when the reader leaves; the agent page once carried the same
+count as a "N new since you last looked" link, dropped as a second copy
+of the badge. Data comes from `GET .../commits` (list and
 attribution) and `GET .../commits/:repo/:hash[?path=]` (a commit's file
 list, or one file's diff); the working tree's diff reuses the existing
 `GET .../changes` and `.../changes/file` routes at `base=<head>`. The

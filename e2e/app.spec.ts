@@ -525,9 +525,9 @@ test('changes view: the commit list, a commit diff, the working tree, and the ma
   await page.getByTestId('agent-name-input').fill('reviewer')
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
-  // the agent page links to the changes since the cursor (the fixture has one commit, and uncommitted work)
-  await expect(page.getByTestId('unread-link')).toContainText('new since you last looked')
-  await page.getByTestId('unread-link').click()
+  // the changes tab counts the commits since the cursor (the fixture has one commit, and uncommitted work)
+  await expect(page.getByTestId('tab-changes')).toContainText(/\d/)
+  await page.getByTestId('tab-changes').click()
   await expect(page).toHaveURL(/\/changes$/)
 
   // the working tree of the git repo shows above the commits (a modified and an untracked file)

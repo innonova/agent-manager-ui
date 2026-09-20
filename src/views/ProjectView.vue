@@ -15,7 +15,6 @@ import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
-import { useChangesStore } from '@/stores/changes'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { since, when } from '@/time'
@@ -23,7 +22,6 @@ import { useNotificationsStore } from '@/stores/notifications'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
-const changes = useChangesStore()
 const drafts = useDraftsStore()
 const presence = usePresenceStore()
 watch(
@@ -97,7 +95,6 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
 
-onMounted(() => void changes.countUnread(props.id))
 let loadGen = 0
 async function loadProject() {
   const gen = ++loadGen // a newer load (fast tree clicks) wins; a stale one changes nothing
@@ -327,13 +324,6 @@ async function archive() {
             >
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
             </span>
-            <RouterLink
-              v-if="changes.unread.get(id)"
-              :to="{ name: 'changes', params: { id } }"
-              class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-              data-test="unread-link"
-              >{{ changes.unread.get(id) }} new since you last looked</RouterLink
-            >
             <div
               class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700"
               data-test="agent-actions"
