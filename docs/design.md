@@ -433,15 +433,18 @@ open-ended kinds end in an animated ellipsis, the dots lighting up in
 turn (CSS only, fixed width so the count after it does not shift, still
 under `prefers-reduced-motion`): the line is visibly alive between the
 once-a-second status updates. `tool` says what kind of thing
-the last `tool_use` item's name is ("running a command", "reading a
-file", "editing a file", "searching", else "waiting for a tool"), never
-the raw command or path: the transcript already has that (`Transcript
-rendering`). That `tool` phase is read from the transcript itself, not
-`status.activity.kind`, whenever the last item is a `tool_use` without
-its result yet: the manager throttles `activity`-only announcements to
-at most one a second, which can otherwise leave the line saying
-"thinking" for a moment after the transcript already shows the call
-running. When `tokens` (the turn's output so far, one number that only grows
+the tool is ("running a command", "reading a file", "editing a file",
+"searching", "running a helper", and so on for the names the three CLIs
+use; a name with no phrase still shows as "running <name>", an MCP
+tool's by its own name; "waiting for a tool" only when the status names
+none), never the raw command or path: the transcript already has that
+(`Transcript rendering`). The name comes from `status.activity.tool`,
+which the manager sets from the moment a call starts streaming; the
+transcript's last `tool_use` item without its result is the fallback,
+and still forces the `tool` phase whenever it is present, since the
+manager throttles `activity`-only announcements to at most one a second,
+which can otherwise leave the line saying "thinking" for a moment after
+the transcript already shows the call running. When `tokens` (the turn's output so far, one number that only grows
 within the turn, absent until a vendor has said anything usable) is
 present, it follows the word and its dots, before the elapsed time,
 with thousands separated: "musing… · 1,340 tokens" and "12 s" at the

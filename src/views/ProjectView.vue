@@ -66,10 +66,13 @@ const effectiveActivity = computed(() => {
   const a = activity.value
   const pending = pendingToolUse.value
   if (!a || !pending || a.kind === 'tool' || a.kind === 'waiting') return a
-  return { kind: 'tool' as const, tokens: a.tokens, since: pending.since }
+  return { kind: 'tool' as const, tool: pending.name, tokens: a.tokens, since: pending.since }
 })
+/** The status names the tool itself from the moment the call starts streaming; the transcript's item is the fallback for a status without one. */
 const activeToolName = computed(() =>
-  effectiveActivity.value?.kind === 'tool' ? (pendingToolUse.value?.name ?? null) : null,
+  effectiveActivity.value?.kind === 'tool'
+    ? (effectiveActivity.value.tool ?? pendingToolUse.value?.name ?? null)
+    : null,
 )
 /** The activity overlay's measured height, so the transcript's floating buttons can clear it. */
 const activityHeight = ref(0)
