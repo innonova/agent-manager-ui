@@ -627,6 +627,7 @@ test('edit a project from inside it; save and restart resumes its idle agents', 
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
   await expect(page.getByTestId('project-title')).toHaveText('Demo')
+  await page.getByTestId('project-switcher').click()
   await page.getByTestId('edit-project-link').click()
   await expect(page.getByRole('heading', { name: 'Edit project' })).toBeVisible()
   await expect(page.getByTestId('project-name')).toHaveValue('Demo')

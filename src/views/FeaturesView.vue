@@ -8,7 +8,7 @@ import type { Feature, FeatureStatus } from '@/api/types'
 import AppShell from '@/components/AppShell.vue'
 import FeatureStatusBadge from '@/components/FeatureStatusBadge.vue'
 import ModalForm from '@/components/ModalForm.vue'
-import ProjectTabs from '@/components/ProjectTabs.vue'
+import ProjectHeader from '@/components/ProjectHeader.vue'
 import { useDraftsStore } from '@/stores/drafts'
 import { useFeaturesStore } from '@/stores/features'
 import { useNotificationsStore } from '@/stores/notifications'
@@ -146,11 +146,7 @@ async function create() {
 
 <template>
   <AppShell>
-    <template #title>
-      <span class="text-slate-400 dark:text-slate-500">/</span>
-      <span data-test="project-title">{{ project?.name ?? '…' }}</span>
-      <ProjectTabs :id="id" />
-    </template>
+    <template #title><ProjectHeader :id="id" /></template>
     <div class="mx-auto flex h-full max-w-5xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Features</h1>

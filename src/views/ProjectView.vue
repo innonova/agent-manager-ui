@@ -6,7 +6,7 @@ import type { Profile, TurnImage } from '@/api/types'
 import ActivityLine from '@/components/ActivityLine.vue'
 import AppShell from '@/components/AppShell.vue'
 import ModalForm from '@/components/ModalForm.vue'
-import ProjectTabs from '@/components/ProjectTabs.vue'
+import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
 import UsageChip from '@/components/UsageChip.vue'
 import ProjectTree from '@/components/ProjectTree.vue'
@@ -18,7 +18,6 @@ import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { since, when } from '@/time'
 import { useNotificationsStore } from '@/stores/notifications'
-import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
@@ -37,13 +36,6 @@ const router = useRouter()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
 const notifications = useNotificationsStore()
-const hosts = useHostsStore()
-/** The project's machine: from the row, or from the id's prefix when the row is gone (its machine is down). */
-const hostName = computed(
-  () =>
-    project.value?.host ?? (props.id.includes(':') ? props.id.split(':')[0] : hosts.local?.name),
-)
-const host = computed(() => hosts.byName(hostName.value))
 
 const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
@@ -244,38 +236,7 @@ async function archive() {
 
 <template>
   <AppShell>
-    <template #title>
-      <span class="text-slate-400 dark:text-slate-500">/</span>
-      <span data-test="project-title">{{
-        project?.name ?? (host && !host.connected ? '(unreachable)' : '…')
-      }}</span>
-      <span
-        v-if="hosts.several && hostName"
-        class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-        data-test="project-host"
-        >{{ hostName }}</span
-      >
-      <span
-        v-if="host && (!host.connected || !host.daemon || host.error)"
-        class="rounded bg-amber-100 px-2 py-0.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
-        data-test="host-warning"
-        >{{
-          !host.connected
-            ? `${host.name} unreachable`
-            : host.error
-              ? `${host.name}: ${host.error}`
-              : `${host.name}: daemon disconnected`
-        }}</span
-      >
-      <RouterLink
-        :to="{ name: 'projects', query: { edit: id } }"
-        class="text-sm text-slate-400 hover:text-slate-900 hover:underline dark:text-slate-500 dark:hover:text-slate-100"
-        title="Edit the project: name, repositories, default profile"
-        data-test="edit-project-link"
-        >edit</RouterLink
-      >
-      <ProjectTabs :id="id" />
-    </template>
+    <template #title><ProjectHeader :id="id" /></template>
     <div class="flex h-full">
       <aside
         class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"

@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch, nex
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
-import ProjectTabs from '@/components/ProjectTabs.vue'
+import ProjectHeader from '@/components/ProjectHeader.vue'
 import { useChangesStore } from '@/stores/changes'
 import { useFeaturesStore } from '@/stores/features'
 import { useDraftsStore } from '@/stores/drafts'
@@ -89,7 +89,6 @@ async function openChange(path: string) {
   await changes.openFile(path)
   void router.replace({ query: { ...route.query, path } })
 }
-const project = computed(() => projects.byId.get(props.id)?.project)
 const size = computed(() => {
   const n = files.open?.size ?? 0
   return n < 1024
@@ -284,11 +283,7 @@ async function createFolder() {
 
 <template>
   <AppShell>
-    <template #title>
-      <span class="text-slate-400 dark:text-slate-500">/</span>
-      <span data-test="project-title">{{ project?.name ?? '…' }}</span>
-      <ProjectTabs :id="id" />
-    </template>
+    <template #title><ProjectHeader :id="id" /></template>
     <div class="flex h-full">
       <aside
         class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
