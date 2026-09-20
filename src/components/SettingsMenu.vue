@@ -144,8 +144,16 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         }}
       </p>
       <RouterLink
-        :to="{ name: 'users' }"
+        :to="{ name: 'machine' }"
         class="mt-3 block text-sm text-blue-700 hover:underline dark:text-blue-300"
+        title="account usage, the harness note, the models file, the method and framing, the learnings log"
+        data-test="machine-link"
+        @click="open = false"
+        >This machine…</RouterLink
+      >
+      <RouterLink
+        :to="{ name: 'users' }"
+        class="mt-1 block text-sm text-blue-700 hover:underline dark:text-blue-300"
         data-test="users-link"
         @click="open = false"
         >Users…</RouterLink

@@ -105,7 +105,7 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
 
   // counts on the project list reflect it
   await page.getByRole('link', { name: 'agent-manager' }).click()
-  await expect(page.locator('[data-count="error"]')).toContainText('1')
+  await expect(page.getByTestId('project-attention')).toContainText('1 in error') // the row's attention signal
 
   // a reload rebuilds the transcript from the manager
   await page.goBack()
@@ -792,6 +792,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   page,
 }) => {
   await login(page)
+  await page.goto('/machine')
   await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
   await page.getByTestId('harness-edit').click()
   await expect(page).toHaveURL(/\/harness/)
@@ -803,8 +804,9 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('harness-save')).toBeEnabled()
   await page.getByTestId('harness-save').click()
   await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
-  await page.getByRole('link', { name: 'projects' }).click()
+  await page.goto('/machine')
   await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
+  await page.goto('/')
   await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
@@ -814,7 +816,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('harness-note')).toHaveText('Custom note for worker in Demo.')
   await page.getByTestId('form-submit').click()
   // back to the built-in one
-  await page.getByRole('link', { name: 'agent-manager' }).click()
+  await page.goto('/machine')
   await page.getByTestId('harness-edit').click()
   await expect(page.getByTestId('harness-editor')).toContainText('Custom note for')
   page.once('dialog', (d) => d.accept())
@@ -822,7 +824,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
   await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
   // the models file: the same page, the house view rendered into every note
-  await page.getByRole('link', { name: 'projects' }).click()
+  await page.goto('/machine')
   await expect(page.getByTestId('models-source')).toHaveText('the shipped text')
   await page.getByTestId('models-edit').click()
   await expect(page).toHaveURL(/\/models/)
@@ -838,17 +840,17 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('harness-editor')).toContainText('Which model for which work') // Monaco renders only the visible lines
   // the method and its framing, the same page again; and the learnings
   // log, appended and listed
-  await page.getByRole('link', { name: 'projects' }).click()
+  await page.goto('/machine')
   await expect(page.getByTestId('method-source')).toHaveText('the shipped text')
   await page.getByTestId('method-edit').click()
   await expect(page).toHaveURL(/\/method/)
   await expect(page.getByTestId('harness-editor')).toContainText('The method') // Monaco renders only the visible lines
-  await page.getByRole('link', { name: 'projects' }).click()
+  await page.goto('/machine')
   await expect(page.getByTestId('framing-source')).toHaveText('the shipped text')
   await page.getByTestId('framing-edit').click()
   await expect(page).toHaveURL(/\/framing/)
   await expect(page.getByTestId('harness-editor')).toContainText('Framing work')
-  await page.getByRole('link', { name: 'projects' }).click()
+  await page.goto('/machine')
   await page.getByTestId('learnings-link').click()
   await expect(page).toHaveURL(/\/learnings/)
   await page
@@ -874,6 +876,8 @@ test('an agent reporting its account usage shows a chip in its header and a bloc
   await expect(page.getByTestId('usage-chip').first()).toContainText('5h 85%', { timeout: 20000 })
   await expect(page.getByTestId('usage-chip').first()).toContainText('7d 43%')
   await page.getByRole('link', { name: 'agent-manager' }).click()
+  await expect(page.getByTestId('usage-line')).toContainText('fake') // one quiet line on the projects page
+  await page.goto('/machine')
   await expect(page.getByTestId('usage')).toContainText('fake')
   await expect(page.getByTestId('usage').getByTestId('usage-chip').first()).toContainText('5h 85%')
 })
