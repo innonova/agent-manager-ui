@@ -721,7 +721,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   page,
 }) => {
   await login(page)
-  await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
+  await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
   await page.getByTestId('harness-edit').click()
   await expect(page).toHaveURL(/\/harness/)
   await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
@@ -747,7 +747,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('harness-editor')).toContainText('Custom note for')
   page.once('dialog', (d) => d.accept())
   await page.getByTestId('harness-use-builtin').click()
-  await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
+  await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
   await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
 })
 

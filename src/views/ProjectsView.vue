@@ -191,7 +191,7 @@ async function submit(restart = false) {
           <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
           <span class="text-slate-500 dark:text-slate-400" data-test="harness-source">{{
             h.source === 'built-in'
-              ? 'the built-in note'
+              ? 'the shipped note'
               : h.source === 'custom'
                 ? 'a custom note'
                 : 'off'

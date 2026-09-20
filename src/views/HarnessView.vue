@@ -28,7 +28,7 @@ const current = computed(() => rows.value.find((r) => r.host === host.value) ?? 
 const dirty = computed(() => !!current.value && text.value !== current.value.template)
 const sourceLabel = computed(() =>
   current.value?.source === 'built-in'
-    ? 'the built-in note'
+    ? 'the shipped note'
     : current.value?.source === 'custom'
       ? 'a custom note'
       : 'off: agents here get no note',
@@ -40,7 +40,7 @@ async function load() {
   host.value = rows.value.some((r) => r.host === wanted) ? wanted : (rows.value[0]?.host ?? '')
   loaded.value = true
 }
-/** The editor shows the template in force; off means an empty file, shown as the built-in text to start from. */
+/** The editor shows the template in force; off means an empty file, shown as the shipped text to start from. */
 watch(current, (row) => {
   text.value = row ? (row.source === 'off' ? row.builtIn : row.template) : ''
 })
@@ -50,7 +50,7 @@ function pick(h: string) {
   void router.replace({ name: 'harness', query: { host: h } })
 }
 
-/** `template` null: back to the built-in one; empty: off; text: the operator's. */
+/** `template` null: the shipped text written back; empty: off; text: the operator's. */
 async function save(template: string | null) {
   if (!current.value) return
   busy.value = true
@@ -61,7 +61,7 @@ async function save(template: string | null) {
     notifications.push(
       'info',
       template === null
-        ? 'back to the built-in note; agents get it at their next restart'
+        ? 'back to the shipped note; agents get it at their next restart'
         : template.trim() === ''
           ? 'the note is off; agents get none at their next restart'
           : 'saved; agents get it at their next restart',
@@ -73,7 +73,7 @@ async function save(template: string | null) {
   }
 }
 function useBuiltIn() {
-  if (!confirm('Remove the custom note on this machine and use the built-in one?')) return
+  if (!confirm("Replace this machine's note with the shipped text?")) return
   void save(null)
 }
 function turnOff() {
@@ -130,22 +130,22 @@ onMounted(load)
         <button
           type="button"
           class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-          title="put the built-in text in the editor (nothing is saved until you save)"
+          title="put the shipped text in the editor (nothing is saved until you save)"
           data-test="harness-load-builtin"
           @click="loadBuiltIn"
         >
-          load the built-in text
+          load the shipped text
         </button>
         <button
           v-if="current && current.source !== 'built-in'"
           type="button"
           class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-          title="remove this machine's file"
+          title="write the shipped text back into this machine's file"
           data-test="harness-use-builtin"
           :disabled="busy"
           @click="useBuiltIn"
         >
-          use the built-in note
+          use the shipped note
         </button>
         <button
           v-if="current && current.source !== 'off'"
