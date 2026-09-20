@@ -239,6 +239,18 @@ export const useAgentsStore = defineStore('agents', () => {
     }
   }
 
+  /**
+   * Loads pages backward until `index` is in the transcript, so a client
+   * can scroll to a commit's item however far back it is. Opens the tail
+   * first; stops at the index, or when there is no earlier history.
+   */
+  async function loadUntil(agentId: string, index: number): Promise<void> {
+    if (!loaded.has(agentId)) await loadItems(agentId)
+    let guard = 0
+    while ((earliest.get(agentId) ?? 0) > index && hasEarlier(agentId) && guard++ < 500)
+      await loadEarlier(agentId)
+  }
+
   async function create(
     projectId: string,
     input: {
@@ -302,6 +314,7 @@ export const useAgentsStore = defineStore('agents', () => {
     load,
     loadItems,
     loadEarlier,
+    loadUntil,
     hasEarlier,
     lastAgent,
     loadingEarlier,

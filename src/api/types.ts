@@ -300,11 +300,14 @@ export interface Commit {
   author: string
   /** Author time, milliseconds. */
   at: number
-  /** The agent's name when the commit falls in a run's window, else null. */
+  /** The agent's name: the turn that made it if recorded, else a run window, else null (the git author is then who). */
   agent: string | null
   agentId: string | null
   /** The feature slug when the commit falls in a run's window, else null. */
   feature: string | null
+  /** The session and transcript item index of the commit, when a turn made it: for linking into the transcript. */
+  sessionId: string | null
+  item: number | null
   /** After the caller's read cursor in its repository. */
   unread: boolean
 }

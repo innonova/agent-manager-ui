@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import ResizeHandle from '@/components/ResizeHandle.vue'
 import { useResizable } from '@/composables/useResizable'
-import { RouterLink, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
 import type { Profile, TurnImage } from '@/api/types'
 import ActivityLine from '@/components/ActivityLine.vue'
@@ -44,6 +44,9 @@ const showNote = ref(false)
 const showDetails = ref(false)
 const treePane = useResizable('project-tree', 288)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
+const route = useRoute()
+/** An item index to scroll the transcript to (a link from the changes tab). */
+const scrollTarget = ref<number | null>(null)
 const activity = computed(() => current.value?.status.activity ?? null)
 /** The current thinking item's live text: only the last item counts, since nothing else appends while it streams. */
 const liveThinkingText = computed(() => {
@@ -133,11 +136,22 @@ watch(
 )
 
 watch(
-  () => props.agentId,
-  async (id) => {
-    if (id) {
-      agents.lastAgent.set(props.id, id)
+  () => [props.agentId, route.query.item] as const,
+  async ([id, itemQ]) => {
+    if (!id) {
+      scrollTarget.value = null
+      return
+    }
+    agents.lastAgent.set(props.id, id)
+    // a link from the changes tab carries ?item=<index>: load back to it, then scroll
+    const n =
+      typeof itemQ === 'string' && Number.isInteger(Number(itemQ)) ? Number(itemQ) : null
+    if (n != null) {
+      await agents.loadUntil(id, n)
+      scrollTarget.value = n
+    } else {
       await agents.loadItems(id)
+      scrollTarget.value = null
     }
   },
   { immediate: true },
@@ -406,6 +420,7 @@ async function archive() {
             :has-earlier="!!props.agentId && agents.hasEarlier(props.agentId)"
             :loading-earlier="!!props.agentId && agents.loadingEarlier.has(props.agentId)"
             :activity-height="activityHeight"
+            :scroll-to="scrollTarget"
             @decide="decide"
             @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"
           />

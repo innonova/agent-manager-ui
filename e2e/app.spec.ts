@@ -594,6 +594,59 @@ test('changes view: a commit appears in another open tab without a reload', asyn
   await tabB.close()
 })
 
+test('changes view: a commit made by a turn links to that turn in the transcript', async ({
+  page,
+}) => {
+  await login(page)
+  // an isolated git repo with one commit, and a project on it
+  const repo = fs.mkdtempSync('/tmp/am-attr-')
+  const git = (...a: string[]) =>
+    execFileSync('git', ['-c', 'user.name=z', '-c', 'user.email=z@z', ...a], { cwd: repo })
+  git('init', '-q')
+  fs.writeFileSync(path.join(repo, 'a.ts'), 'a\n')
+  git('add', '-A')
+  git('commit', '-q', '-m', 'the work')
+  const made = await page.request.post('/api/projects', {
+    data: { name: 'Attr', repos: [{ path: repo }], defaultProfile: 'fake' },
+  })
+  expect(made.ok()).toBeTruthy()
+  const projectId = (await made.json()).project.id as string
+
+  await page.goto('/')
+  await page.getByTestId('project-row').filter({ hasText: 'Attr' }).click()
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('maker')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+
+  // the fake agent announces a commit; the manager records HEAD as maker's turn.
+  // a second turn follows, so the committed line is not the last item.
+  await page.getByTestId('turn-input').fill('please commit')
+  await page.getByTestId('send').click()
+  await expect(page.locator('[data-item="system"]').filter({ hasText: 'committed' })).toBeVisible()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await page.getByTestId('turn-input').fill('and one more thing')
+  await page.getByTestId('send').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+
+  // the changes tab: the commit's "who" is maker, and a link
+  await page.getByTestId('tab-changes').click()
+  const link = page.getByTestId('commit-agent-link').first()
+  await expect(link).toHaveText('maker')
+
+  // clicking it goes to maker's transcript at the commit's item
+  await link.click()
+  await expect(page).toHaveURL(/\/agents\/.*[?&]item=\d/)
+  const committed = page.locator('[data-item="system"]').filter({ hasText: 'committed' })
+  await expect(committed).toBeVisible()
+  await expect(committed).toBeInViewport()
+  // scrolled up to it, not left at the end (there are later items): the "latest" button shows
+  await expect(page.getByRole('button', { name: /latest/ })).toBeVisible()
+
+  // this file's suite is shared and later tests count projects: leave none behind
+  await page.request.delete(`/api/projects/${projectId}`)
+})
+
 test('features view: create, watch the agent work the file, respond, done', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Files demo' }).click()

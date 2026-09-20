@@ -9,6 +9,7 @@ import { useChangesStore } from '@/stores/changes'
 import { useProjectsStore } from '@/stores/projects'
 import { useFeaturesStore } from '@/stores/features'
 import { useAgentsStore } from '@/stores/agents'
+import type { Commit } from '@/api/types'
 import { when } from '@/time'
 
 const DiffViewer = defineAsyncComponent(() => import('@/components/DiffViewer.vue'))
@@ -111,6 +112,15 @@ const commitIndex = computed(() => {
 })
 function openCommit(repo: string, hash: string, subject: string) {
   void changes.openCommit(repo, hash, subject)
+}
+/** Go to the agent's transcript at the commit's item, when a turn made it. */
+function goToTurn(c: Commit) {
+  if (!c.agentId || c.item == null) return
+  void router.push({
+    name: 'agent',
+    params: { id: props.id, agentId: c.agentId },
+    query: { item: String(c.item) },
+  })
 }
 function onListKey(e: KeyboardEvent) {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
@@ -240,7 +250,19 @@ const selectedFileTitle = computed(() => {
               </span>
               <span class="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
                 <span v-if="repos.length > 1" class="font-mono">{{ c.repo }}</span>
-                <span :class="c.agent ? 'text-slate-600 dark:text-slate-300' : ''">{{
+                <!-- a turn made it: the agent name links to that moment in its transcript -->
+                <span
+                  v-if="c.sessionId && c.item != null"
+                  role="link"
+                  tabindex="0"
+                  class="cursor-pointer text-blue-700 hover:underline dark:text-blue-300"
+                  data-test="commit-agent-link"
+                  :title="`go to ${c.agent}'s transcript at this commit`"
+                  @click.stop="goToTurn(c)"
+                  @keydown.enter.stop.prevent="goToTurn(c)"
+                  >{{ c.agent }}</span
+                >
+                <span v-else :class="c.agent ? 'text-slate-600 dark:text-slate-300' : ''">{{
                   c.agent ?? c.author
                 }}</span>
                 <span>·</span>

@@ -87,13 +87,18 @@ collapses or steps out, Enter or Space opens or toggles, Home/End jump.
 Its own tab, between files and features, because the unit a person
 follows is the commit, not one large diff from an arbitrary moment.
 Three columns. Left: the project's commits across its repositories,
-newest first, each row the subject, the short hash, who (the agent's
-name when the commit fell in a run's window, else the git author), when,
-the repository (with more than one), and the feature slug as a chip when
-it is attributed; above them, one row per repository with uncommitted
-work ("working tree · \<agent> · in progress" with a file count); and a
-"you last looked here" divider between the commits made since the marker
-and the rest. Middle: the selected commit's (or working tree's) changed
+newest first, each row the subject, the short hash, who, when, the
+repository (with more than one), and the feature slug as a chip when it
+is attributed. Who is the manager's attribution — the agent of the turn
+that made it, else a run window's agent, else the git author (see the
+manager's Changes). When a turn made it (the commit carries a session
+and item), the agent's name is a link that goes to that agent's
+transcript scrolled to the commit's moment; selecting the row still
+shows the diff, so the two do not fight. Above the commits, one row per
+repository with uncommitted work ("working tree · \<agent> · in
+progress" with a file count); and a "you last looked here" divider
+between the commits made since the marker and the rest. Middle: the
+selected commit's (or working tree's) changed
 files, with the tree's status letters and colours. Right: the Monaco
 diff of the selected file (side by side or inline) — for a commit,
 against its parent; for the working tree, the uncommitted diff. Up and
@@ -212,6 +217,12 @@ on background jobs when it is idle with some pending.
 
 The transcript auto-follows while the user is at the bottom and stops
 following when they scroll up.
+
+The agent route takes `?item=<index>`: the agents store pages history
+back until that item is loaded (`loadUntil`), and the transcript, given
+a `scrollTo`, scrolls that item to the centre and highlights it for a
+moment instead of following to the end. This is how a commit in the
+changes tab links to the turn that made it.
 
 ## State
 
@@ -567,8 +578,9 @@ clicking it brings the window up on that agent.
   a tool call, streamed and gone at the turn's end), a second tab
   seeing an agent created and then archived elsewhere without a reload,
   and the changes view (the commit list and a commit diff, the working
-  tree, the marker moving on leave, and a commit appearing in another
-  tab without a reload). There is no test for
+  tree, the marker moving on leave, a commit appearing in another
+  tab without a reload, and a commit made by a turn linking to that turn
+  in the transcript). There is no test for
   a dropped socket; the store's reconnect refetch is covered by the unit
   test.
 

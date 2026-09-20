@@ -11,6 +11,8 @@ const props = defineProps<{
   loadingEarlier?: boolean
   /** The activity overlay's current height, so the "latest" button shifts up clear of it. */
   activityHeight?: number
+  /** An item index to scroll to and highlight (a link from the changes tab); null to leave the view at the end. */
+  scrollTo?: number | null
 }>()
 const emit = defineEmits<{ decide: [requestId: string, option: string]; loadEarlier: [] }>()
 
@@ -78,9 +80,31 @@ async function follow() {
   if (e) e.scrollTop = e.scrollHeight
 }
 
+/** The scroll target already honoured, so a re-render does not keep yanking to it. */
+const highlighted = ref(-1)
+async function goToTarget(): Promise<void> {
+  const target = props.scrollTo
+  if (target == null || target === highlighted.value) return
+  await nextTick()
+  const e = el.value
+  const row = e?.querySelector<HTMLElement>(`[data-index="${target}"]`)
+  if (!e || !row) return // not rendered yet (still paging in); a later items change retries
+  following.value = false // hold at the target, not the bottom
+  row.scrollIntoView({ block: 'center' })
+  row.classList.add('ring-2', 'ring-blue-400', 'rounded')
+  window.setTimeout(() => row.classList.remove('ring-2', 'ring-blue-400', 'rounded'), 2000)
+  highlighted.value = target
+}
+watch(() => props.scrollTo, goToTarget)
+
 watch(
   () => props.items,
   () => {
+    // arriving with a scroll target: go to it, do not force the view to the end
+    if (props.scrollTo != null && props.scrollTo !== highlighted.value) {
+      void goToTarget()
+      return
+    }
     following.value = true // a different transcript starts at its end
     void follow()
   },
@@ -113,11 +137,17 @@ onMounted(follow)
         {{ loadingEarlier ? 'loading earlier…' : 'load earlier' }}
       </button>
       <template v-for="r in rows" :key="r.key">
-        <ToolCallItem v-if="r.kind === 'tool'" :call="r.call" :result="r.result" />
+        <ToolCallItem
+          v-if="r.kind === 'tool'"
+          :call="r.call"
+          :result="r.result"
+          :data-index="r.key"
+        />
         <TranscriptItem
           v-else
           :item="r.item"
           :at="r.at"
+          :data-index="r.key"
           @decide="(id, o) => emit('decide', id, o)"
         />
       </template>

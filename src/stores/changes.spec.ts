@@ -33,6 +33,8 @@ const result = (over: Partial<CommitsResult> = {}): CommitsResult => ({
       agent: 'alice',
       agentId: 'ag1',
       feature: 'feat',
+      sessionId: 'sess1',
+      item: 12,
       unread: true,
     },
     {
@@ -45,6 +47,8 @@ const result = (over: Partial<CommitsResult> = {}): CommitsResult => ({
       agent: null,
       agentId: null,
       feature: null,
+      sessionId: null,
+      item: null,
       unread: false,
     },
   ],
