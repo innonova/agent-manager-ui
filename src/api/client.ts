@@ -18,6 +18,7 @@ import type {
   User,
   HarnessRow,
   Learning,
+  NoteFileKind,
 } from './types'
 
 export class ApiError extends Error {
@@ -135,10 +136,9 @@ export const api = {
     call<{ hosts: { host: string; accounts: AccountUsageRow[] }[] }>('GET', '/api/usage'),
   /** The harness note's template per host: what every agent is told at session start. */
   harness: () => call<{ hosts: HarnessRow[] }>('GET', '/api/harness'),
-  /** One of the two note files per host: the harness template or the models file rendered into it. */
-  noteFile: (kind: 'harness' | 'models' | 'method') =>
-    call<{ hosts: HarnessRow[] }>('GET', `/api/${kind}`),
-  saveNoteFile: (kind: 'harness' | 'models' | 'method', host: string, template: string | null) =>
+  /** One of the operator files per host (see NoteFileKind); the path is the kind. */
+  noteFile: (kind: NoteFileKind) => call<{ hosts: HarnessRow[] }>('GET', `/api/${kind}`),
+  saveNoteFile: (kind: NoteFileKind, host: string, template: string | null) =>
     call<HarnessRow>('PUT', `/api/${kind}`, { host, template }),
   /** The install's learnings log, entries after `since` (0 for all), oldest first. */
   learnings: (host?: string, since = 0) =>

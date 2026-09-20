@@ -814,7 +814,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('models-source')).toHaveText('the shipped text')
   await page.getByTestId('models-edit').click()
   await expect(page).toHaveURL(/\/models/)
-  await expect(page.getByTestId('harness-editor')).toContainText('What we have learned') // Monaco renders only the visible lines
+  await expect(page.getByTestId('harness-editor')).toContainText('Which model for which work') // Monaco renders only the visible lines
   await page.getByTestId('editor').click()
   await page.keyboard.press('Control+A')
   await page.keyboard.type('### Fake 1\n\nGood at tests.')
@@ -823,13 +823,19 @@ test('the harness note is edited on the projects page and reaches an agent at it
   page.once('dialog', (d) => d.accept())
   await page.getByTestId('harness-use-builtin').click()
   await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
-  await expect(page.getByTestId('harness-editor')).toContainText('What we have learned') // Monaco renders only the visible lines
-  // the method, the same page again; and the learnings log, appended and listed
+  await expect(page.getByTestId('harness-editor')).toContainText('Which model for which work') // Monaco renders only the visible lines
+  // the method and its framing, the same page again; and the learnings
+  // log, appended and listed
   await page.getByRole('link', { name: 'projects' }).click()
   await expect(page.getByTestId('method-source')).toHaveText('the shipped text')
   await page.getByTestId('method-edit').click()
   await expect(page).toHaveURL(/\/method/)
-  await expect(page.getByTestId('harness-editor')).toContainText('Working with agents')
+  await expect(page.getByTestId('harness-editor')).toContainText('The method') // Monaco renders only the visible lines
+  await page.getByRole('link', { name: 'projects' }).click()
+  await expect(page.getByTestId('framing-source')).toHaveText('the shipped text')
+  await page.getByTestId('framing-edit').click()
+  await expect(page).toHaveURL(/\/framing/)
+  await expect(page.getByTestId('harness-editor')).toContainText('Framing work')
   await page.getByRole('link', { name: 'projects' }).click()
   await page.getByTestId('learnings-link').click()
   await expect(page).toHaveURL(/\/learnings/)

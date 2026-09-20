@@ -146,7 +146,7 @@ onUnmounted(() => observer?.disconnect())
       <div
         v-if="showThinkingBox"
         ref="box"
-        class="mt-1 max-h-12 overflow-y-auto rounded bg-slate-50 px-2 py-1 font-mono text-[11px] leading-4 text-slate-400 whitespace-pre-wrap dark:bg-slate-950/40 dark:text-slate-500"
+        class="mt-1 max-h-12 overflow-y-auto rounded bg-slate-50 px-2 py-1 font-mono text-[11px] leading-4 whitespace-pre-wrap text-slate-400 dark:bg-slate-950/40 dark:text-slate-500"
         data-test="activity-thinking"
       >
         {{ thinkingText }}

@@ -2,19 +2,25 @@
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { HarnessRow } from '@/api/types'
+import type { HarnessRow, NoteFileKind } from '@/api/types'
 import AppShell from '@/components/AppShell.vue'
 import { useHostsStore } from '@/stores/hosts'
 import { useNotificationsStore } from '@/stores/notifications'
 
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
 
-/** Which of the two note files: the harness note's template, or the models file rendered into it. */
-const props = withDefaults(defineProps<{ kind?: 'harness' | 'models' | 'method' }>(), {
+/**
+ * Which operator file: the harness note's template, the models file
+ * rendered into it, the method, or the framing that is the method's
+ * companion. One editor for all four; they differ only in the words
+ * around it.
+ */
+const props = withDefaults(defineProps<{ kind?: NoteFileKind }>(), {
   kind: 'harness',
 })
 const isModels = computed(() => props.kind === 'models')
 const isMethod = computed(() => props.kind === 'method')
+const isFraming = computed(() => props.kind === 'framing')
 
 /**
  * The harness note's template, per machine, in a real editor: what every
@@ -99,7 +105,8 @@ onMounted(load)
     <template #title>
       <span class="text-sm text-slate-500 dark:text-slate-400">
         <RouterLink :to="{ name: 'projects' }" class="hover:underline">projects</RouterLink>
-        · {{ isModels ? 'models' : isMethod ? 'method' : 'harness note' }}
+        ·
+        {{ isModels ? 'models' : isMethod ? 'method' : isFraming ? 'framing' : 'harness note' }}
       </span>
     </template>
     <div class="flex h-full min-h-0 flex-col">
@@ -191,7 +198,14 @@ onMounted(load)
       <p
         class="border-t border-slate-200 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400"
       >
-        <template v-if="isMethod">
+        <template v-if="isFraming">
+          How a feature and a brief are written here: the purpose first, the three kinds of
+          sentence, what not to write. The companion to the method — the method is the steps, this
+          is what is said at each of them. Agents read it with <code>am framing</code>; like the
+          method it is not part of the harness note, and it is curated from the learnings log
+          (<RouterLink :to="{ name: 'learnings' }" class="underline">learnings</RouterLink>).
+        </template>
+        <template v-else-if="isMethod">
           How work is run under this manager, for every project on it: features, the gate, helpers,
           reviews, debriefs. Agents read it with <code>am method</code>; it is not part of the
           harness note. Curated now and then from the learnings log (<RouterLink

@@ -25,6 +25,12 @@ const router = createRouter({
       component: () => import('@/views/HarnessView.vue'),
       props: { kind: 'method' },
     },
+    {
+      path: '/framing',
+      name: 'framing',
+      component: () => import('@/views/HarnessView.vue'),
+      props: { kind: 'framing' },
+    },
     { path: '/learnings', name: 'learnings', component: () => import('@/views/LearningsView.vue') },
     {
       path: '/projects/:id',

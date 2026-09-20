@@ -50,11 +50,16 @@ const harness = ref<HarnessRow[]>([])
 const models = ref<HarnessRow[]>([])
 /** Per host, the method: how work is run under this manager. */
 const method = ref<HarnessRow[]>([])
+/** Per host, the framing: how a feature and a brief are written, the method's companion. */
+const framing = ref<HarnessRow[]>([])
 async function loadHarness() {
   harness.value = (await api.harness().catch(() => ({ hosts: [] }))).hosts
   models.value = (await api.noteFile('models').catch(() => ({ hosts: [] }))).hosts
   method.value = (await api.noteFile('method').catch(() => ({ hosts: [] }))).hosts
+  framing.value = (await api.noteFile('framing').catch(() => ({ hosts: [] }))).hosts
 }
+/** The framing row of a host, so the Method block can offer both documents on one line. */
+const framingOf = (host: string) => framing.value.find((r) => r.host === host) ?? null
 const sourceLabel = (s: HarnessRow['source']) =>
   s === 'built-in' ? 'the shipped text' : s === 'custom' ? 'a custom text' : 'off'
 
@@ -248,7 +253,7 @@ async function submit(restart = false) {
           one that starts a helper chooses with it in front of it.
         </p>
       </div>
-      <!-- the method, per machine: how work is run under this manager, and the log it is curated from -->
+      <!-- the method and its framing, per machine, with the log both are curated from -->
       <div
         v-if="method.length"
         class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
@@ -274,6 +279,20 @@ async function submit(restart = false) {
             data-test="method-edit"
             >view / edit</RouterLink
           >
+          <span v-if="framingOf(h.host)" class="text-slate-400 dark:text-slate-500">framing</span>
+          <span
+            v-if="framingOf(h.host)"
+            class="text-slate-500 dark:text-slate-400"
+            data-test="framing-source"
+            >{{ sourceLabel(framingOf(h.host)!.source) }}</span
+          >
+          <RouterLink
+            v-if="framingOf(h.host)"
+            :to="{ name: 'framing', query: { host: h.host } }"
+            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            data-test="framing-edit"
+            >view / edit</RouterLink
+          >
           <RouterLink
             :to="{ name: 'learnings', query: { host: h.host } }"
             class="text-xs text-blue-700 hover:underline dark:text-blue-300"
@@ -282,8 +301,9 @@ async function submit(restart = false) {
           >
         </div>
         <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
-          How work is run here: features, the gate, helpers, reviews. Curated now and then from the
-          learnings log, where anyone records what was learned at the moment of noticing.
+          How work is run here: features, the gate, helpers, reviews — and, beside it, the framing:
+          how a feature and a brief are written. Both are curated now and then from the learnings
+          log, where anyone records what was learned at the moment of noticing.
         </p>
       </div>
       <p

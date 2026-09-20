@@ -119,6 +119,13 @@ export interface AccountUsage {
   at: number
 }
 
+/**
+ * The operator files the manager ships and serves alike: the harness
+ * note's template, the models file rendered into it, the method and its
+ * companion the framing. One page edits all four.
+ */
+export type NoteFileKind = 'harness' | 'models' | 'method' | 'framing'
+
 /** The harness note's template on one machine: built in, the operator's, or off (an empty file). */
 export interface HarnessRow {
   host: string
