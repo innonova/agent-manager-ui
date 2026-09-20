@@ -8,7 +8,7 @@ const notifications = useNotificationsStore()
     <div
       v-for="t in notifications.toasts"
       :key="t.id"
-      class="pointer-events-auto rounded-md border px-4 py-3 text-sm shadow-lg"
+      class="pointer-events-auto rounded-md border px-4 py-3 text-base shadow-lg"
       :class="
         t.level === 'error'
           ? 'border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100'
@@ -20,7 +20,7 @@ const notifications = useNotificationsStore()
       {{ t.text }}
       <button
         v-if="t.action"
-        class="ml-2 rounded border border-current px-2 py-0.5 text-xs hover:bg-slate-100 dark:hover:bg-slate-800"
+        class="ml-2 rounded border border-current px-2 py-0.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
         data-test="toast-action"
         @click.stop="(t.action.run(), notifications.dismiss(t.id))"
       >

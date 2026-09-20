@@ -161,85 +161,91 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <form
-    class="flex flex-col gap-2 border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900"
+    class="flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900"
     @submit.prevent="send"
     @dragover.prevent
     @drop="onDrop"
   >
-    <div
-      v-if="attachments.length || attachError"
-      class="flex flex-wrap items-center gap-2"
-      data-test="attachments"
-    >
+    <div class="mx-auto flex w-full max-w-3xl flex-col gap-2">
       <div
-        v-for="(a, i) in attachments"
-        :key="a.url"
-        class="relative h-16 w-16 overflow-hidden rounded border border-slate-300 dark:border-slate-700"
-        data-test="attachment"
-        :title="a.name"
+        v-if="attachments.length || attachError"
+        class="flex flex-wrap items-center gap-2"
+        data-test="attachments"
       >
-        <img :src="a.url" :alt="a.name" class="h-full w-full object-cover" />
-        <button
-          type="button"
-          class="absolute top-0 right-0 rounded-bl bg-slate-900/70 px-1 text-xs text-white hover:bg-red-700"
-          title="Remove"
-          data-test="attachment-remove"
-          @click="detach(i)"
+        <div
+          v-for="(a, i) in attachments"
+          :key="a.url"
+          class="relative h-16 w-16 overflow-hidden rounded border border-slate-300 dark:border-slate-700"
+          data-test="attachment"
+          :title="a.name"
         >
-          ×
-        </button>
+          <img :src="a.url" :alt="a.name" class="h-full w-full object-cover" />
+          <button
+            type="button"
+            class="absolute top-0 right-0 rounded-bl bg-slate-900/70 px-1 text-sm text-white hover:bg-red-700"
+            title="Remove"
+            data-test="attachment-remove"
+            @click="detach(i)"
+          >
+            ×
+          </button>
+        </div>
+        <span v-if="attachError" class="text-sm text-red-700 dark:text-red-300">{{
+          attachError
+        }}</span>
       </div>
-      <span v-if="attachError" class="text-xs text-red-700 dark:text-red-300">{{
-        attachError
-      }}</span>
-    </div>
-    <div class="flex items-end gap-2">
-      <textarea
-        ref="box"
-        v-model="text"
-        rows="2"
-        class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
-        :placeholder="
-          state === 'exited'
-            ? 'Send a message to resume the agent…'
-            : state === 'waiting-permission'
-              ? 'The agent is waiting for your answer above.'
-              : state === 'working'
-                ? `The agent is working; a message now is seen at its next step (${hint})`
-                : `Message the agent… (${hint})`
-        "
-        :disabled="disabled"
-        spellcheck="true"
-        data-test="turn-input"
-        @keydown="onKey"
-        @input="onInput"
-        @paste="onPaste"
-      />
-      <button
-        v-if="state === 'working'"
-        type="button"
-        class="rounded border border-amber-400 px-3 py-2 text-sm text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
-        data-test="interrupt"
-        @click="emit('interrupt')"
-      >
-        interrupt
-      </button>
-      <button
-        type="submit"
-        class="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
-        :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
-        data-test="send"
-        :title="steering ? 'Delivered during the turn, at the agent\'s next step' : undefined"
-      >
-        {{ steering ? 'steer' : 'send' }}
-      </button>
-      <span
-        v-if="queued"
-        class="text-xs text-slate-500 dark:text-slate-400"
-        data-test="queued"
-        title="Held by the manager; sent when the agent finishes this turn"
-        >{{ queued }} queued</span
-      >
+      <div class="flex items-end gap-2">
+        <textarea
+          ref="box"
+          v-model="text"
+          rows="2"
+          class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none dark:border-slate-700"
+          :placeholder="
+            state === 'exited'
+              ? 'Send a message to resume the agent…'
+              : state === 'waiting-permission'
+                ? 'The agent is waiting for your answer above.'
+                : state === 'working'
+                  ? `Steer the agent… (${hint})`
+                  : `Message the agent… (${hint})`
+          "
+          :disabled="disabled"
+          spellcheck="true"
+          data-test="turn-input"
+          @keydown="onKey"
+          @input="onInput"
+          @paste="onPaste"
+        />
+        <button
+          v-if="state === 'working'"
+          type="button"
+          class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
+          data-test="interrupt"
+          @click="emit('interrupt')"
+        >
+          interrupt
+        </button>
+        <button
+          type="submit"
+          class="rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50"
+          :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
+          data-test="send"
+          :title="
+            steering
+              ? 'Delivered during the turn, at the agent\'s next step; or held for the next turn where the vendor cannot take one'
+              : undefined
+          "
+        >
+          {{ steering ? 'steer' : 'send' }}
+        </button>
+        <span
+          v-if="queued"
+          class="text-sm text-slate-500 dark:text-slate-400"
+          data-test="queued"
+          title="Held by the manager; sent when the agent finishes this turn"
+          >{{ queued }} queued</span
+        >
+      </div>
     </div>
   </form>
 </template>

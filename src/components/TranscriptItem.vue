@@ -76,39 +76,42 @@ const cost = computed(() =>
 </script>
 
 <template>
-  <div v-if="item.kind === 'user'" class="flex flex-col items-end" data-item="user">
-    <span
-      v-if="item.by"
-      class="mr-1 mb-0.5 text-[11px] text-slate-400 dark:text-slate-500"
-      data-test="turn-by"
-      >{{ item.by }}</span
-    >
-    <div
-      class="max-w-[80%] rounded-lg bg-blue-600 px-3 py-2 text-sm whitespace-pre-wrap text-white"
-      :title="time"
-    >
-      {{ item.text }}
-      <div v-if="item.images?.length" class="mt-2 flex flex-wrap gap-2" data-test="user-images">
-        <a
-          v-for="(img, i) in item.images"
-          :key="i"
-          href="#"
-          title="Open full size"
-          @click.prevent="openImage(img)"
-        >
-          <img
-            :src="`data:${img.mediaType};base64,${img.data}`"
-            alt="pasted image"
-            class="max-h-40 max-w-[16rem] rounded border border-blue-400 object-contain"
-          />
-        </a>
-      </div>
+  <div
+    v-if="item.kind === 'user'"
+    class="rounded-r border-l-2 border-blue-500 bg-blue-50/70 px-3 py-2 dark:bg-blue-950/40"
+    data-item="user"
+    :title="time"
+  >
+    <div class="mb-0.5 flex items-baseline gap-2 text-sm text-slate-500 dark:text-slate-400">
+      <span
+        v-if="item.by"
+        class="font-medium text-slate-700 dark:text-slate-300"
+        data-test="turn-by"
+        >{{ item.by }}</span
+      >
+      <span>{{ time }}</span>
+    </div>
+    <div class="whitespace-pre-wrap">{{ item.text }}</div>
+    <div v-if="item.images?.length" class="mt-2 flex flex-wrap gap-2" data-test="user-images">
+      <a
+        v-for="(img, i) in item.images"
+        :key="i"
+        href="#"
+        title="Open full size"
+        @click.prevent="openImage(img)"
+      >
+        <img
+          :src="`data:${img.mediaType};base64,${img.data}`"
+          alt="pasted image"
+          class="max-h-40 max-w-[16rem] rounded border border-blue-300 object-contain dark:border-blue-800"
+        />
+      </a>
     </div>
   </div>
 
   <div
     v-else-if="item.kind === 'text'"
-    class="prose prose-sm dark:prose-invert max-w-none"
+    class="prose dark:prose-invert max-w-none"
     :data-item="item.streaming ? 'text-streaming' : 'text'"
   >
     <div v-html="html" />
@@ -120,7 +123,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'permission'"
-    class="rounded border px-3 py-2 text-sm"
+    class="rounded border px-3 py-2 text-base"
     :class="
       item.decision
         ? 'border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
@@ -130,21 +133,21 @@ const cost = computed(() =>
     :data-decision="item.decision ?? undefined"
   >
     <div class="flex items-center gap-2">
-      <span class="font-mono text-xs font-semibold">{{ item.tool }}</span>
+      <span class="font-mono text-sm font-semibold">{{ item.tool }}</span>
       <span class="truncate">{{ item.title }}</span>
       <span class="grow" />
-      <span v-if="item.decision" class="text-xs text-slate-500 dark:text-slate-400">{{
+      <span v-if="item.decision" class="text-sm text-slate-500 dark:text-slate-400">{{
         decidedLabel
       }}</span>
-      <span v-else class="animate-pulse text-xs text-amber-800 dark:text-amber-200"
+      <span v-else class="animate-pulse text-sm text-amber-800 dark:text-amber-200"
         >waiting for you<template v-if="time"> since {{ time }}</template></span
       >
     </div>
     <pre
       v-if="permissionInput"
-      class="mt-1 overflow-x-auto font-mono text-xs whitespace-pre-wrap text-slate-700 dark:text-slate-300"
+      class="mt-1 overflow-x-auto font-mono text-sm whitespace-pre-wrap text-slate-700 dark:text-slate-300"
       >{{ permissionInput }}</pre>
-    <div v-if="!item.decision" class="mt-2 flex gap-2 text-xs">
+    <div v-if="!item.decision" class="mt-2 flex gap-2 text-sm">
       <button
         v-for="o in item.options"
         :key="o.id"
@@ -163,14 +166,14 @@ const cost = computed(() =>
        place; only a long block is folded. -->
   <div
     v-else-if="item.kind === 'thinking' && item.text.length <= THINKING_FOLD_CHARS"
-    class="text-sm whitespace-pre-wrap"
+    class="text-base whitespace-pre-wrap"
     data-item="thinking"
   >
     {{ item.text }}
   </div>
   <details
     v-else-if="item.kind === 'thinking'"
-    class="text-xs text-slate-500 dark:text-slate-400"
+    class="text-sm text-slate-500 dark:text-slate-400"
     data-item="thinking"
   >
     <summary class="cursor-pointer select-none">thinking · {{ item.text.length }} chars</summary>
@@ -181,7 +184,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'tool_use'"
-    class="rounded border border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
+    class="rounded border border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-900"
     data-item="tool_use"
   >
     <button
@@ -200,7 +203,7 @@ const cost = computed(() =>
 
   <details
     v-else-if="item.kind === 'tool_result'"
-    class="ml-4 text-xs"
+    class="ml-4 text-sm"
     :class="item.isError ? 'text-red-800 dark:text-red-200' : 'text-slate-600 dark:text-slate-300'"
     data-item="tool_result"
   >
@@ -214,7 +217,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'error'"
-    class="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100"
+    class="rounded border border-red-300 bg-red-50 px-3 py-2 text-base text-red-900 dark:border-red-800 dark:bg-red-950 dark:text-red-100"
     data-item="error"
   >
     {{ item.message }}
@@ -222,7 +225,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'system'"
-    class="text-xs text-slate-400 dark:text-slate-500"
+    class="text-sm text-slate-400 dark:text-slate-500"
     data-item="system"
   >
     <span v-if="time" class="mr-2 tabular-nums">{{ time }}</span
@@ -231,7 +234,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'turn_end'"
-    class="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500"
+    class="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500"
     data-item="turn_end"
   >
     <span class="h-px grow bg-slate-200 dark:bg-slate-700" />

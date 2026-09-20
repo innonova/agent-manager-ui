@@ -40,7 +40,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
 <template>
   <div ref="el" class="relative">
     <button
-      class="rounded px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
+      class="rounded px-2 py-1 text-base text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100"
       title="Display settings"
       aria-label="Display settings"
       data-test="settings"
@@ -50,11 +50,11 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
     </button>
     <div
       v-if="open"
-      class="absolute right-0 z-30 mt-1 w-56 rounded-md border border-slate-200 bg-white p-3 text-sm shadow-lg dark:border-slate-700 dark:bg-slate-900"
+      class="absolute right-0 z-30 mt-1 w-56 rounded-md border border-slate-200 bg-white p-3 text-base shadow-lg dark:border-slate-700 dark:bg-slate-900"
       data-test="settings-menu"
     >
       <div
-        class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
       >
         Theme
       </div>
@@ -75,7 +75,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         </button>
       </div>
       <div
-        class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
       >
         Font size
       </div>
@@ -99,7 +99,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         </button>
       </div>
       <div
-        class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
       >
         Enter key
       </div>
@@ -120,9 +120,9 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           {{ k.label }}
         </button>
       </div>
-      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">Ctrl+Enter always sends.</p>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Ctrl+Enter always sends.</p>
       <div
-        class="mt-3 mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        class="mt-3 mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
       >
         Notifications
       </div>
@@ -136,7 +136,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
         />
         <span>Desktop notifications</span>
       </label>
-      <p class="mt-1 text-xs text-slate-500 dark:text-slate-400" data-test="notify-hint">
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" data-test="notify-hint">
         {{
           permission === 'denied'
             ? 'Blocked by the browser; allow notifications for this site first.'
@@ -145,7 +145,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
       </p>
       <RouterLink
         :to="{ name: 'users' }"
-        class="mt-3 block text-xs text-blue-700 hover:underline dark:text-blue-300"
+        class="mt-3 block text-sm text-blue-700 hover:underline dark:text-blue-300"
         data-test="users-link"
         @click="open = false"
         >Users…</RouterLink

@@ -51,6 +51,8 @@ export interface Agent {
   effort: string | null
   /** What the agent was told about running here at its last session start; null when the note is off. */
   harnessNote?: string | null
+  /** Who created it: a person's name, or `agent-<name>` for a helper started by another agent. */
+  createdBy?: string | null
 }
 
 export interface HostStatus {

@@ -37,7 +37,7 @@ async function submit() {
       @submit.prevent="submit"
     >
       <h1 class="mb-4 text-lg font-semibold">agent-manager</h1>
-      <label class="mb-3 block text-sm">
+      <label class="mb-3 block text-base">
         <span class="text-slate-600 dark:text-slate-300">Name</span>
         <input
           v-model="name"
@@ -47,7 +47,7 @@ async function submit() {
           required
         />
       </label>
-      <label class="mb-4 block text-sm">
+      <label class="mb-4 block text-base">
         <span class="text-slate-600 dark:text-slate-300">Password</span>
         <input
           v-model="password"
@@ -58,11 +58,11 @@ async function submit() {
           required
         />
       </label>
-      <p v-if="error" class="mb-3 text-sm text-red-700 dark:text-red-300" data-test="login-error">
+      <p v-if="error" class="mb-3 text-base text-red-700 dark:text-red-300" data-test="login-error">
         {{ error }}
       </p>
       <button
-        class="w-full rounded bg-blue-600 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+        class="w-full rounded bg-blue-600 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50"
         :disabled="busy"
         data-test="login-submit"
       >

@@ -63,7 +63,7 @@ const status = computed(() => {
 
 <template>
   <div
-    class="rounded border border-slate-200 bg-white text-xs dark:border-slate-800 dark:bg-slate-900"
+    class="rounded border border-slate-200 bg-white text-sm dark:border-slate-800 dark:bg-slate-900"
     :class="result?.isError ? 'border-red-300 dark:border-red-800' : ''"
     data-item="tool_use"
     :data-open="open || undefined"

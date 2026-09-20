@@ -13,7 +13,7 @@ const styles: Record<FeatureStatus, string> = {
 
 <template>
   <span
-    class="rounded px-1.5 py-0.5 text-xs font-medium"
+    class="rounded px-1.5 py-0.5 text-sm font-medium"
     :class="styles[status]"
     :data-status="status"
     >{{ status }}</span

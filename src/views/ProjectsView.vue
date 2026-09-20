@@ -152,7 +152,7 @@ async function submit(restart = false) {
         <h1 class="text-xl font-semibold">Projects</h1>
         <span class="grow" />
         <button
-          class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+          class="rounded bg-blue-600 px-3 py-1.5 text-base text-white hover:bg-blue-700"
           data-test="new-project"
           @click="openNew"
         >
@@ -162,11 +162,11 @@ async function submit(restart = false) {
       <!-- the vendor accounts' limits, per machine, as last reported through an agent -->
       <div
         v-if="usage.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
         data-test="usage"
       >
         <div
-          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
         >
           Account usage
         </div>
@@ -180,7 +180,7 @@ async function submit(restart = false) {
             <span class="text-slate-500 dark:text-slate-400">{{ a.profile }}</span>
             <UsageChip :usage="a.usage" />
           </template>
-          <span v-if="h.accounts.length === 0" class="text-xs text-slate-400 dark:text-slate-500"
+          <span v-if="h.accounts.length === 0" class="text-sm text-slate-400 dark:text-slate-500"
             >nothing reported yet</span
           >
         </div>
@@ -188,11 +188,11 @@ async function submit(restart = false) {
       <!-- the harness note's template, per machine: what every agent is told at session start -->
       <div
         v-if="harness.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
         data-test="harness"
       >
         <div
-          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
         >
           Harness note
         </div>
@@ -211,12 +211,12 @@ async function submit(restart = false) {
           }}</span>
           <RouterLink
             :to="{ name: 'harness', query: { host: h.host } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="harness-edit"
             >view / edit</RouterLink
           >
         </div>
-        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
           What every agent is told about running here, at session start; a change reaches an agent
           at its next restart.
         </p>
@@ -224,11 +224,11 @@ async function submit(restart = false) {
       <!-- the models file, per machine: the house view rendered into every note -->
       <div
         v-if="models.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
         data-test="models"
       >
         <div
-          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
         >
           Models
         </div>
@@ -243,12 +243,12 @@ async function submit(restart = false) {
           }}</span>
           <RouterLink
             :to="{ name: 'models', query: { host: h.host } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="models-edit"
             >view / edit</RouterLink
           >
         </div>
-        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
           Which model suits which work, as we have learned it; every agent gets it in its note, so
           one that starts a helper chooses with it in front of it.
         </p>
@@ -256,11 +256,11 @@ async function submit(restart = false) {
       <!-- the method and its framing, per machine, with the log both are curated from -->
       <div
         v-if="method.length"
-        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-base dark:border-slate-800 dark:bg-slate-900"
         data-test="method"
       >
         <div
-          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+          class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
         >
           Method
         </div>
@@ -275,7 +275,7 @@ async function submit(restart = false) {
           }}</span>
           <RouterLink
             :to="{ name: 'method', query: { host: h.host } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="method-edit"
             >view / edit</RouterLink
           >
@@ -289,18 +289,18 @@ async function submit(restart = false) {
           <RouterLink
             v-if="framingOf(h.host)"
             :to="{ name: 'framing', query: { host: h.host } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="framing-edit"
             >view / edit</RouterLink
           >
           <RouterLink
             :to="{ name: 'learnings', query: { host: h.host } }"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="learnings-link"
             >learnings</RouterLink
           >
         </div>
-        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+        <p class="mt-1 text-sm text-slate-400 dark:text-slate-500">
           How work is run here: features, the gate, helpers, reviews — and, beside it, the framing:
           how a feature and a brief are written. Both are curated now and then from the learnings
           log, where anyone records what was learned at the moment of noticing.
@@ -308,7 +308,7 @@ async function submit(restart = false) {
       </div>
       <p
         v-if="projects.loaded && projects.rows.length === 0"
-        class="text-sm text-slate-500 dark:text-slate-400"
+        class="text-base text-slate-500 dark:text-slate-400"
       >
         No projects yet. A project is one or more repositories on this machine, registered by
         absolute path.
@@ -326,7 +326,7 @@ async function submit(restart = false) {
                 {{ r.project.name }}
                 <span
                   v-if="hosts.several && r.project.host"
-                  class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                  class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-sm font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                   :class="
                     hosts.byName(r.project.host)?.connected === false ||
                     hosts.byName(r.project.host)?.error
@@ -347,7 +347,7 @@ async function submit(restart = false) {
               <div
                 v-for="repo in r.project.repos"
                 :key="repo.name"
-                class="truncate font-mono text-xs text-slate-500 dark:text-slate-400"
+                class="truncate font-mono text-sm text-slate-500 dark:text-slate-400"
                 data-test="project-repo"
               >
                 <span v-if="r.project.repos.length > 1" class="text-slate-700 dark:text-slate-300"
@@ -359,7 +359,7 @@ async function submit(restart = false) {
             <AgentCountBadges :counts="r.agentCounts" />
             <button
               type="button"
-              class="text-xs text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-100"
+              class="text-sm text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-slate-100"
               data-test="edit-project"
               title="Edit project"
               @click.prevent="openEdit(r.project)"

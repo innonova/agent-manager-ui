@@ -295,7 +295,7 @@ async function createFolder() {
       >
         <div class="flex items-center px-3 py-2">
           <button
-            class="text-xs font-semibold tracking-wide uppercase"
+            class="text-sm font-semibold tracking-wide uppercase"
             :class="
               mode === 'tree'
                 ? 'text-slate-900 dark:text-slate-100'
@@ -307,7 +307,7 @@ async function createFolder() {
             Files
           </button>
           <button
-            class="ml-3 text-xs font-semibold tracking-wide uppercase"
+            class="ml-3 text-sm font-semibold tracking-wide uppercase"
             :class="
               mode === 'changes'
                 ? 'text-slate-900 dark:text-slate-100'
@@ -326,7 +326,7 @@ async function createFolder() {
           <span class="grow" />
           <button
             v-if="mode === 'changes'"
-            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
             data-test="files-refresh"
             @click="changes.load()"
           >
@@ -440,7 +440,7 @@ async function createFolder() {
           </button>
         </div>
         <template v-if="mode === 'changes'">
-          <div class="flex items-center gap-2 px-3 pb-1 text-xs text-slate-500 dark:text-slate-400">
+          <div class="flex items-center gap-2 px-3 pb-1 text-sm text-slate-500 dark:text-slate-400">
             <span class="truncate" data-test="changes-base">{{ baseLabel }}</span>
             <span class="grow" />
             <button
@@ -468,7 +468,7 @@ async function createFolder() {
             <template v-for="r in changes.repos" :key="r.repo">
               <div
                 v-if="changes.repos.length > 1 || r.note"
-                class="px-3 pt-2 pb-1 text-xs text-slate-500 dark:text-slate-400"
+                class="px-3 pt-2 pb-1 text-sm text-slate-500 dark:text-slate-400"
               >
                 <span v-if="changes.repos.length > 1" class="font-mono">{{ r.repo }}</span>
                 <span v-if="r.note" class="ml-1 italic" data-test="changes-note">{{ r.note }}</span>
@@ -476,7 +476,7 @@ async function createFolder() {
               <button
                 v-for="f in r.files"
                 :key="f.path"
-                class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+                class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-base hover:bg-slate-100 dark:hover:bg-slate-800"
                 :class="
                   changes.openPath === f.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : ''
                 "
@@ -490,14 +490,14 @@ async function createFolder() {
                   f.path.slice(f.path.indexOf('/') + 1)
                 }}</span>
                 <span class="grow" />
-                <span class="shrink-0 text-xs" :class="STATUS_CLASS[f.status]">{{
+                <span class="shrink-0 text-sm" :class="STATUS_CLASS[f.status]">{{
                   STATUS_LETTER[f.status]
                 }}</span>
               </button>
             </template>
             <p
               v-if="!changes.loading && changedCount === 0"
-              class="px-3 py-2 text-xs text-slate-400 dark:text-slate-500"
+              class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500"
               data-test="changes-empty"
             >
               No changes {{ baseLabel }}.
@@ -505,7 +505,7 @@ async function createFolder() {
           </div>
           <p
             v-if="changes.error"
-            class="px-3 py-2 text-xs text-red-700 dark:text-red-300"
+            class="px-3 py-2 text-sm text-red-700 dark:text-red-300"
             data-test="changes-error"
           >
             {{ changes.error }}
@@ -513,7 +513,7 @@ async function createFolder() {
         </template>
         <form
           v-if="mode === 'tree' && newFolder !== null"
-          class="flex items-center gap-2 px-3 pb-1 text-xs"
+          class="flex items-center gap-2 px-3 pb-1 text-sm"
           data-test="new-folder-form"
           @submit.prevent="createFolder()"
         >
@@ -536,7 +536,7 @@ async function createFolder() {
           v-if="mode === 'tree'"
           v-model="files.filter"
           type="search"
-          class="mx-3 mb-1 rounded border border-slate-300 px-2 py-0.5 text-xs focus:border-blue-500 focus:outline-none dark:border-slate-700"
+          class="mx-3 mb-1 rounded border border-slate-300 px-2 py-0.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
           placeholder="filter loaded entries"
           data-test="files-filter"
           @keydown.escape="files.filter = ''"
@@ -563,7 +563,7 @@ async function createFolder() {
         </ul>
         <p
           v-if="mode === 'tree' && files.error"
-          class="px-3 py-2 text-xs text-red-700 dark:text-red-300"
+          class="px-3 py-2 text-sm text-red-700 dark:text-red-300"
           data-test="files-error"
         >
           {{ files.error }}
@@ -571,24 +571,24 @@ async function createFolder() {
       </aside>
       <section v-if="mode === 'changes'" class="flex min-w-0 grow flex-col">
         <div
-          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
-          <span class="truncate font-mono text-xs" data-test="diff-path">{{
+          <span class="truncate font-mono text-sm" data-test="diff-path">{{
             changes.openPath ?? 'select a changed file'
           }}</span>
           <span class="grow" />
-          <label v-if="changes.open" class="flex items-center gap-1 text-xs text-slate-500">
+          <label v-if="changes.open" class="flex items-center gap-1 text-sm text-slate-500">
             <input v-model="inline" type="checkbox" /> inline
           </label>
         </div>
         <div class="min-h-0 grow bg-white dark:bg-slate-950">
-          <p v-if="!changes.open" class="p-6 text-sm text-slate-400">
+          <p v-if="!changes.open" class="p-6 text-base text-slate-400">
             Changes are measured from a base to the working tree, so uncommitted work shows too.
             "Mark as read" moves the base to the current commit.
           </p>
           <p
             v-else-if="changes.open.binary || changes.open.truncated"
-            class="p-6 text-sm text-slate-400"
+            class="p-6 text-base text-slate-400"
             data-test="diff-unavailable"
           >
             {{ changes.open.binary ? 'Binary file.' : 'Too large to show.' }}
@@ -604,29 +604,29 @@ async function createFolder() {
       </section>
       <section v-else class="flex min-w-0 grow flex-col">
         <div
-          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
-          <span class="truncate font-mono text-xs" data-test="file-path">{{
+          <span class="truncate font-mono text-sm" data-test="file-path">{{
             files.openPath ?? 'select a file'
           }}</span>
           <span class="grow" />
-          <span v-if="files.open" class="text-xs text-slate-400">{{ size }}</span>
+          <span v-if="files.open" class="text-sm text-slate-400">{{ size }}</span>
         </div>
         <div class="min-h-0 grow bg-white dark:bg-slate-950">
-          <p v-if="!files.open" class="p-6 text-sm text-slate-400">
+          <p v-if="!files.open" class="p-6 text-base text-slate-400">
             Files are shown read-only; agents work in the tree directly, and this view refreshes
             when one finishes a turn.
           </p>
           <p
             v-else-if="files.open.binary"
-            class="p-6 text-sm text-slate-400"
+            class="p-6 text-base text-slate-400"
             data-test="file-binary"
           >
             Binary file, {{ size }}.
           </p>
           <p
             v-else-if="files.open.truncated"
-            class="p-6 text-sm text-slate-400"
+            class="p-6 text-base text-slate-400"
             data-test="file-truncated"
           >
             Too large to show ({{ size }}).

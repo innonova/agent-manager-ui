@@ -3,6 +3,12 @@ import path from 'node:path'
 import { expect, test, type Page } from '@playwright/test'
 import { ADMIN_PASSWORD, PROJECT_DIR, SECOND_DIR } from './constants'
 
+/** The agent header's facts fold away under the name; open them when a test needs one. */
+async function details(page: Page) {
+  if ((await page.getByTestId('agent-details').count()) === 0)
+    await page.getByTestId('agent-details-toggle').click()
+}
+
 async function login(page: Page) {
   await page.goto('/')
   await expect(page).toHaveURL(/\/login/)
@@ -125,6 +131,7 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
     page.locator('[data-item="system"]').filter({ hasText: 'session resumed' }),
   ).toHaveCount(2)
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await details(page)
   await expect(page.getByTestId('harness-note-link')).toBeVisible()
 })
 
@@ -401,7 +408,9 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
   await expect(page.getByTestId('agent-model-chip')).toHaveText('fake-9') // the vendor reports what it runs
+  await details(page)
   await expect(page.getByTestId('agent-effort-chip')).toHaveText('effort high')
+  await details(page)
   await page.getByTestId('harness-note-link').click() // what the agent was told about running here
   await expect(page.getByTestId('harness-note')).toContainText('Running under agent-manager')
   await page.getByTestId('form-submit').click()
@@ -547,6 +556,7 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await page.getByTestId('agent-cwd').selectOption('second')
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await details(page)
   await expect(page.getByTestId('agent-cwd-label')).toContainText(SECOND_DIR)
   await page.getByTestId('tab-features').click()
   await expect(page).toHaveURL(/\/features$/)
@@ -799,6 +809,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
   await page.getByTestId('restart').click()
+  await details(page)
   await page.getByTestId('harness-note-link').click()
   await expect(page.getByTestId('harness-note')).toHaveText('Custom note for worker in Demo.')
   await page.getByTestId('form-submit').click()
@@ -859,6 +870,7 @@ test('an agent reporting its account usage shows a chip in its header and a bloc
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
   await page.getByTestId('turn-input').fill('usage 85')
   await page.getByTestId('turn-input').press('Enter')
+  await details(page)
   await expect(page.getByTestId('usage-chip').first()).toContainText('5h 85%', { timeout: 20000 })
   await expect(page.getByTestId('usage-chip').first()).toContainText('7d 43%')
   await page.getByRole('link', { name: 'agent-manager' }).click()

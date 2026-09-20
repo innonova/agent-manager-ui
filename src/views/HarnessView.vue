@@ -103,7 +103,7 @@ onMounted(load)
 <template>
   <AppShell>
     <template #title>
-      <span class="text-sm text-slate-500 dark:text-slate-400">
+      <span class="text-base text-slate-500 dark:text-slate-400">
         <RouterLink :to="{ name: 'projects' }" class="hover:underline">projects</RouterLink>
         ·
         {{ isModels ? 'models' : isMethod ? 'method' : isFraming ? 'framing' : 'harness note' }}
@@ -111,7 +111,7 @@ onMounted(load)
     </template>
     <div class="flex h-full min-h-0 flex-col">
       <div
-        class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-200 px-4 py-2 text-sm dark:border-slate-800"
+        class="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-slate-200 px-4 py-2 text-base dark:border-slate-800"
       >
         <div v-if="hosts.several" class="flex gap-1" data-test="harness-hosts">
           <button
@@ -137,13 +137,13 @@ onMounted(load)
         >
         <span
           v-if="current"
-          class="truncate font-mono text-xs text-slate-400 dark:text-slate-500"
+          class="truncate font-mono text-sm text-slate-400 dark:text-slate-500"
           >{{ current.file }}</span
         >
         <span class="grow" />
         <button
           type="button"
-          class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+          class="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           title="put the shipped text in the editor (nothing is saved until you save)"
           data-test="harness-load-builtin"
           @click="loadBuiltIn"
@@ -153,7 +153,7 @@ onMounted(load)
         <button
           v-if="current && current.source !== 'built-in'"
           type="button"
-          class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+          class="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
           title="write the shipped text back into this machine's file"
           data-test="harness-use-builtin"
           :disabled="busy"
@@ -164,7 +164,7 @@ onMounted(load)
         <button
           v-if="current && current.source !== 'off'"
           type="button"
-          class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
+          class="text-sm text-slate-500 hover:text-red-700 dark:text-slate-400"
           title="agents on this machine get no note"
           data-test="harness-off"
           :disabled="busy"
@@ -174,7 +174,7 @@ onMounted(load)
         </button>
         <button
           type="button"
-          class="rounded bg-blue-600 px-3 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+          class="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
           data-test="harness-save"
           :disabled="busy || !dirty"
           @click="save(text)"
@@ -191,12 +191,12 @@ onMounted(load)
           wrap
           @update:content="text = $event"
         />
-        <p v-else-if="loaded" class="p-4 text-sm text-slate-500 dark:text-slate-400">
+        <p v-else-if="loaded" class="p-4 text-base text-slate-500 dark:text-slate-400">
           Nothing to edit: no machine answered.
         </p>
       </div>
       <p
-        class="border-t border-slate-200 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400"
+        class="border-t border-slate-200 px-4 py-2 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400"
       >
         <template v-if="isFraming">
           How a feature and a brief are written here: the purpose first, the three kinds of

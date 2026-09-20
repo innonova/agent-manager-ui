@@ -23,13 +23,13 @@ const emit = defineEmits<{ close: []; submit: []; secondary: [] }>()
       <div class="flex flex-col gap-3">
         <slot />
       </div>
-      <p v-if="error" class="mt-3 text-sm text-red-700 dark:text-red-300" data-test="form-error">
+      <p v-if="error" class="mt-3 text-base text-red-700 dark:text-red-300" data-test="form-error">
         {{ error }}
       </p>
       <div class="mt-5 flex justify-end gap-2">
         <button
           type="button"
-          class="rounded px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+          class="rounded px-3 py-1.5 text-base text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
           @click="emit('close')"
         >
           cancel
@@ -37,7 +37,7 @@ const emit = defineEmits<{ close: []; submit: []; secondary: [] }>()
         <button
           v-if="secondaryLabel"
           type="button"
-          class="rounded border border-blue-600 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-slate-800"
+          class="rounded border border-blue-600 px-3 py-1.5 text-base text-blue-700 hover:bg-blue-50 disabled:opacity-50 dark:text-blue-300 dark:hover:bg-slate-800"
           :disabled="busy"
           data-test="form-secondary"
           @click="emit('secondary')"
@@ -46,7 +46,7 @@ const emit = defineEmits<{ close: []; submit: []; secondary: [] }>()
         </button>
         <button
           type="submit"
-          class="rounded bg-blue-600 px-4 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          class="rounded bg-blue-600 px-4 py-1.5 text-base text-white hover:bg-blue-700 disabled:opacity-50"
           :disabled="busy"
           data-test="form-submit"
         >

@@ -49,6 +49,7 @@ const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
 const showNote = ref(false)
+const showDetails = ref(false)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 const activity = computed(() => current.value?.status.activity ?? null)
 /** The current thinking item's live text: only the last item counts, since nothing else appends while it streams. */
@@ -250,13 +251,13 @@ async function archive() {
       }}</span>
       <span
         v-if="hosts.several && hostName"
-        class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+        class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
         data-test="project-host"
         >{{ hostName }}</span
       >
       <span
         v-if="host && (!host.connected || !host.daemon || host.error)"
-        class="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+        class="rounded bg-amber-100 px-2 py-0.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
         data-test="host-warning"
         >{{
           !host.connected
@@ -268,7 +269,7 @@ async function archive() {
       >
       <RouterLink
         :to="{ name: 'projects', query: { edit: id } }"
-        class="text-xs text-slate-400 hover:text-slate-900 hover:underline dark:text-slate-500 dark:hover:text-slate-100"
+        class="text-sm text-slate-400 hover:text-slate-900 hover:underline dark:text-slate-500 dark:hover:text-slate-100"
         title="Edit the project: name, repositories, default profile"
         data-test="edit-project-link"
         >edit</RouterLink
@@ -281,13 +282,13 @@ async function archive() {
       >
         <div class="flex items-center px-3 py-2">
           <span
-            class="text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+            class="text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
             >Projects</span
           >
           <span class="grow" />
           <RouterLink
             :to="{ name: 'projects' }"
-            class="text-xs text-slate-500 hover:underline dark:text-slate-400"
+            class="text-sm text-slate-500 hover:underline dark:text-slate-400"
             title="Create or edit projects"
             >manage</RouterLink
           >
@@ -297,26 +298,65 @@ async function archive() {
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">
         <div
-          class="border-b border-slate-200 bg-white px-4 py-2 text-sm dark:border-slate-800 dark:bg-slate-900"
+          class="border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
-          <!-- line one: who and how it is doing, and what you can do about it -->
+          <!-- one line: who, how it is doing, what you can do; the facts fold away under the name -->
           <div class="flex items-center gap-3">
-            <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
+            <button
+              type="button"
+              class="flex items-center gap-1.5 text-left"
+              :title="
+                showDetails
+                  ? 'hide the details'
+                  : 'profile, directory, usage, effort, the harness note'
+              "
+              data-test="agent-details-toggle"
+              @click="showDetails = !showDetails"
+            >
+              <span class="font-medium" data-test="agent-name">{{ current.agent.name }}</span>
+              <span class="text-sm text-slate-400 dark:text-slate-500">{{
+                showDetails ? '▾' : '▸'
+              }}</span>
+            </button>
             <StateBadge
               :state="current.status.state"
               :background="current.status.background"
               data-test="agent-state"
             />
             <span
+              v-if="current.status.model"
+              class="font-mono text-sm text-slate-500 dark:text-slate-400"
+              title="model reported by the agent"
+              data-test="agent-model-chip"
+              >{{ current.status.model }}</span
+            >
+            <span
+              v-if="current.agent.createdBy && current.agent.createdBy.startsWith('agent-')"
+              class="text-sm text-slate-500 dark:text-slate-400"
+              title="a helper: the agent that started it gives it its work and reviews it"
+              data-test="started-by"
+              >started by {{ current.agent.createdBy.slice(6) }}</span
+            >
+            <span
               v-if="current.status.error"
               class="truncate text-red-700 dark:text-red-300"
               data-test="agent-error"
               >{{ current.status.error }}</span
             >
+            <span
+              v-if="current.status.state === 'idle' && current.status.background"
+              class="text-sm text-blue-700 dark:text-blue-300"
+              :title="`no activity since ${when(current.status.lastActivityAt)}`"
+              data-test="waiting-since"
+              >waiting on {{ current.status.background }} background job{{
+                current.status.background === 1 ? '' : 's'
+              }}
+              for {{ since(current.status.lastActivityAt) }}</span
+            >
             <span class="grow" />
             <span
               v-if="othersHere.length"
-              class="text-xs text-violet-700 dark:text-violet-300"
+              class="text-sm text-violet-700 dark:text-violet-300"
               data-test="presence"
             >
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
@@ -324,92 +364,81 @@ async function archive() {
             <RouterLink
               v-if="changes.unread.get(id)"
               :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
-              class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+              class="text-sm text-blue-700 hover:underline dark:text-blue-300"
               data-test="unread-link"
               >{{ changes.unread.get(id) }} changed since you last looked</RouterLink
             >
-            <button
-              v-if="current.status.state !== 'exited'"
-              class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              data-test="stop"
-              @click="stop"
+            <div
+              class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700"
+              data-test="agent-actions"
             >
-              stop
-            </button>
-            <button
-              class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              title="stop and resume with the current settings (repositories, harness note); the conversation continues"
-              data-test="restart"
-              @click="restart"
-            >
-              restart
-            </button>
-            <button
-              class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
-              data-test="archive"
-              @click="archive"
-            >
-              archive
-            </button>
-            <button
-              class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
-              title="forget this agent for good: its process, the daemon's logs of its sessions, the cached transcript; the vendor's own store stays"
-              data-test="delete"
-              @click="remove"
-            >
-              delete
-            </button>
+              <button
+                v-if="current.status.state !== 'exited'"
+                class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                title="end the session; the next message resumes it"
+                data-test="stop"
+                @click="stop"
+              >
+                stop
+              </button>
+              <button
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                title="stop and resume with the current settings (repositories, harness note); the conversation continues"
+                data-test="restart"
+                @click="restart"
+              >
+                restart
+              </button>
+              <button
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                title="end the session and take the agent off the list; its transcript stays"
+                data-test="archive"
+                @click="archive"
+              >
+                archive
+              </button>
+              <button
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-red-950"
+                title="forget this agent for good: its process, the daemon's logs of its sessions, the cached transcript; the vendor's own store stays"
+                data-test="delete"
+                @click="remove"
+              >
+                delete
+              </button>
+            </div>
           </div>
-          <!-- line two: the facts about the session, muted: chips left, usage centred, place right -->
-          <div class="mt-1 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-            <div class="flex shrink-0 items-center gap-2">
-              <span
-                v-if="current.status.model"
-                class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-slate-600 dark:bg-slate-800 dark:text-slate-300"
-                title="model reported by the agent"
-                data-test="agent-model-chip"
-                >{{ current.status.model }}</span
-              >
-              <span
-                v-if="current.agent.effort"
-                class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
-                title="effort level the agent was started with"
-                data-test="agent-effort-chip"
-                >effort {{ current.agent.effort }}</span
-              >
-              <span
-                v-if="current.agent.permissions === 'ask'"
-                class="rounded bg-slate-100 px-1.5 py-0.5 dark:bg-slate-800"
-                title="Gated tools wait for your answer"
-                >asks</span
-              >
-              <span
-                v-if="current.status.state === 'idle' && current.status.background"
-                class="text-blue-700 dark:text-blue-300"
-                :title="`no activity since ${when(current.status.lastActivityAt)}`"
-                data-test="waiting-since"
-                >waiting on {{ current.status.background }} background job{{
-                  current.status.background === 1 ? '' : 's'
-                }}
-                for {{ since(current.status.lastActivityAt) }}</span
-              >
-            </div>
-            <div class="flex min-w-0 grow justify-center">
-              <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
-            </div>
+          <!-- the facts, on request: read once an hour, not once a glance -->
+          <div
+            v-if="showDetails"
+            class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500 dark:text-slate-400"
+            data-test="agent-details"
+          >
+            <span
+              >profile <span class="font-mono">{{ current.agent.profile }}</span></span
+            >
+            <span class="font-mono" data-test="agent-cwd-label">{{ current.agent.cwd }}</span>
+            <span v-if="current.agent.effort" data-test="agent-effort-chip"
+              >effort {{ current.agent.effort }}</span
+            >
+            <span
+              v-if="current.agent.permissions === 'ask'"
+              title="Gated tools wait for your answer"
+              >asks before gated tools</span
+            >
+            <span v-if="current.agent.createdBy && !current.agent.createdBy.startsWith('agent-')"
+              >started by {{ current.agent.createdBy }}</span
+            >
+            <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
             <button
               v-if="current.agent.harnessNote"
               type="button"
-              class="shrink-0 font-mono hover:underline"
+              class="text-blue-700 hover:underline dark:text-blue-300"
               title="what the agent was told about running here, at its last session start"
               data-test="harness-note-link"
               @click="showNote = true"
             >
-              harness
+              what it was told
             </button>
-            <span class="shrink-0 truncate font-mono" data-test="agent-cwd-label"
-              >{{ current.agent.profile }} · {{ current.agent.cwd }}</span
-            >
           </div>
         </div>
         <div class="relative min-h-0 grow">
@@ -425,7 +454,7 @@ async function archive() {
                input, without moving anything -->
           <div
             v-if="othersTyping.length"
-            class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-xs text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
+            class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
             data-test="presence-typing"
           >
             <span class="animate-pulse">{{
@@ -454,7 +483,7 @@ async function archive() {
       </section>
       <section
         v-else
-        class="flex grow items-center justify-center text-sm text-slate-400 dark:text-slate-500"
+        class="flex grow items-center justify-center text-base text-slate-400 dark:text-slate-500"
       >
         Select or create an agent.
       </section>
@@ -468,10 +497,10 @@ async function archive() {
       @submit="showNote = false"
     >
       <pre
-        class="max-h-96 overflow-auto rounded bg-slate-50 p-3 text-xs whitespace-pre-wrap dark:bg-slate-800"
+        class="max-h-96 overflow-auto rounded bg-slate-50 p-3 text-sm whitespace-pre-wrap dark:bg-slate-800"
         data-test="harness-note"
         >{{ current.agent.harnessNote }}</pre>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
         Given at session start; a changed template reaches the agent at its next restart.
       </p>
     </ModalForm>
@@ -483,7 +512,7 @@ async function archive() {
       @close="showNew = false"
       @submit="create"
     >
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Name</span>
         <input
           v-model="form.name"
@@ -492,7 +521,7 @@ async function archive() {
           required
         />
       </label>
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Profile</span>
         <select
           v-model="form.profile"
@@ -506,17 +535,17 @@ async function archive() {
         </select>
       </label>
       <div class="grid grid-cols-2 gap-3">
-        <label class="text-sm">
+        <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">Model</span>
           <input
             v-model="form.model"
-            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
             placeholder="vendor default"
             title="The vendor's model name, passed as is: claude-opus-5, gpt-6, … The vendor rejects a bad one at start."
             data-test="agent-model"
           />
         </label>
-        <label class="text-sm">
+        <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">Effort</span>
           <select
             v-model="form.effort"
@@ -530,7 +559,7 @@ async function archive() {
           </select>
         </label>
       </div>
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Permissions</span>
         <select
           v-model="form.permissions"
@@ -541,7 +570,7 @@ async function archive() {
           <option value="ask">ask — gated tools wait for your answer here</option>
         </select>
       </label>
-      <label v-if="(project?.repos.length ?? 0) > 1" class="text-sm">
+      <label v-if="(project?.repos.length ?? 0) > 1" class="text-base">
         <span class="text-slate-600 dark:text-slate-300"
           >Working repository (the others are passed as extra directories)</span
         >

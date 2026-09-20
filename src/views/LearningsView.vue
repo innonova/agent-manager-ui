@@ -61,7 +61,7 @@ onMounted(load)
 <template>
   <AppShell>
     <template #title>
-      <span class="text-sm text-slate-500 dark:text-slate-400">
+      <span class="text-base text-slate-500 dark:text-slate-400">
         <RouterLink :to="{ name: 'projects' }" class="hover:underline">projects</RouterLink>
         · learnings
       </span>
@@ -72,7 +72,7 @@ onMounted(load)
           v-for="h in hosts.list"
           :key="h.name"
           type="button"
-          class="rounded px-2 py-0.5 text-sm"
+          class="rounded px-2 py-0.5 text-base"
           :class="
             h.name === host || (!host && h.local)
               ? 'bg-slate-200 font-medium dark:bg-slate-700'
@@ -87,20 +87,20 @@ onMounted(load)
         <textarea
           v-model="text"
           rows="3"
-          class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-950"
+          class="w-full rounded border border-slate-300 bg-white px-2 py-1 text-base dark:border-slate-700 dark:bg-slate-950"
           placeholder="Something learned about running agents or working with them: what happened, with the evidence. An observation, not a rule."
           data-test="learning-text"
         ></textarea>
         <div class="flex items-center gap-2">
           <input
             v-model="refText"
-            class="grow rounded border border-slate-300 bg-white px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-950"
+            class="grow rounded border border-slate-300 bg-white px-2 py-1 text-base dark:border-slate-700 dark:bg-slate-950"
             placeholder="pointer, optional: a run id, a feature slug, a commit"
             data-test="learning-ref"
           />
           <button
             type="submit"
-            class="rounded bg-blue-600 px-3 py-1 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+            class="rounded bg-blue-600 px-3 py-1 text-base text-white hover:bg-blue-700 disabled:opacity-50"
             :disabled="busy || !text.trim()"
             data-test="learning-add"
           >
@@ -112,17 +112,17 @@ onMounted(load)
         <li
           v-for="e in newestFirst"
           :key="e.n"
-          class="border-t border-slate-200 py-3 text-sm dark:border-slate-800"
+          class="border-t border-slate-200 py-3 text-base dark:border-slate-800"
           data-test="learning"
         >
-          <div class="mb-1 text-xs text-slate-500 dark:text-slate-400">
+          <div class="mb-1 text-sm text-slate-500 dark:text-slate-400">
             #{{ e.n }} · {{ when(e.at) }} · {{ e.by }}<span v-if="e.ref"> · {{ e.ref }}</span>
           </div>
           <div class="whitespace-pre-wrap">{{ e.text }}</div>
         </li>
         <li
           v-if="loaded && entries.length === 0"
-          class="py-3 text-sm text-slate-500 dark:text-slate-400"
+          class="py-3 text-base text-slate-500 dark:text-slate-400"
         >
           Nothing recorded yet. Agents add entries with <code>am learn</code>; people here.
         </li>

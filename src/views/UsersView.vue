@@ -110,12 +110,12 @@ async function copy(text: string) {
     <div class="mx-auto flex h-full max-w-3xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Users</h1>
-        <span class="text-xs text-slate-400"
+        <span class="text-sm text-slate-400"
           >everyone here is a trusted admin; accounts exist only because someone created them</span
         >
         <span class="grow" />
         <button
-          class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+          class="rounded bg-blue-600 px-3 py-1.5 text-base text-white hover:bg-blue-700"
           data-test="new-user"
           @click="showNew = true"
         >
@@ -135,28 +135,28 @@ async function copy(text: string) {
           <template v-if="renaming && u.id === session.user?.id">
             <input
               v-model="myName"
-              class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700"
+              class="rounded border border-slate-300 px-2 py-1 text-base dark:border-slate-700"
               data-test="rename-input"
               @keydown.enter.prevent="saveRename"
               @keydown.escape="renaming = false"
             />
             <button
-              class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+              class="text-sm text-blue-700 hover:underline dark:text-blue-300"
               data-test="rename-save"
               @click="saveRename"
             >
               save
             </button>
-            <button class="text-xs text-slate-500 hover:underline" @click="renaming = false">
+            <button class="text-sm text-slate-500 hover:underline" @click="renaming = false">
               cancel
             </button>
           </template>
           <template v-else>
             <span class="font-medium" data-test="user-name">{{ u.name }}</span>
-            <span v-if="u.id === session.user?.id" class="text-xs text-slate-400">(you)</span>
+            <span v-if="u.id === session.user?.id" class="text-sm text-slate-400">(you)</span>
             <button
               v-if="u.id === session.user?.id"
-              class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+              class="text-sm text-blue-700 hover:underline dark:text-blue-300"
               data-test="rename"
               @click="startRename"
             >
@@ -164,11 +164,11 @@ async function copy(text: string) {
             </button>
           </template>
           <span class="grow" />
-          <span class="text-xs text-slate-400" :title="`created ${when(u.createdAt)}`"
+          <span class="text-sm text-slate-400" :title="`created ${when(u.createdAt)}`"
             >last login {{ when(u.lastLoginAt) }}</span
           >
           <button
-            class="rounded border border-slate-300 px-2 py-0.5 text-xs dark:border-slate-700"
+            class="rounded border border-slate-300 px-2 py-0.5 text-sm dark:border-slate-700"
             data-test="reset-password"
             @click="resetPassword(u)"
           >
@@ -176,7 +176,7 @@ async function copy(text: string) {
           </button>
           <button
             v-if="u.id !== session.user?.id"
-            class="rounded border border-red-400 px-2 py-0.5 text-xs text-red-800 dark:border-red-700 dark:text-red-200"
+            class="rounded border border-red-400 px-2 py-0.5 text-sm text-red-800 dark:border-red-700 dark:text-red-200"
             data-test="remove-user"
             @click="remove(u)"
           >
@@ -194,7 +194,7 @@ async function copy(text: string) {
       @close="showNew = false"
       @submit="create"
     >
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Name</span>
         <input
           v-model="newName"
@@ -203,7 +203,7 @@ async function copy(text: string) {
           required
         />
       </label>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
         A password is generated and shown once; pass it on and they can log in.
       </p>
     </ModalForm>
@@ -215,7 +215,7 @@ async function copy(text: string) {
       @close="reveal = null"
       @submit="reveal = null"
     >
-      <p class="text-sm text-slate-600 dark:text-slate-300">
+      <p class="text-base text-slate-600 dark:text-slate-300">
         Shown once. Copy it now; it is not stored anywhere readable.
       </p>
       <div class="flex items-center gap-2">
@@ -226,7 +226,7 @@ async function copy(text: string) {
         >
         <button
           type="button"
-          class="rounded border border-slate-300 px-2 py-1 text-xs dark:border-slate-700"
+          class="rounded border border-slate-300 px-2 py-1 text-sm dark:border-slate-700"
           @click="copy(reveal!.password)"
         >
           copy

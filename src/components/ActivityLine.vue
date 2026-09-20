@@ -135,7 +135,7 @@ onUnmounted(() => observer?.disconnect())
       data-test="activity-line"
     >
       <div
-        class="flex items-baseline justify-between gap-2 text-xs text-slate-500 dark:text-slate-400"
+        class="flex items-baseline justify-between gap-2 text-sm text-slate-500 dark:text-slate-400"
         data-test="activity-label"
       >
         <span>{{ leftText }}</span>

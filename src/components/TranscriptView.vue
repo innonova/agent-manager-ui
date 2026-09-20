@@ -105,7 +105,7 @@ onMounted(follow)
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
       <button
         v-if="hasEarlier"
-        class="self-center rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+        class="self-center rounded-full border border-slate-300 px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 disabled:opacity-60 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
         data-test="load-earlier"
         :disabled="loadingEarlier"
         @click="emit('loadEarlier')"
@@ -121,14 +121,14 @@ onMounted(follow)
           @decide="(id, o) => emit('decide', id, o)"
         />
       </template>
-      <p v-if="rows.length === 0" class="text-sm text-slate-400 dark:text-slate-500">
+      <p v-if="rows.length === 0" class="text-base text-slate-400 dark:text-slate-500">
         No transcript yet.
       </p>
     </div>
   </div>
   <button
     v-if="!following"
-    class="absolute right-6 bottom-24 rounded-full bg-slate-800 px-3 py-1 text-xs text-white shadow"
+    class="absolute right-6 bottom-24 rounded-full bg-slate-800 px-3 py-1 text-sm text-white shadow"
     :style="activityHeight ? { bottom: `calc(6rem + ${activityHeight}px)` } : undefined"
     @click="((following = true), follow())"
   >

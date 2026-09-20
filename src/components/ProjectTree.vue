@@ -133,7 +133,7 @@ events.on((f) => {
       :data-open="isOpen(r.project.id) || undefined"
     >
       <div
-        class="flex items-center gap-1 px-2 py-1.5 text-sm"
+        class="flex items-center gap-1 px-2 py-1.5 text-base"
         :class="r.project.id === projectId ? 'font-semibold' : 'text-slate-700 dark:text-slate-300'"
       >
         <button
@@ -185,7 +185,7 @@ events.on((f) => {
         <AgentCountBadges v-if="!isOpen(r.project.id)" :counts="r.agentCounts" class="shrink-0" />
         <button
           v-else
-          class="shrink-0 text-xs text-blue-700 hover:underline dark:text-blue-300"
+          class="shrink-0 text-sm text-blue-700 hover:underline dark:text-blue-300"
           :data-test="r.project.id === projectId ? 'new-agent' : 'tree-new-agent'"
           title="New agent in this project"
           @click="emit('newAgent', r.project.id)"
@@ -197,7 +197,7 @@ events.on((f) => {
         <li v-for="a in agentsOf(r.project.id)" :key="a.agent.id" data-test="agent-row">
           <RouterLink
             :to="{ name: 'agent', params: { id: r.project.id, agentId: a.agent.id } }"
-            class="flex items-center gap-2 py-1.5 pr-3 pl-7 text-sm hover:bg-slate-50 dark:hover:bg-slate-800"
+            class="flex items-center gap-2 py-1.5 pr-3 pl-7 text-base hover:bg-slate-50 dark:hover:bg-slate-800"
             :class="a.agent.id === agentId ? 'bg-slate-100 font-medium dark:bg-slate-800' : ''"
           >
             <span
@@ -216,12 +216,12 @@ events.on((f) => {
         </li>
         <li
           v-if="agentsOf(r.project.id).length === 0"
-          class="py-1 pl-7 text-xs text-slate-400 dark:text-slate-500"
+          class="py-1 pl-7 text-sm text-slate-400 dark:text-slate-500"
         >
           no agents
         </li>
         <!-- archived agents: out of the way, but not a black hole -->
-        <li class="py-1 pl-7 text-xs">
+        <li class="py-1 pl-7 text-sm">
           <button
             type="button"
             class="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
@@ -235,7 +235,7 @@ events.on((f) => {
           <li
             v-for="a in archivedOf(r.project.id)"
             :key="a.agent.id"
-            class="flex items-center gap-2 py-1 pr-3 pl-9 text-xs text-slate-500 dark:text-slate-400"
+            class="flex items-center gap-2 py-1 pr-3 pl-9 text-sm text-slate-500 dark:text-slate-400"
             data-test="archived-row"
           >
             <RouterLink
@@ -257,7 +257,7 @@ events.on((f) => {
           </li>
           <li
             v-if="archivedOf(r.project.id).length === 0"
-            class="py-1 pl-9 text-xs text-slate-400 dark:text-slate-500"
+            class="py-1 pl-9 text-sm text-slate-400 dark:text-slate-500"
           >
             none
           </li>

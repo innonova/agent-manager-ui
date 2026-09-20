@@ -59,7 +59,7 @@ const title = computed(() => {
 <template>
   <span
     v-if="text"
-    class="font-mono text-xs whitespace-nowrap"
+    class="font-mono text-sm whitespace-nowrap"
     :class="tone"
     :title="title"
     data-test="usage-chip"

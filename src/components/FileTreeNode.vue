@@ -54,7 +54,7 @@ const title = computed(() => {
 <template>
   <li>
     <button
-      class="flex w-full items-center gap-1.5 truncate py-0.5 pr-2 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+      class="flex w-full items-center gap-1.5 truncate py-0.5 pr-2 text-left text-base hover:bg-slate-100 dark:hover:bg-slate-800"
       :class="[
         files.openPath === entry.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : '',
         entry.ignored ? 'opacity-50' : '',
@@ -100,7 +100,7 @@ const title = computed(() => {
       <span class="grow" />
       <span
         v-if="entry.status"
-        class="shrink-0 text-xs"
+        class="shrink-0 text-sm"
         :class="statusClass"
         :title="`git: ${entry.status}`"
         >{{ STATUS_LETTER[entry.status] }}</span

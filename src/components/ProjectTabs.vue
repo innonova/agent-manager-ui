@@ -10,7 +10,7 @@ const tab = (name: string) =>
 </script>
 
 <template>
-  <nav class="flex gap-4 text-sm">
+  <nav class="flex gap-4 text-base">
     <RouterLink
       :to="{ name: 'project', params: { id } }"
       class="border-b-2 py-1"

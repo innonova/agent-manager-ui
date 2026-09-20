@@ -16,7 +16,7 @@ const styles: Record<AgentState, string> = {
 
 <template>
   <span
-    class="rounded px-1.5 py-0.5 text-xs font-medium"
+    class="rounded px-1.5 py-0.5 text-sm font-medium"
     :class="styles[state]"
     :title="title ?? (background ? `${background} background job(s) pending` : undefined)"
     :data-state="state"

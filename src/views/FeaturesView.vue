@@ -153,20 +153,20 @@ async function create() {
     <div class="mx-auto flex h-full max-w-5xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Features</h1>
-        <span class="text-xs text-slate-400"
+        <span class="text-sm text-slate-400"
           >features/*.md in each repository · ask an agent in its conversation to work on them; it
           reports here</span
         >
         <span class="grow" />
         <button
-          class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
+          class="rounded bg-blue-600 px-3 py-1.5 text-base text-white hover:bg-blue-700"
           data-test="new-feature"
           @click="showNew = true"
         >
           new feature
         </button>
       </div>
-      <p v-if="list.length === 0" class="text-sm text-slate-500 dark:text-slate-400">
+      <p v-if="list.length === 0" class="text-base text-slate-500 dark:text-slate-400">
         No features yet. Each feature is a markdown file under <code>features/</code> in one of the
         project's repositories: a title, a status and a description. Ask an agent, in its
         conversation, to work on one; it appends its report to the file and puts it in review.
@@ -174,7 +174,7 @@ async function create() {
       <div class="min-h-0 grow overflow-y-auto">
         <section v-for="g in groups" :key="g.status" class="mb-6">
           <h2
-            class="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+            class="mb-2 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
           >
             {{ g.status }}
           </h2>
@@ -185,24 +185,24 @@ async function create() {
               <div class="flex items-center gap-3 px-4 py-2">
                 <button class="min-w-0 grow text-left" @click="toggle(f.slug)">
                   <span class="font-medium" data-test="feature-title">{{ f.title }}</span>
-                  <span class="ml-2 font-mono text-xs text-slate-400"
+                  <span class="ml-2 font-mono text-sm text-slate-400"
                     >{{ f.slug
                     }}<template v-if="f.status !== 'done'"> · p{{ f.priority }}</template></span
                   >
                   <span
                     v-if="f.status === 'done'"
-                    class="ml-2 text-xs text-slate-400"
+                    class="ml-2 text-sm text-slate-400"
                     :title="new Date(f.mtime).toLocaleString()"
                     data-test="feature-done-at"
                     >{{ new Date(f.mtime).toLocaleDateString() }}</span
                   >
                   <span
                     v-if="multiRepo"
-                    class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                    class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 font-mono text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                     data-test="feature-repo"
                     >{{ f.repo }}</span
                   >
-                  <span v-if="f.dependsOn.length" class="ml-2 text-xs text-slate-400"
+                  <span v-if="f.dependsOn.length" class="ml-2 text-sm text-slate-400"
                     >after {{ f.dependsOn.join(', ') }}</span
                   >
                 </button>
@@ -213,12 +213,12 @@ async function create() {
                     params: { id },
                     query: { mode: 'changes', base: `feature:${f.slug}` },
                   }"
-                  class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+                  class="text-sm text-blue-700 hover:underline dark:text-blue-300"
                   data-test="feature-changes"
                   >changes</RouterLink
                 >
                 <FeatureStatusBadge :status="f.status" data-test="feature-status" />
-                <div class="flex gap-2 text-xs">
+                <div class="flex gap-2 text-sm">
                   <button
                     v-if="f.status !== 'in-progress'"
                     class="rounded border border-slate-300 px-2 py-0.5 dark:border-slate-700"
@@ -259,16 +259,16 @@ async function create() {
                 class="border-t border-slate-100 px-4 py-3 dark:border-slate-800"
                 data-test="feature-body"
               >
-                <div class="prose prose-sm dark:prose-invert max-w-none" v-html="html(f)" />
+                <div class="prose dark:prose-invert max-w-none" v-html="html(f)" />
                 <div v-if="f.status !== 'in-progress'" class="mt-4">
                   <textarea
                     v-model="response"
                     rows="3"
-                    class="w-full rounded border border-slate-300 px-3 py-2 text-sm dark:border-slate-700"
+                    class="w-full rounded border border-slate-300 px-3 py-2 text-base dark:border-slate-700"
                     placeholder="Respond to the report… (appended to the file as a dated Response section)"
                     data-test="feature-response-input"
                   />
-                  <div class="mt-2 flex items-center gap-2 text-xs">
+                  <div class="mt-2 flex items-center gap-2 text-sm">
                     <button
                       class="rounded bg-blue-600 px-3 py-1 text-white hover:bg-blue-700 disabled:opacity-50"
                       :disabled="!response.trim()"
@@ -298,7 +298,7 @@ async function create() {
       @close="showNew = false"
       @submit="create"
     >
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Title</span>
         <input
           :value="form.title"
@@ -308,7 +308,7 @@ async function create() {
           required
         />
       </label>
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300"
           >Description (markdown; this is what the agent is asked to do)</span
         >
@@ -316,11 +316,11 @@ async function create() {
           :value="form.body"
           @input="patchForm({ body: ($event.target as HTMLTextAreaElement).value })"
           rows="8"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
           data-test="feature-body-input"
         />
       </label>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
+      <p class="text-sm text-slate-500 dark:text-slate-400">
         Saved as <code>features/{{ form.slug || slugify(form.title) || '…' }}.md</code> in
         {{ project?.repos[0]?.name ?? 'the primary repository' }}.
         <button
@@ -333,7 +333,7 @@ async function create() {
         </button>
       </p>
       <template v-if="showMore">
-        <label class="text-sm">
+        <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">File name (slug)</span>
           <input
             :value="form.slug"
@@ -343,7 +343,7 @@ async function create() {
             data-test="feature-slug-input"
           />
         </label>
-        <label class="text-sm">
+        <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">Priority (lower runs first)</span>
           <input
             :value="form.priority"
@@ -365,7 +365,7 @@ async function create() {
       @close="editing = null"
       @submit="saveEdit"
     >
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Title</span>
         <input
           v-model="edit.title"
@@ -374,18 +374,18 @@ async function create() {
           required
         />
       </label>
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300"
           >Description (markdown; the whole file below the frontmatter)</span
         >
         <textarea
           v-model="edit.body"
           rows="10"
-          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-xs dark:border-slate-700"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
           data-test="feature-edit-body"
         />
       </label>
-      <label class="text-sm">
+      <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Priority (lower first)</span>
         <input
           v-model="edit.priority"
