@@ -164,6 +164,16 @@ onMounted(async () => {
     await files.openFile(p)
   }
 })
+// the top bar's switcher changes the project under this view; follow it
+watch(
+  () => props.id,
+  async (id) => {
+    if (!features.byProject.has(id)) void features.load(id)
+    void changes.countUnread(id)
+    await files.select(id)
+    if (mode.value === 'changes') await changes.select(id, base.value)
+  },
+)
 
 watch(
   () => [mode.value, base.value] as const,

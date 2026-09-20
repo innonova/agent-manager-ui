@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
@@ -93,6 +93,11 @@ onMounted(async () => {
   if (!projects.loaded) await projects.load()
   await features.load(props.id)
 })
+// the top bar's switcher changes the project under this view; follow it
+watch(
+  () => props.id,
+  (id) => void features.load(id),
+)
 
 function toggle(slug: string) {
   open.value = open.value === slug ? null : slug

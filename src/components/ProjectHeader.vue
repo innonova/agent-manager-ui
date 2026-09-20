@@ -23,9 +23,6 @@ const hosts = useHostsStore()
 const row = computed(() => projects.byId.get(props.id))
 const project = computed(() => row.value?.project)
 const host = computed(() => (project.value?.host ? hosts.byName(project.value.host) : undefined))
-const agentTotal = computed(() =>
-  row.value ? Object.values(row.value.agentCounts).reduce((a, b) => a + b, 0) : 0,
-)
 const waiting = computed(() =>
   row.value
     ? row.value.agentCounts['waiting-permission'] + row.value.agentCounts['waiting-input']
@@ -151,9 +148,7 @@ const tab = (name: string) =>
         class="rounded bg-amber-100 px-1.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
         :title="`${waiting} waiting for you`"
         >{{ waiting }}</span
-      ><span v-else-if="agentTotal" class="text-sm text-slate-400 dark:text-slate-500">{{
-        agentTotal
-      }}</span></RouterLink
+      ></RouterLink
     >
     <RouterLink
       :to="{ name: 'files', params: { id } }"

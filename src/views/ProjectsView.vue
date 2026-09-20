@@ -247,10 +247,10 @@ async function submit(restart = false) {
                 class="rounded bg-red-100 px-1.5 py-0.5 text-red-900 dark:bg-red-900 dark:text-red-100"
                 >{{ r.agentCounts.error }} in error</span
               >
-              <span class="text-slate-400 dark:text-slate-500"
-                >{{ agentTotal(r.agentCounts) }} agent{{
-                  agentTotal(r.agentCounts) === 1 ? '' : 's'
-                }}</span
+              <span
+                v-if="agentTotal(r.agentCounts) === 0"
+                class="text-slate-400 dark:text-slate-500"
+                >no agents</span
               >
             </div>
             <button
