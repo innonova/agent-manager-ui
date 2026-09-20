@@ -122,26 +122,32 @@ const durationText = computed(() => {
   return a && timed.value ? since(a.since, now.value) : null
 })
 
-const leftText = computed(() => {
+/** The state, without the count: the ellipsis goes right after it. */
+const stateText = computed(() => {
   const a = props.activity
   if (!a) return ''
-  const tokensSuffix = a.tokens != null ? ` · ${a.tokens.toLocaleString('en-US')} tokens` : ''
   switch (a.kind) {
     case 'requesting':
       // the request is out and nothing has come back: the wait before
       // every message of a turn, not only the first
-      return `waiting for the model${tokensSuffix}`
+      return 'waiting for the model'
     case 'thinking':
-      return `${thinkingWord.value}${tokensSuffix}`
+      return thinkingWord.value
     case 'writing':
       return 'writing'
     case 'tool':
-      return `${(props.toolName && TOOL_PHRASES[props.toolName]) || FALLBACK_TOOL_PHRASE}${tokensSuffix}`
+      return (props.toolName && TOOL_PHRASES[props.toolName]) || FALLBACK_TOOL_PHRASE
     case 'waiting':
       return 'waiting for your answer'
     default:
       return ''
   }
+})
+/** The turn's count so far, after the state and its dots, when the vendor has given one and the kind carries it. */
+const tokensText = computed(() => {
+  const a = props.activity
+  if (!a || a.tokens == null || a.kind === 'writing' || a.kind === 'waiting') return ''
+  return ` · ${a.tokens.toLocaleString('en-US')} tokens`
 })
 
 /** Only for text the transcript doesn't already show inline (it folds above this length); nothing would be gained by repeating a short one twice. */
@@ -199,8 +205,9 @@ onUnmounted(() => observer?.disconnect())
         data-test="activity-label"
       >
         <span
-          >{{ leftText
-          }}<span v-if="timed" class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span
+          >{{ stateText
+          }}<span v-if="timed" class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span
+          >{{ tokensText }}</span
         >
         <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
           durationText

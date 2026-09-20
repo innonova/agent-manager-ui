@@ -443,8 +443,9 @@ at most one a second, which can otherwise leave the line saying
 "thinking" for a moment after the transcript already shows the call
 running. When `tokens` (the turn's output so far, one number that only grows
 within the turn, absent until a vendor has said anything usable) is
-present, it sits between the word and the elapsed time, with thousands
-separated: "musing · 1,340 tokens · 12 s". While `activity.kind` is
+present, it follows the word and its dots, before the elapsed time,
+with thousands separated: "musing… · 1,340 tokens" and "12 s" at the
+right. While `activity.kind` is
 `thinking`, the tail of the current transcript's last item streams in
 under the line — but only when that item is longer than what the
 transcript already shows inline (`THINKING_FOLD_CHARS`, `src/constants.ts`,
