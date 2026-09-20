@@ -80,13 +80,13 @@ export interface PermissionOption {
   label: string
 }
 
-export type ActivityKind = 'thinking' | 'writing' | 'tool' | 'waiting'
+export type ActivityKind = 'requesting' | 'thinking' | 'writing' | 'tool' | 'waiting'
 
 export interface ActivityInfo {
   kind: ActivityKind
   /** What runs: a shell tool's command, a read/edit's path, else the tool's name. */
   detail?: string
-  /** The turn's output tokens so far, as the vendor reports them while streaming; absent when it has said nothing usable. */
+  /** The turn's output so far, one number that only grows within the turn (settled messages plus a live estimate of the one under way); absent when the vendor has said nothing usable. */
   tokens?: number
   /** The record time the activity started, so a client can say "thinking for 12 s". */
   since: number

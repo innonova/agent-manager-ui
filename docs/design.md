@@ -395,8 +395,8 @@ it (the session id, the harness note it was given).
 
 ## What the agent is doing
 
-The manager's `status.activity` (`{ kind: 'thinking' | 'writing' | 'tool' |
-'waiting', detail?, tokens?, since } | null`) says what the last thing on
+The manager's `status.activity` (`{ kind: 'requesting' | 'thinking' |
+'writing' | 'tool' | 'waiting', detail?, tokens?, since } | null`) says what the last thing on
 the stream was doing; a line shows it, muted, while it is not null.
 It overlays the bottom of the transcript pane (`ActivityLine.vue`,
 translucent, the same technique as the "is typing…" note) rather than
@@ -412,7 +412,13 @@ the scroller reserves that height below the items, so the newest item
 instead of sitting under it, and a view that was at the end stays there.
 `writing` just says "writing" and `waiting` says "waiting for your
 answer" — both already show themselves elsewhere (the growing reply, the
-permission card). `thinking` and `tool` are open-ended, so they get more:
+permission card). `requesting` says "waiting for the model": the request
+is out and nothing has come back, which happens before every message of
+a turn, not only its first, and is often the longest stretch a quick
+tool call has (a model that goes straight to the call thinks for no time
+at all, so a line that had no words for this kind stood blank for
+seconds and read as the thinking having gone missing). `requesting`,
+`thinking` and `tool` are open-ended, so they get more:
 a left-aligned word and, right-aligned on the same line, the elapsed time
 ticking locally from `since` ("12 s", then "3 min", `src/time.ts`'s
 `since`). `thinking`'s word is not always "thinking": one of a small set
@@ -428,9 +434,10 @@ rendering`). That `tool` phase is read from the transcript itself, not
 its result yet: the manager throttles `activity`-only announcements to
 at most one a second, which can otherwise leave the line saying
 "thinking" for a moment after the transcript already shows the call
-running. When `tokens` (the turn's output so far, absent until a vendor
-has said anything usable) is present, it sits between the word and the
-elapsed time: "musing · 340 tokens · 12 s". While `activity.kind` is
+running. When `tokens` (the turn's output so far, one number that only grows
+within the turn, absent until a vendor has said anything usable) is
+present, it sits between the word and the elapsed time, with thousands
+separated: "musing · 1,340 tokens · 12 s". While `activity.kind` is
 `thinking`, the tail of the current transcript's last item streams in
 under the line — but only when that item is longer than what the
 transcript already shows inline (`THINKING_FOLD_CHARS`, `src/constants.ts`,

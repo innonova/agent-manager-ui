@@ -58,8 +58,13 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-/** thinking and tool are open-ended enough to want elapsed time and a token count; writing and waiting already show themselves. */
-const timed = computed(() => props.activity?.kind === 'thinking' || props.activity?.kind === 'tool')
+/** requesting, thinking and tool are open-ended enough to want elapsed time and a token count; writing and waiting already show themselves. */
+const timed = computed(
+  () =>
+    props.activity?.kind === 'requesting' ||
+    props.activity?.kind === 'thinking' ||
+    props.activity?.kind === 'tool',
+)
 
 const durationText = computed(() => {
   const a = props.activity
@@ -69,8 +74,12 @@ const durationText = computed(() => {
 const leftText = computed(() => {
   const a = props.activity
   if (!a) return ''
-  const tokensSuffix = a.tokens != null ? ` · ${a.tokens} tokens` : ''
+  const tokensSuffix = a.tokens != null ? ` · ${a.tokens.toLocaleString('en-US')} tokens` : ''
   switch (a.kind) {
+    case 'requesting':
+      // the request is out and nothing has come back: the wait before
+      // every message of a turn, not only the first
+      return `waiting for the model${tokensSuffix}`
     case 'thinking':
       return `${thinkingWord.value}${tokensSuffix}`
     case 'writing':
