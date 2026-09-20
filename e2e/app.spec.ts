@@ -864,3 +864,39 @@ test('an agent reporting its account usage shows a chip in its header and a bloc
   await expect(page.getByTestId('usage')).toContainText('fake')
   await expect(page.getByTestId('usage').getByTestId('usage-chip').first()).toContainText('5h 85%')
 })
+
+test('a created agent, and an archived one, reach every open tab live', async ({ page }) => {
+  await login(page)
+  // A project made before either tab loads, so both see it when they open.
+  const made = await page.request.post('/api/projects', {
+    data: { name: 'Live', repos: [{ path: PROJECT_DIR }], defaultProfile: 'fake' },
+  })
+  expect(made.ok()).toBeTruthy()
+
+  // Tab A opens the project; its (empty) agent list is loaded and now live.
+  await page.goto('/')
+  await page.getByTestId('project-row').filter({ hasText: 'Live' }).first().click()
+  await expect(page.getByTestId('project-title')).toHaveText('Live')
+  const scoutInA = page.getByTestId('agent-row').filter({ hasText: 'scout' })
+  await expect(scoutInA).toHaveCount(0)
+
+  // Tab B, the same person in another tab, creates an agent.
+  const tabB = await page.context().newPage()
+  await tabB.goto('/')
+  await tabB.getByTestId('project-row').filter({ hasText: 'Live' }).first().click()
+  await tabB.getByTestId('new-agent').click()
+  await tabB.getByTestId('agent-name-input').fill('scout')
+  await tabB.getByTestId('form-submit').click()
+  await expect(tabB.getByTestId('agent-name')).toHaveText('scout')
+
+  // Tab A sees it appear without a reload, with its state as it stands.
+  await expect(scoutInA).toHaveCount(1)
+  await expect(scoutInA.locator('[data-state]')).toHaveAttribute('data-state', /idle|starting/)
+
+  // Tab B archives it; Tab A sees it leave, again without a reload.
+  tabB.once('dialog', (d) => d.accept())
+  await tabB.getByTestId('archive').click()
+  await expect(scoutInA).toHaveCount(0)
+
+  await tabB.close()
+})

@@ -114,7 +114,12 @@ async function deleteArchived(row: AgentRow) {
   }
 }
 events.on((f) => {
-  if (f.type === 'agent.removed' && archivedOpen.value.has(f.projectId))
+  // An agent archived elsewhere joins the archived row; a forgotten one
+  // leaves it. Either way, reload it if it is open in this tab.
+  if (
+    (f.type === 'agent.archived' || f.type === 'agent.removed') &&
+    archivedOpen.value.has(f.projectId)
+  )
     void loadArchived(f.projectId)
 })
 </script>

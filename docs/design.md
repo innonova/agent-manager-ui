@@ -433,6 +433,20 @@ anywhere. "+ new" sits on each expanded
 project. The projects page is for creating and editing projects, reached
 by "manage".
 
+An agent created elsewhere — by a person in another tab or by an agent
+with `am new` — appears here without a refresh: the manager's
+`agent.created` frame carries the new agent's record and status, and the
+agents store adds it to the project's list (only where that project's
+list is already loaded in this tab; opening the project later fetches
+the whole list, so an unloaded project is never left a partial list of
+one). The counts move with it via `project.counts`, as they already do.
+The reverse too: `agent.archived` (off the active list, still readable
+under the "archived" row) and `agent.removed` (forgotten for good) each
+drop the agent from every tab's list; if the archived row is open, it
+reloads to show the newcomer or its absence. A tab that has the agent's
+own page open when it is archived elsewhere is left as it is: the
+transcript stays valid and readable, as for a remove today.
+
 ## Several machines (a hub)
 
 When the manager is a hub, `hello` and `hosts` frames list the machines
@@ -489,14 +503,19 @@ clicking it brings the window up on that agent.
 
 ## Testing
 
-- Unit: the agents store's transcript paging (`src/stores/agents.spec.ts`).
+- Unit: the agents store's transcript paging, and its live handling of an
+  agent created (added only where the project's list is loaded, idempotent
+  for the creating tab's own frame) and archived (dropped from the list)
+  (`src/stores/agents.spec.ts`).
 - End-to-end: Playwright against a real daemon (fake profile) and
   manager: login, project and agent creation, a streamed turn, an error
   turn and counts, reload, stop and resume, display and Enter-key
   preferences, desktop notifications, the update badge, drafts, the files
   and changes views, permissions, users, presence, features, editing a
-  project with a restart, steering, and the activity line (thinking then
-  a tool call, streamed and gone at the turn's end). There is no test for
+  project with a restart, steering, the activity line (thinking then
+  a tool call, streamed and gone at the turn's end), and a second tab
+  seeing an agent created and then archived elsewhere without a reload.
+  There is no test for
   a dropped socket; the store's reconnect refetch is covered by the unit
   test.
 

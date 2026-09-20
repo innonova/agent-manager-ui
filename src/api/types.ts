@@ -215,6 +215,10 @@ export type EventFrame =
       agentId: string
       session: { daemonSessionId: string; startedAt: number; endedAt: number | null }
     }
+  /** A new agent exists: add it to its project's list. */
+  | { type: 'agent.created'; agent: Agent; status: AgentStatus }
+  /** Archived: off the active list but still readable; drop it from the list. */
+  | { type: 'agent.archived'; agentId: string; projectId: string }
   /** Forgotten for good: drop it everywhere. */
   | { type: 'agent.removed'; agentId: string; projectId: string }
   | { type: 'users.changed'; users: User[] }

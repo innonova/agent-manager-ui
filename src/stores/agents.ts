@@ -47,7 +47,28 @@ export const useAgentsStore = defineStore('agents', () => {
       }
       return
     }
-    if (f.type === 'agent.removed') {
+    if (f.type === 'agent.created') {
+      // Only materialise it where the project's list is already loaded in
+      // this tab; adding to a project we have not loaded would leave a
+      // partial list of one. When the user opens that project, load()
+      // fetches the whole list, this agent included. Idempotent, since the
+      // creating tab added the row optimistically and hears its own frame.
+      const list = byProject.get(f.agent.projectId)
+      if (!list) return
+      const existing = byId.get(f.agent.id)
+      if (existing) {
+        existing.agent = f.agent
+        existing.status = f.status
+      } else {
+        const row = { agent: f.agent, status: f.status }
+        byId.set(f.agent.id, row)
+        byProject.set(f.agent.projectId, [...list, row])
+      }
+      return
+    }
+    if (f.type === 'agent.archived' || f.type === 'agent.removed') {
+      // Archived agents stay readable under the project's "archived" row;
+      // removed ones are gone for good. Both leave the active list.
       forget(f.agentId)
       return
     }

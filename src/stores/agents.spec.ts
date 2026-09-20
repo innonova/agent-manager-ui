@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import type { StoredItem } from '@/api/types'
+import type { EventFrame, StoredItem } from '@/api/types'
 
 const items = vi.fn<(id: string, query: Record<string, number | undefined>) => Promise<unknown>>()
 vi.mock('@/api/client', () => ({
@@ -10,7 +10,15 @@ vi.mock('@/api/client', () => ({
   },
   ApiError: class extends Error {},
 }))
-vi.mock('@/api/events', () => ({ events: { on: vi.fn<() => void>(), onReconnect: undefined } }))
+// Capture the store's frame handlers so a test can feed it an event.
+const handlers: ((f: EventFrame) => void)[] = []
+const dispatch = (f: EventFrame) => handlers.forEach((h) => h(f))
+vi.mock('@/api/events', () => ({
+  events: {
+    on: (cb: (f: EventFrame) => void) => handlers.push(cb),
+    onReconnect: undefined,
+  },
+}))
 vi.mock('./notifications', () => ({ useNotificationsStore: () => ({ push: vi.fn<() => void>() }) }))
 vi.mock('@/stores/attention', () => ({
   useAttentionStore: () => ({ finished: vi.fn<() => void>() }),
@@ -119,5 +127,54 @@ describe('agents store transcript paging', () => {
     await store.loadItems('a')
     expect(store.items.get('a')!.length).toBe(5)
     expect(store.hasEarlier('a')).toBe(false)
+  })
+})
+
+const created = (id: string, projectId: string): EventFrame => ({
+  type: 'agent.created',
+  agent: { id, projectId, name: id } as never,
+  status: { state: 'idle' } as never,
+})
+
+describe('agents store: an agent appearing and leaving live', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    handlers.length = 0
+  })
+
+  it('adds a created agent to a project whose list is loaded', () => {
+    const store = useAgentsStore()
+    store.byProject.set('p', []) // this tab has loaded project p
+    dispatch(created('a', 'p'))
+    expect(store.byProject.get('p')!.map((r) => r.agent.id)).toEqual(['a'])
+    expect(store.byId.get('a')?.status.state).toBe('idle')
+  })
+
+  it('ignores a created agent for a project this tab has not loaded', () => {
+    const store = useAgentsStore()
+    // no byProject entry for 'p': load() will fetch the whole list later
+    dispatch(created('a', 'p'))
+    expect(store.byProject.get('p')).toBeUndefined()
+    expect(store.byId.has('a')).toBe(false)
+  })
+
+  it('is idempotent: the creating tab that added optimistically hears its own frame', () => {
+    const store = useAgentsStore()
+    const row = { agent: { id: 'a', projectId: 'p', name: 'a' } as never, status: {} as never }
+    store.byProject.set('p', [row])
+    store.byId.set('a', row)
+    dispatch(created('a', 'p'))
+    expect(store.byProject.get('p')!.length).toBe(1) // not doubled
+    expect(store.byId.get('a')?.status.state).toBe('idle') // status refreshed from the frame
+  })
+
+  it('drops an archived agent from the active list', () => {
+    const store = useAgentsStore()
+    const row = { agent: { id: 'a', projectId: 'p', name: 'a' } as never, status: {} as never }
+    store.byProject.set('p', [row])
+    store.byId.set('a', row)
+    dispatch({ type: 'agent.archived', agentId: 'a', projectId: 'p' })
+    expect(store.byProject.get('p')).toEqual([])
+    expect(store.byId.has('a')).toBe(false)
   })
 })
