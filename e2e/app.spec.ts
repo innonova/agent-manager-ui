@@ -65,9 +65,7 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
     'I should look at the file first.',
   )
   expect(await transcript.evaluate((el) => el.clientHeight)).toBe(transcriptHeightBefore)
-  expect(await composerBox.evaluate((el) => el.getBoundingClientRect().top)).toBe(
-    composerTopBefore,
-  )
+  expect(await composerBox.evaluate((el) => el.getBoundingClientRect().top)).toBe(composerTopBefore)
   // a tool call is one collapsed line with its result folded under it
   const call = page.locator('[data-item="tool_use"]').first()
   await expect(call).toContainText('Read')
@@ -811,6 +809,21 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await page.getByTestId('harness-use-builtin').click()
   await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
   await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
+  // the models file: the same page, the house view rendered into every note
+  await page.getByRole('link', { name: 'projects' }).click()
+  await expect(page.getByTestId('models-source')).toHaveText('the shipped text')
+  await page.getByTestId('models-edit').click()
+  await expect(page).toHaveURL(/\/models/)
+  await expect(page.getByTestId('harness-editor')).toContainText('Claude Sonnet 5')
+  await page.getByTestId('editor').click()
+  await page.keyboard.press('Control+A')
+  await page.keyboard.type('### Fake 1\n\nGood at tests.')
+  await page.getByTestId('harness-save').click()
+  await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('harness-use-builtin').click()
+  await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
+  await expect(page.getByTestId('harness-editor')).toContainText('Claude Sonnet 5')
 })
 
 test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({

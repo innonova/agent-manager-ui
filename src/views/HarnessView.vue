@@ -9,6 +9,10 @@ import { useNotificationsStore } from '@/stores/notifications'
 
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
 
+/** Which of the two note files: the harness note's template, or the models file rendered into it. */
+const props = withDefaults(defineProps<{ kind?: 'harness' | 'models' }>(), { kind: 'harness' })
+const isModels = computed(() => props.kind === 'models')
+
 /**
  * The harness note's template, per machine, in a real editor: what every
  * agent there is told at session start. The whole page is the editor, so
@@ -35,7 +39,7 @@ const sourceLabel = computed(() =>
 )
 
 async function load() {
-  rows.value = (await api.harness().catch(() => ({ hosts: [] }))).hosts
+  rows.value = (await api.noteFile(props.kind).catch(() => ({ hosts: [] }))).hosts
   const wanted = String(route.query.host ?? '')
   host.value = rows.value.some((r) => r.host === wanted) ? wanted : (rows.value[0]?.host ?? '')
   loaded.value = true
@@ -47,7 +51,7 @@ watch(current, (row) => {
 function pick(h: string) {
   if (dirty.value && !confirm('Discard the unsaved changes?')) return
   host.value = h
-  void router.replace({ name: 'harness', query: { host: h } })
+  void router.replace({ name: props.kind, query: { host: h } })
 }
 
 /** `template` null: the shipped text written back; empty: off; text: the operator's. */
@@ -55,7 +59,7 @@ async function save(template: string | null) {
   if (!current.value) return
   busy.value = true
   try {
-    const row = await api.saveHarness(current.value.host, template)
+    const row = await api.saveNoteFile(props.kind, current.value.host, template)
     rows.value = rows.value.map((r) => (r.host === row.host ? row : r))
     text.value = row.source === 'off' ? row.builtIn : row.template
     notifications.push(
@@ -92,7 +96,7 @@ onMounted(load)
     <template #title>
       <span class="text-sm text-slate-500 dark:text-slate-400">
         <RouterLink :to="{ name: 'projects' }" class="hover:underline">projects</RouterLink>
-        · harness note
+        · {{ isModels ? 'models' : 'harness note' }}
       </span>
     </template>
     <div class="flex h-full min-h-0 flex-col">
@@ -171,7 +175,7 @@ onMounted(load)
       <div class="min-h-0 grow" data-test="harness-editor">
         <CodeViewer
           v-if="loaded && current"
-          path="harness.md"
+          :path="`${props.kind}.md`"
           :content="text"
           editable
           wrap
@@ -184,14 +188,22 @@ onMounted(load)
       <p
         class="border-t border-slate-200 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400"
       >
-        Every agent on this machine is given this text at session start, with
-        <code v-pre>{{ agent }}</code
-        >, <code v-pre>{{ project }}</code
-        >, <code v-pre>{{ host }}</code
-        >, <code v-pre>{{ profile }}</code
-        >, <code v-pre>{{ cwd }}</code
-        >, <code v-pre>{{ permissions }}</code> and <code v-pre>{{ repos }}</code> filled in. A
-        change reaches an agent at its next restart. Saving an empty text turns the note off.
+        <template v-if="isModels">
+          The house view of which model suits which work, rendered into every agent's note under a
+          "Models" heading (the harness note's <code v-pre>{{ models }}</code> placeholder), so an
+          agent that starts a helper chooses with it in front of it. At most 8 KB. A change reaches
+          an agent at its next restart; saving an empty text leaves the note without the section.
+        </template>
+        <template v-else>
+          Every agent on this machine is given this text at session start, with
+          <code v-pre>{{ agent }}</code
+          >, <code v-pre>{{ project }}</code
+          >, <code v-pre>{{ host }}</code
+          >, <code v-pre>{{ profile }}</code
+          >, <code v-pre>{{ cwd }}</code
+          >, <code v-pre>{{ permissions }}</code> and <code v-pre>{{ repos }}</code> filled in. A
+          change reaches an agent at its next restart. Saving an empty text turns the note off.
+        </template>
       </p>
     </div>
   </AppShell>

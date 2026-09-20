@@ -255,6 +255,13 @@ could not be loaded instead of looping.
 
 ## Harness note
 
+The models file (`/models`, the same page and editor with `kind`
+`models`, a second block on the projects page) is the house view of
+which model suits which work; the manager renders it into every note
+under a "Models" heading. Same shipped-or-custom-or-off states, at
+most 8 KB, and the page's footer says so instead of listing
+placeholders.
+
 The projects page has a "Harness note" block: per machine, whether
 agents there get the shipped note (no file, or one equal to the shipped
 text), a custom one or none, with a link

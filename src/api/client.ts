@@ -134,6 +134,10 @@ export const api = {
     call<{ hosts: { host: string; accounts: AccountUsageRow[] }[] }>('GET', '/api/usage'),
   /** The harness note's template per host: what every agent is told at session start. */
   harness: () => call<{ hosts: HarnessRow[] }>('GET', '/api/harness'),
+  /** One of the two note files per host: the harness template or the models file rendered into it. */
+  noteFile: (kind: 'harness' | 'models') => call<{ hosts: HarnessRow[] }>('GET', `/api/${kind}`),
+  saveNoteFile: (kind: 'harness' | 'models', host: string, template: string | null) =>
+    call<HarnessRow>('PUT', `/api/${kind}`, { host, template }),
   /** Writes the host's template (empty turns the note off); null goes back to the built-in one. */
   saveHarness: (host: string, template: string | null) =>
     call<HarnessRow>('PUT', '/api/harness', { host, template }),

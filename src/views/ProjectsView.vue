@@ -46,9 +46,14 @@ onUnmounted(() => {
 
 /** Per host, the harness note's template: what every agent there is told at session start. */
 const harness = ref<HarnessRow[]>([])
+/** Per host, the models file: the house view rendered into every note. */
+const models = ref<HarnessRow[]>([])
 async function loadHarness() {
   harness.value = (await api.harness().catch(() => ({ hosts: [] }))).hosts
+  models.value = (await api.noteFile('models').catch(() => ({ hosts: [] }))).hosts
 }
+const sourceLabel = (s: HarnessRow['source']) =>
+  s === 'built-in' ? 'the shipped text' : s === 'custom' ? 'a custom text' : 'off'
 
 function empty(): ProjectFormValue {
   return {
@@ -206,6 +211,38 @@ async function submit(restart = false) {
         <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
           What every agent is told about running here, at session start; a change reaches an agent
           at its next restart.
+        </p>
+      </div>
+      <!-- the models file, per machine: the house view rendered into every note -->
+      <div
+        v-if="models.length"
+        class="mb-4 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm dark:border-slate-800 dark:bg-slate-900"
+        data-test="models"
+      >
+        <div
+          class="mb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
+        >
+          Models
+        </div>
+        <div
+          v-for="h in models"
+          :key="h.host"
+          class="flex flex-wrap items-center gap-x-3 gap-y-1 py-0.5"
+        >
+          <span v-if="hosts.several" class="w-28 truncate font-medium">{{ h.host }}</span>
+          <span class="text-slate-500 dark:text-slate-400" data-test="models-source">{{
+            sourceLabel(h.source)
+          }}</span>
+          <RouterLink
+            :to="{ name: 'models', query: { host: h.host } }"
+            class="text-xs text-blue-700 hover:underline dark:text-blue-300"
+            data-test="models-edit"
+            >view / edit</RouterLink
+          >
+        </div>
+        <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
+          Which model suits which work, as we have learned it; every agent gets it in its note, so
+          one that starts a helper chooses with it in front of it.
         </p>
       </div>
       <p
