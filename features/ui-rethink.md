@@ -1,6 +1,6 @@
 ---
 title: the UI as a reading app: hierarchy, one header line, projects first
-status: planned
+status: in-progress
 priority: 30
 ---
 
