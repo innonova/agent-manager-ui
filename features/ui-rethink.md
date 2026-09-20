@@ -127,3 +127,17 @@ twice in the sidebar, the creating tab hearing its own `agent.created`
 frame before the reply; fixed on `main` first (5575883), since it was
 live. The dev server's Vue devtools toolbar floats over every
 screenshot and is easy to mistake for the UI.
+
+## Report (2026-09-20, second round)
+
+The top bar, on the person's note that "edit agents files features"
+was a random row and the tree's selection dictated what the other two
+views showed without saying so. The project is now the anchor: its
+name is a switcher (the other projects with what needs attention, edit
+this one, all projects), and agents, files and features are its tabs,
+each saying what it holds: the agents waiting for you or the total,
+the files changed since you last looked, the features to review. One
+component (`ProjectHeader.vue`) serves the three views; the host chip
+and warning moved into it. Verified by the suite (24) and screenshots
+of the bar closed, open and on the files view; the edit test opens the
+switcher first. Directly on `main`, commit f228bf5.
