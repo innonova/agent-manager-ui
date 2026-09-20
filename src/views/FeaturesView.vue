@@ -82,7 +82,8 @@ const error = ref<string | null>(null)
 const busy = ref(false)
 
 const groups = computed(() => {
-  const order: FeatureStatus[] = ['in-progress', 'review', 'blocked', 'planned', 'done']
+  // what awaits a person first, then what is moving, then what waits
+  const order: FeatureStatus[] = ['review', 'in-progress', 'blocked', 'planned', 'done']
   return order
     .map((status) => ({ status, items: list.value.filter((f) => f.status === status) }))
     .filter((g) => g.items.length)
@@ -153,10 +154,6 @@ async function create() {
     <div class="mx-auto flex h-full max-w-5xl flex-col p-6">
       <div class="mb-4 flex items-center gap-3">
         <h1 class="text-xl font-semibold">Features</h1>
-        <span class="text-sm text-slate-400"
-          >features/*.md in each repository · ask an agent in its conversation to work on them; it
-          reports here</span
-        >
         <span class="grow" />
         <button
           class="rounded bg-blue-600 px-3 py-1.5 text-base text-white hover:bg-blue-700"
@@ -167,9 +164,8 @@ async function create() {
         </button>
       </div>
       <p v-if="list.length === 0" class="text-base text-slate-500 dark:text-slate-400">
-        No features yet. Each feature is a markdown file under <code>features/</code> in one of the
-        project's repositories: a title, a status and a description. Ask an agent, in its
-        conversation, to work on one; it appends its report to the file and puts it in review.
+        Track work here. Give a feature to an agent in conversation, then review its report; each
+        one is a file under <code>features/</code> in a repository of the project.
       </p>
       <div class="min-h-0 grow overflow-y-auto">
         <section v-for="g in groups" :key="g.status" class="mb-6">

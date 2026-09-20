@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
 import ProjectTabs from '@/components/ProjectTabs.vue'
@@ -341,10 +341,10 @@ async function createFolder() {
         >
           <span
             v-if="files.targetDir()"
-            class="min-w-0 grow truncate pl-1 font-mono text-[11px]"
+            class="min-w-0 grow truncate pl-1 text-sm text-slate-500 dark:text-slate-400"
             :title="`Uploads and new folders go into ${files.targetDir()}; select a folder or a file in the tree to change it`"
             data-test="files-target"
-            >into {{ files.targetDir() }}</span
+            >uploads go to <span class="font-mono">{{ files.targetDir() }}</span></span
           >
           <span v-else class="grow" />
           <button
@@ -613,9 +613,14 @@ async function createFolder() {
           <span v-if="files.open" class="text-sm text-slate-400">{{ size }}</span>
         </div>
         <div class="min-h-0 grow bg-white dark:bg-slate-950">
-          <p v-if="!files.open" class="p-6 text-base text-slate-400">
-            Files are shown read-only; agents work in the tree directly, and this view refreshes
-            when one finishes a turn.
+          <p v-if="!files.open" class="p-6 text-base text-slate-500 dark:text-slate-400">
+            Select a file in the tree, or see
+            <RouterLink
+              :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
+              class="text-blue-700 hover:underline dark:text-blue-300"
+              >what changed</RouterLink
+            >. Files are read-only here; agents work in the tree, and this view refreshes when one
+            finishes a turn.
           </p>
           <p
             v-else-if="files.open.binary"
