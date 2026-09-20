@@ -1,6 +1,6 @@
 ---
 title: show what the agent is doing, near the input
-status: review
+status: done
 priority: 50
 ---
 

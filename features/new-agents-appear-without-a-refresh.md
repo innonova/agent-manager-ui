@@ -1,6 +1,6 @@
 ---
 title: a new agent appears in every open tab without a refresh
-status: review
+status: done
 priority: 40
 ---
 
