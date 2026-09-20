@@ -119,6 +119,11 @@ export const api = {
   /** Stops and resumes one agent with the current settings; the manager refuses (409) while it is busy. */
   restart: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/restart`, {}),
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
+  /** Forgets the agent for good: process, daemon logs, cache and rows; the vendor's own store stays. */
+  remove: (id: string) => call<{ ok: true }>('DELETE', `/api/agents/${id}`),
+  /** The project's archived agents, newest first. */
+  archivedAgents: (projectId: string) =>
+    call<AgentRow[]>('GET', `/api/projects/${projectId}/agents?archived=1`),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
   /** The vendor accounts' usage per host, as last reported through an agent. */

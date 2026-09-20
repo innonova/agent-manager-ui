@@ -335,7 +335,14 @@ message shows as "N queued" beside the button and a toast says so.
 Starting and waiting on a permission still block sending. Interrupt is
 unchanged.
 
-The header's actions are stop, restart and archive. Restart stops and
+The header's actions are stop, restart, archive and delete. Archive
+ends the session and takes the agent off the list; its transcript
+stays and it is reachable under the project's "archived" row in the
+sidebar tree, which loads the archived agents when opened, each with
+a link and a delete. Delete forgets the agent for good on the manager
+(process, the daemon's logs of its sessions, the cached transcript;
+the vendor's own store stays), after a confirm; an `agent.removed`
+frame drops it from every tab. Restart stops and
 resumes that one agent with the current settings (a repository added
 to the project, a changed harness note), conversation intact; the
 manager refuses it while the agent works, waits on a permission or has

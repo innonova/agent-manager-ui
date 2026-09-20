@@ -186,6 +186,20 @@ async function restart() {
       .catch((e) => notifications.push('error', String(e.message ?? e)))
 }
 
+async function remove() {
+  if (
+    !props.agentId ||
+    !confirm(
+      "Delete this agent for good? Its process ends and the daemon logs and cached transcript are removed; the vendor's own conversation store stays.",
+    )
+  )
+    return
+  await agents
+    .remove(props.agentId)
+    .catch((e) => notifications.push('error', String(e.message ?? e)))
+  await router.replace({ name: 'project', params: { id: props.id } })
+}
+
 async function archive() {
   if (
     !props.agentId ||
@@ -306,6 +320,14 @@ async function archive() {
               @click="archive"
             >
               archive
+            </button>
+            <button
+              class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
+              title="forget this agent for good: its process, the daemon's logs of its sessions, the cached transcript; the vendor's own store stays"
+              data-test="delete"
+              @click="remove"
+            >
+              delete
             </button>
           </div>
           <!-- line two: the facts about the session, muted: chips left, usage centred, place right -->

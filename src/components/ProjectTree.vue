@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
-import { ApiError } from '@/api/client'
+import { ApiError, api } from '@/api/client'
+import type { AgentRow } from '@/api/types'
+import { events } from '@/api/events'
+import { when } from '@/time'
 import { useAgentsStore } from '@/stores/agents'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useAttentionStore } from '@/stores/attention'
@@ -77,6 +80,42 @@ watch(
 )
 const rows = computed(() => projects.rows)
 const agentsOf = (id: string) => agents.byProject.get(id) ?? []
+
+/** Archived agents, fetched when a project's "archived" row is opened; refetched when one is forgotten. */
+const archivedOpen = ref(new Set<string>())
+const archived = ref(new Map<string, AgentRow[]>())
+async function loadArchived(projectId: string) {
+  const rows = await api.archivedAgents(projectId).catch(() => [])
+  archived.value = new Map(archived.value).set(projectId, rows)
+}
+function toggleArchived(projectId: string) {
+  const open = new Set(archivedOpen.value)
+  if (open.has(projectId)) open.delete(projectId)
+  else {
+    open.add(projectId)
+    void loadArchived(projectId)
+  }
+  archivedOpen.value = open
+}
+const archivedOf = (id: string) => archived.value.get(id) ?? []
+async function deleteArchived(row: AgentRow) {
+  if (
+    !confirm(
+      `Delete "${row.agent.name}" for good? The daemon logs and cached transcript are removed; the vendor's own store stays.`,
+    )
+  )
+    return
+  try {
+    await api.remove(row.agent.id)
+    await loadArchived(row.agent.projectId)
+  } catch (e) {
+    useNotificationsStore().push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
+events.on((f) => {
+  if (f.type === 'agent.removed' && archivedOpen.value.has(f.projectId))
+    void loadArchived(f.projectId)
+})
 </script>
 
 <template>
@@ -175,6 +214,48 @@ const agentsOf = (id: string) => agents.byProject.get(id) ?? []
         >
           no agents
         </li>
+        <!-- archived agents: out of the way, but not a black hole -->
+        <li class="py-1 pl-7 text-xs">
+          <button
+            type="button"
+            class="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300"
+            data-test="archived-toggle"
+            @click="toggleArchived(r.project.id)"
+          >
+            {{ archivedOpen.has(r.project.id) ? '▾' : '▸' }} archived
+          </button>
+        </li>
+        <template v-if="archivedOpen.has(r.project.id)">
+          <li
+            v-for="a in archivedOf(r.project.id)"
+            :key="a.agent.id"
+            class="flex items-center gap-2 py-1 pr-3 pl-9 text-xs text-slate-500 dark:text-slate-400"
+            data-test="archived-row"
+          >
+            <RouterLink
+              :to="{ name: 'agent', params: { id: r.project.id, agentId: a.agent.id } }"
+              class="truncate hover:underline"
+              :title="`archived ${a.agent.archivedAt ? when(a.agent.archivedAt) : ''}`"
+              >{{ a.agent.name }}</RouterLink
+            >
+            <span class="grow" />
+            <button
+              type="button"
+              class="text-slate-400 hover:text-red-700 dark:text-slate-500"
+              title="delete for good"
+              data-test="archived-delete"
+              @click="deleteArchived(a)"
+            >
+              ×
+            </button>
+          </li>
+          <li
+            v-if="archivedOf(r.project.id).length === 0"
+            class="py-1 pl-9 text-xs text-slate-400 dark:text-slate-500"
+          >
+            none
+          </li>
+        </template>
       </ul>
     </li>
   </ul>

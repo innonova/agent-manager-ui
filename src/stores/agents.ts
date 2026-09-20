@@ -47,6 +47,10 @@ export const useAgentsStore = defineStore('agents', () => {
       }
       return
     }
+    if (f.type === 'agent.removed') {
+      forget(f.agentId)
+      return
+    }
     if (f.type === 'agent.session') {
       // a new session: the record changed with it (session id, the harness note it was given)
       const row = byId.get(f.agentId)
@@ -234,8 +238,8 @@ export const useAgentsStore = defineStore('agents', () => {
   const decide = (agentId: string, requestId: string, option: string) =>
     api.decide(agentId, requestId, option)
 
-  async function archive(agentId: string): Promise<void> {
-    await api.archive(agentId)
+  /** Drops everything held for an agent that left the list (archived or forgotten). */
+  function forget(agentId: string): void {
     for (const [pid, aid] of lastAgent) if (aid === agentId) lastAgent.delete(pid)
     items.delete(agentId)
     loaded.delete(agentId)
@@ -251,6 +255,17 @@ export const useAgentsStore = defineStore('agents', () => {
     byId.delete(agentId)
   }
 
+  async function archive(agentId: string): Promise<void> {
+    await api.archive(agentId)
+    forget(agentId)
+  }
+
+  /** Forgets the agent for good on the manager, then here. */
+  async function remove(agentId: string): Promise<void> {
+    await api.remove(agentId)
+    forget(agentId)
+  }
+
   return {
     byProject,
     byId,
@@ -263,6 +278,7 @@ export const useAgentsStore = defineStore('agents', () => {
     loadingEarlier,
     create,
     archive,
+    remove,
     decide,
   }
 })

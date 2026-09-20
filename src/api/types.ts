@@ -182,6 +182,8 @@ export type EventFrame =
       agentId: string
       session: { daemonSessionId: string; startedAt: number; endedAt: number | null }
     }
+  /** Forgotten for good: drop it everywhere. */
+  | { type: 'agent.removed'; agentId: string; projectId: string }
   | { type: 'users.changed'; users: User[] }
   | { type: 'presence'; agents: Record<string, PresenceUser[]> }
 

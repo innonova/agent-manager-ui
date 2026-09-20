@@ -717,6 +717,38 @@ test('files view: a new folder and an uploaded file land in the tree and can be 
   await expect(page.getByTestId('turn-input')).toHaveValue(/See .*logs\/app\.log/)
 })
 
+test('archived agents are listed under the project and can be deleted for good', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('temp')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|starting/)
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('archive').click()
+  await expect(page.getByTestId('agent-row').filter({ hasText: 'temp' })).toHaveCount(0)
+  await page.getByTestId('archived-toggle').first().click()
+  await expect(page.getByTestId('archived-row').filter({ hasText: 'temp' })).toHaveCount(1)
+  page.once('dialog', (d) => d.accept())
+  await page
+    .getByTestId('archived-row')
+    .filter({ hasText: 'temp' })
+    .getByTestId('archived-delete')
+    .click()
+  await expect(page.getByTestId('archived-row').filter({ hasText: 'temp' })).toHaveCount(0)
+  // delete from the header, for a live agent
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('brief')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|starting/)
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('delete').click()
+  await expect(page).toHaveURL(/\/projects\/[^/]+$/)
+  await expect(page.getByTestId('agent-row').filter({ hasText: 'brief' })).toHaveCount(0)
+})
+
 test('the harness note is edited on the projects page and reaches an agent at its restart', async ({
   page,
 }) => {
