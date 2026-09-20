@@ -82,6 +82,8 @@ export interface ActivityInfo {
   kind: ActivityKind
   /** What runs: a shell tool's command, a read/edit's path, else the tool's name. */
   detail?: string
+  /** The turn's output tokens so far, as the vendor reports them while streaming; absent when it has said nothing usable. */
+  tokens?: number
   /** The record time the activity started, so a client can say "thinking for 12 s". */
   since: number
 }

@@ -354,21 +354,34 @@ it (the session id, the harness note it was given).
 ## What the agent is doing
 
 The manager's `status.activity` (`{ kind: 'thinking' | 'writing' | 'tool' |
-'waiting', detail?, since } | null`) says what the last thing on the
-stream was doing; a line right above the composer shows it, muted, while
-it is not null: "thinking for 12 s" (the duration ticks locally from
-`since`), "writing", a tool's `detail` with a verb guessed from the last
-`tool_use` item's name ("reading", "editing", "running", "searching",
-"fetching"), or "waiting for your answer". While `activity.kind` is
-`thinking`, the tail of the current transcript's last item (when it is
-itself a `thinking` item) streams in under the line, three or four lines,
-monospace, muted, pinned to the bottom as it grows so older text scrolls
-away; it is the live view of the same item the transcript already shows
-(`Transcript rendering`), nothing new is kept. The line and the streamed
-text disappear together the moment `activity` goes back to `null` (a turn
-ending, or any other state change), so the layout only holds the extra
-height while a turn is actually running. The state badge and header stay
-as they are; this is additional, not a replacement.
+'waiting', detail?, tokens?, since } | null`) says what the last thing on
+the stream was doing; a line right above the composer shows it, muted,
+while it is not null. `writing` just says "writing" and `waiting` says
+"waiting for your answer" — both already show themselves elsewhere (the
+growing reply, the permission card). `thinking` and `tool` are open-ended,
+so they get more: a left-aligned word and, right-aligned on the same
+line, the elapsed time ticking locally from `since` ("12 s", then
+"3 min", `src/time.ts`'s `since`). `thinking`'s word is not always
+"thinking": one of a small set of quiet synonyms (thinking, musing,
+pondering, weighing, considering) is picked once per thinking stretch —
+keyed on `since`, so a `tokens`-only update to the same stretch does not
+reroll it — not per tick, so it holds still while the seconds advance.
+`tool` says what kind of thing the last `tool_use` item's name is
+("running a command", "reading a file", "editing a file", "searching",
+else "waiting for a tool"), never the raw command or path: the
+transcript already has that (`Transcript rendering`). When `tokens` (the
+turn's output so far, absent until a vendor has said anything usable) is
+present, it sits between the word and the elapsed time: "musing · 340
+tokens · 12 s". While `activity.kind` is `thinking`, the tail of the
+current transcript's last item (when it is itself a `thinking` item)
+streams in under the line, three or four lines, monospace, muted, pinned
+to the bottom as it grows so older text scrolls away; it is the live
+view of the same item the transcript already shows, nothing new is kept.
+The line and the streamed text disappear together the moment `activity`
+goes back to `null` (a turn ending, or any other state change), so the
+layout only holds the extra height while a turn is actually running. The
+state badge and header stay as they are; this is additional, not a
+replacement.
 
 ## The sidebar is a tree of projects
 

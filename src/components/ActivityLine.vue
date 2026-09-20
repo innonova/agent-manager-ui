@@ -7,23 +7,43 @@ const props = defineProps<{
   activity: Activity
   /** The current thinking item's text, live, while `activity.kind === 'thinking'`. */
   thinkingText?: string | null
-  /** The name of the tool call under way, while `activity.kind === 'tool'`, for the verb. */
+  /** The name of the tool call under way, while `activity.kind === 'tool'`, for the phrase. */
   toolName?: string | null
 }>()
 
-/** How to say what a tool call is doing, from its name; unknown names just "run". */
-const TOOL_VERBS: Record<string, string> = {
-  Bash: 'running',
-  shell: 'running',
-  Read: 'reading',
-  Write: 'editing',
-  Edit: 'editing',
-  NotebookEdit: 'editing',
+/** Quiet words for a thinking stretch; one is picked per stretch, not per tick. */
+const THINKING_WORDS = ['thinking', 'musing', 'pondering', 'weighing', 'considering']
+let nextThinkingWord = 0
+const thinkingWord = ref(THINKING_WORDS[0])
+/** The `since` of the stretch the current word was picked for, so a token-only update (same stretch) does not reroll it. */
+const wordedSince = ref<number | null>(null)
+watch(
+  () => (props.activity?.kind === 'thinking' ? props.activity.since : null),
+  (thinkingSince) => {
+    if (thinkingSince == null || thinkingSince === wordedSince.value) return
+    wordedSince.value = thinkingSince
+    thinkingWord.value = THINKING_WORDS[nextThinkingWord % THINKING_WORDS.length]
+    nextThinkingWord++
+  },
+  { immediate: true },
+)
+
+/**
+ * What kind of thing a tool call is, from its name; the transcript already
+ * has the command or path, so the line just says the shape of it.
+ */
+const TOOL_PHRASES: Record<string, string> = {
+  Bash: 'running a command',
+  shell: 'running a command',
+  Read: 'reading a file',
+  Write: 'editing a file',
+  Edit: 'editing a file',
+  NotebookEdit: 'editing a file',
   Glob: 'searching',
   Grep: 'searching',
-  WebFetch: 'fetching',
   WebSearch: 'searching',
 }
+const FALLBACK_TOOL_PHRASE = 'waiting for a tool'
 
 /** Ticks once a second so "thinking for Ns" advances locally between status updates. */
 const now = ref(Date.now())
@@ -35,18 +55,25 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-const label = computed(() => {
+/** thinking and tool are open-ended enough to want elapsed time and a token count; writing and waiting already show themselves. */
+const timed = computed(() => props.activity?.kind === 'thinking' || props.activity?.kind === 'tool')
+
+const durationText = computed(() => {
+  const a = props.activity
+  return a && timed.value ? since(a.since, now.value) : null
+})
+
+const leftText = computed(() => {
   const a = props.activity
   if (!a) return ''
+  const tokensSuffix = a.tokens != null ? ` · ${a.tokens} tokens` : ''
   switch (a.kind) {
     case 'thinking':
-      return `thinking for ${since(a.since, now.value)}`
+      return `${thinkingWord.value}${tokensSuffix}`
     case 'writing':
       return 'writing'
-    case 'tool': {
-      const verb = (props.toolName && TOOL_VERBS[props.toolName]) || 'running'
-      return a.detail ? `${verb} \`${a.detail}\`` : verb
-    }
+    case 'tool':
+      return `${(props.toolName && TOOL_PHRASES[props.toolName]) || FALLBACK_TOOL_PHRASE}${tokensSuffix}`
     case 'waiting':
       return 'waiting for your answer'
     default:
@@ -72,8 +99,14 @@ watch(
     class="border-t border-slate-200 bg-white px-4 py-2 dark:border-slate-800 dark:bg-slate-900"
     data-test="activity-line"
   >
-    <div class="text-xs text-slate-500 dark:text-slate-400" data-test="activity-label">
-      {{ label }}
+    <div
+      class="flex items-baseline justify-between gap-2 text-xs text-slate-500 dark:text-slate-400"
+      data-test="activity-label"
+    >
+      <span>{{ leftText }}</span>
+      <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
+        durationText
+      }}</span>
     </div>
     <div
       v-if="activity.kind === 'thinking' && thinkingText"

@@ -48,17 +48,22 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.locator('[data-item="user"]')).toContainText('use a tool please')
   await expect(page.locator('[data-item="user"]').getByTestId('turn-by')).toHaveText('admin')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
-  // the activity line: thinking first, with its live text streamed in above the composer
+  // the activity line: thinking first (its first stretch this session, so
+  // the rotating word starts at "thinking"), with the elapsed time
+  // right-aligned and its live text streamed in above the composer
   await expect(page.getByTestId('activity-line')).toContainText('thinking')
+  await expect(page.getByTestId('activity-duration')).toBeVisible()
   await expect(page.getByTestId('activity-thinking')).toContainText(
     'I should look at the file first.',
   )
   // a tool call is one collapsed line with its result folded under it
   const call = page.locator('[data-item="tool_use"]').first()
   await expect(call).toContainText('Read')
-  // then the tool: the line names it, the thinking text is gone
-  await expect(page.getByTestId('activity-line')).toContainText('reading')
-  await expect(page.getByTestId('activity-line')).toContainText('example.txt')
+  // then the tool: what kind of thing it is, timed the same way, no raw
+  // command or path (the transcript already has it) and the thinking text is gone
+  await expect(page.getByTestId('activity-line')).toContainText('reading a file')
+  await expect(page.getByTestId('activity-line')).not.toContainText('example.txt')
+  await expect(page.getByTestId('activity-duration')).toBeVisible()
   await expect(page.getByTestId('activity-thinking')).toHaveCount(0)
   await expect(call.getByTestId('tool-status')).toHaveText(/chars/)
   await expect(call.locator('[data-item="tool_result"]')).toHaveCount(0)
