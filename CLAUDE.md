@@ -119,4 +119,4 @@ and sets the status back to `planned`, or marks it `done`. The
 convention is specified in
 `../agent-manager/docs/design.md` (Features); the practice around it,
 including how agents delegate to helpers, is
-`../agent-manager/docs/method.md`.
+`../agent-manager/method.md` (what `am method` prints).
