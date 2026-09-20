@@ -40,6 +40,7 @@ export const useProjectsStore = defineStore('projects', () => {
     name: string
     repos: RepoInput[]
     defaultProfile?: string | null
+    delegation?: 'free' | 'on-request'
     host?: string
   }): Promise<Project> {
     const row = await api.createProject(input)
@@ -49,7 +50,12 @@ export const useProjectsStore = defineStore('projects', () => {
 
   async function update(
     id: string,
-    input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
+    input: {
+      name?: string
+      repos?: RepoInput[]
+      defaultProfile?: string | null
+      delegation?: 'free' | 'on-request'
+    },
   ): Promise<Project> {
     const row = await api.updateProject(id, input)
     rows.value = sorted(rows.value.map((r) => (r.project.id === id ? row : r)))

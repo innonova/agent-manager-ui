@@ -70,12 +70,18 @@ export const api = {
     name: string
     repos: RepoInput[]
     defaultProfile?: string | null
+    delegation?: 'free' | 'on-request'
     /** The machine to create it on (a hub); absent means this one. */
     host?: string
   }) => call<{ project: Project; agentCounts: AgentCounts }>('POST', '/api/projects', input),
   updateProject: (
     id: string,
-    input: { name?: string; repos?: RepoInput[]; defaultProfile?: string | null },
+    input: {
+      name?: string
+      repos?: RepoInput[]
+      defaultProfile?: string | null
+      delegation?: 'free' | 'on-request'
+    },
   ) => call<{ project: Project; agentCounts: AgentCounts }>('PATCH', `/api/projects/${id}`, input),
   deleteProject: (id: string) => call<{ ok: true }>('DELETE', `/api/projects/${id}`),
   /** Stops and resumes the project's idle agents so they see its current settings. */

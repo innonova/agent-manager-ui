@@ -26,6 +26,8 @@ export interface Project {
   path: string
   repos: Repo[]
   defaultProfile: string | null
+  /** When agents in the project may start other agents. */
+  delegation: 'free' | 'on-request'
   createdAt: number
 }
 

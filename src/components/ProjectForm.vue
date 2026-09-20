@@ -5,6 +5,8 @@ export interface ProjectFormValue {
   name: string
   repos: { name: string; path: string }[]
   defaultProfile: string
+  /** When agents in the project may start other agents. */
+  delegation: 'free' | 'on-request'
   /** The machine to create it on; only offered when there are several. */
   host: string
 }
@@ -120,5 +122,20 @@ function move(i: number, d: -1 | 1) {
         {{ p.name }}<template v-if="p.description"> — {{ p.description }}</template>
       </option>
     </select>
+  </label>
+  <label class="text-base">
+    <span class="text-slate-600 dark:text-slate-300">Delegation</span>
+    <select
+      v-model="model.delegation"
+      class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+      data-test="project-delegation"
+    >
+      <option value="free">free — agents may start other agents on their own judgement</option>
+      <option value="on-request">on request — only when a person has asked</option>
+    </select>
+    <p class="mt-0.5 text-sm text-slate-400 dark:text-slate-500">
+      On request, an agent is told in its harness note to delegate only when a person has expressly
+      asked for it in the conversation; it can still start a helper when asked.
+    </p>
   </label>
 </template>

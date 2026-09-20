@@ -64,6 +64,7 @@ function empty(): ProjectFormValue {
     name: '',
     repos: [{ name: '', path: '' }],
     defaultProfile: '',
+    delegation: 'free',
     host: hosts.local?.name ?? '',
   }
 }
@@ -96,6 +97,7 @@ function openEdit(p: Project) {
     name: p.name,
     repos: p.repos.map((r) => ({ ...r })),
     defaultProfile: p.defaultProfile ?? '',
+    delegation: p.delegation,
     host: p.host ?? '',
   }
   error.value = null
@@ -116,6 +118,7 @@ async function submit(restart = false) {
           r.name.trim() ? { name: r.name.trim(), path: r.path.trim() } : { path: r.path.trim() },
         ),
       defaultProfile: form.value.defaultProfile || null,
+      delegation: form.value.delegation,
     }
     if (editing.value) await projects.update(editing.value.id, input)
     else
@@ -211,6 +214,13 @@ async function submit(restart = false) {
                   "
                   data-test="project-host"
                   >{{ r.project.host }}</span
+                >
+                <span
+                  v-if="r.project.delegation === 'on-request'"
+                  class="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-sm font-normal text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+                  title="Agents delegate only when a person has asked"
+                  data-test="project-delegation-badge"
+                  >delegation on request</span
                 >
               </div>
               <div
