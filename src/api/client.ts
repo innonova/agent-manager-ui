@@ -115,6 +115,8 @@ export const api = {
     }),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),
   stop: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/stop`, {}),
+  /** Stops and resumes one agent with the current settings; the manager refuses (409) while it is busy. */
+  restart: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/restart`, {}),
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),

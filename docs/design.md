@@ -318,6 +318,13 @@ message shows as "N queued" beside the button and a toast says so.
 Starting and waiting on a permission still block sending. Interrupt is
 unchanged.
 
+The header's actions are stop, restart and archive. Restart stops and
+resumes that one agent with the current settings (a repository added
+to the project, a changed harness note), conversation intact; the
+manager refuses it while the agent works, waits on a permission or has
+background jobs, and the refusal shows as a toast, so interrupt first
+when that is meant. An exited agent is simply started.
+
 ## The sidebar is a tree of projects
 
 Inside a project, the sidebar lists every project (with a host badge

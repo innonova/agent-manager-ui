@@ -90,6 +90,14 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   ).toHaveCount(1)
   await expect(page.locator('[data-item="turn_end"]')).toHaveCount(3)
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+
+  // restart: a new session with the conversation, and the harness note it was given
+  await page.getByTestId('restart').click()
+  await expect(
+    page.locator('[data-item="system"]').filter({ hasText: 'session resumed' }),
+  ).toHaveCount(2)
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect(page.getByTestId('harness-note-link')).toBeVisible()
 })
 
 test('logging out returns to login and protects routes', async ({ page }) => {

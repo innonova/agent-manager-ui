@@ -179,6 +179,13 @@ async function stop() {
     await api.stop(props.agentId).catch((e) => notifications.push('error', String(e.message ?? e)))
 }
 
+async function restart() {
+  if (props.agentId)
+    await api
+      .restart(props.agentId)
+      .catch((e) => notifications.push('error', String(e.message ?? e)))
+}
+
 async function archive() {
   if (
     !props.agentId ||
@@ -284,6 +291,14 @@ async function archive() {
               @click="stop"
             >
               stop
+            </button>
+            <button
+              class="text-xs text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              title="stop and resume with the current settings (repositories, harness note); the conversation continues"
+              data-test="restart"
+              @click="restart"
+            >
+              restart
             </button>
             <button
               class="text-xs text-slate-500 hover:text-red-700 dark:text-slate-400"
