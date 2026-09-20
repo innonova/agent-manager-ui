@@ -508,7 +508,10 @@ clicking it brings the window up on that agent.
   for the creating tab's own frame) and archived (dropped from the list)
   (`src/stores/agents.spec.ts`).
 - End-to-end: Playwright against a real daemon (fake profile) and
-  manager: login, project and agent creation, a streamed turn, an error
+  manager. The file is stateful and ordered: one manager serves the
+  whole run, tests build on what earlier ones created (the "Demo"
+  project, the "worker" agent), and a test that wants a clean slate
+  makes its own project. It covers login, project and agent creation, a streamed turn, an error
   turn and counts, reload, stop and resume, display and Enter-key
   preferences, desktop notifications, the update badge, drafts, the files
   and changes views, permissions, users, presence, features, editing a
