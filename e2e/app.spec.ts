@@ -814,7 +814,7 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('models-source')).toHaveText('the shipped text')
   await page.getByTestId('models-edit').click()
   await expect(page).toHaveURL(/\/models/)
-  await expect(page.getByTestId('harness-editor')).toContainText('Claude Sonnet 5')
+  await expect(page.getByTestId('harness-editor')).toContainText('What we have learned') // Monaco renders only the visible lines
   await page.getByTestId('editor').click()
   await page.keyboard.press('Control+A')
   await page.keyboard.type('### Fake 1\n\nGood at tests.')
@@ -823,7 +823,24 @@ test('the harness note is edited on the projects page and reaches an agent at it
   page.once('dialog', (d) => d.accept())
   await page.getByTestId('harness-use-builtin').click()
   await expect(page.getByTestId('harness-source')).toHaveText('the shipped note')
-  await expect(page.getByTestId('harness-editor')).toContainText('Claude Sonnet 5')
+  await expect(page.getByTestId('harness-editor')).toContainText('What we have learned') // Monaco renders only the visible lines
+  // the method, the same page again; and the learnings log, appended and listed
+  await page.getByRole('link', { name: 'projects' }).click()
+  await expect(page.getByTestId('method-source')).toHaveText('the shipped text')
+  await page.getByTestId('method-edit').click()
+  await expect(page).toHaveURL(/\/method/)
+  await expect(page.getByTestId('harness-editor')).toContainText('Working with agents')
+  await page.getByRole('link', { name: 'projects' }).click()
+  await page.getByTestId('learnings-link').click()
+  await expect(page).toHaveURL(/\/learnings/)
+  await page
+    .getByTestId('learning-text')
+    .fill('The fake agent answers a poke by reporting the job done.')
+  await page.getByTestId('learning-ref').fill('run-idle e2e')
+  await page.getByTestId('learning-add').click()
+  await expect(page.getByTestId('learning').first()).toContainText('answers a poke')
+  await expect(page.getByTestId('learning').first()).toContainText('admin')
+  await expect(page.getByTestId('learning').first()).toContainText('run-idle e2e')
 })
 
 test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({

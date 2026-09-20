@@ -129,6 +129,15 @@ export interface HarnessRow {
   file: string
 }
 
+/** One entry of the install's learnings log: an observation with evidence, appended and never edited. */
+export interface Learning {
+  n: number
+  at: number
+  by: string
+  ref: string | null
+  text: string
+}
+
 export interface AccountUsageRow {
   profile: string
   agentId: string

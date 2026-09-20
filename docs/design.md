@@ -253,6 +253,18 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Method and learnings
+
+`/method` is the note-file page with kind `method`: how work is run
+under this manager (features, the gate, helpers, reviews, debriefs),
+per install, shipped and seeded like the models file, edited in the
+same editor; agents read it with `am method`. `/learnings` lists the
+install's learnings log newest first (the file is oldest first) with a
+form to add an entry: text and an optional pointer; the manager stamps
+time and author, and nothing edits or deletes an entry. Both get a row
+in a "Method" block on the projects page. A hub shows and writes per
+host.
+
 ## Harness note
 
 The models file (`/models`, the same page and editor with `kind`

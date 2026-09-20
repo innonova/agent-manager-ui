@@ -10,8 +10,11 @@ import { useNotificationsStore } from '@/stores/notifications'
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
 
 /** Which of the two note files: the harness note's template, or the models file rendered into it. */
-const props = withDefaults(defineProps<{ kind?: 'harness' | 'models' }>(), { kind: 'harness' })
+const props = withDefaults(defineProps<{ kind?: 'harness' | 'models' | 'method' }>(), {
+  kind: 'harness',
+})
 const isModels = computed(() => props.kind === 'models')
+const isMethod = computed(() => props.kind === 'method')
 
 /**
  * The harness note's template, per machine, in a real editor: what every
@@ -96,7 +99,7 @@ onMounted(load)
     <template #title>
       <span class="text-sm text-slate-500 dark:text-slate-400">
         <RouterLink :to="{ name: 'projects' }" class="hover:underline">projects</RouterLink>
-        · {{ isModels ? 'models' : 'harness note' }}
+        · {{ isModels ? 'models' : isMethod ? 'method' : 'harness note' }}
       </span>
     </template>
     <div class="flex h-full min-h-0 flex-col">
@@ -188,7 +191,16 @@ onMounted(load)
       <p
         class="border-t border-slate-200 px-4 py-2 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400"
       >
-        <template v-if="isModels">
+        <template v-if="isMethod">
+          How work is run under this manager, for every project on it: features, the gate, helpers,
+          reviews, debriefs. Agents read it with <code>am method</code>; it is not part of the
+          harness note. Curated now and then from the learnings log (<RouterLink
+            :to="{ name: 'learnings' }"
+            class="underline"
+            >learnings</RouterLink
+          >).
+        </template>
+        <template v-else-if="isModels">
           The house view of which model suits which work, rendered into every agent's note under a
           "Models" heading (the harness note's <code v-pre>{{ models }}</code> placeholder), so an
           agent that starts a helper chooses with it in front of it. At most 8 KB. A change reaches

@@ -17,6 +17,7 @@ import type {
   StoredItem,
   User,
   HarnessRow,
+  Learning,
 } from './types'
 
 export class ApiError extends Error {
@@ -135,9 +136,23 @@ export const api = {
   /** The harness note's template per host: what every agent is told at session start. */
   harness: () => call<{ hosts: HarnessRow[] }>('GET', '/api/harness'),
   /** One of the two note files per host: the harness template or the models file rendered into it. */
-  noteFile: (kind: 'harness' | 'models') => call<{ hosts: HarnessRow[] }>('GET', `/api/${kind}`),
-  saveNoteFile: (kind: 'harness' | 'models', host: string, template: string | null) =>
+  noteFile: (kind: 'harness' | 'models' | 'method') =>
+    call<{ hosts: HarnessRow[] }>('GET', `/api/${kind}`),
+  saveNoteFile: (kind: 'harness' | 'models' | 'method', host: string, template: string | null) =>
     call<HarnessRow>('PUT', `/api/${kind}`, { host, template }),
+  /** The install's learnings log, entries after `since` (0 for all), oldest first. */
+  learnings: (host?: string, since = 0) =>
+    call<{ entries: Learning[] }>(
+      'GET',
+      `/api/learnings?since=${since}${host ? `&host=${encodeURIComponent(host)}` : ''}`,
+    ),
+  /** Appends an entry; the manager stamps time and author. */
+  addLearning: (text: string, ref?: string, host?: string) =>
+    call<{ entry: Learning }>('POST', '/api/learnings', {
+      text,
+      ...(ref ? { ref } : {}),
+      ...(host ? { host } : {}),
+    }),
   /** Writes the host's template (empty turns the note off); null goes back to the built-in one. */
   saveHarness: (host: string, template: string | null) =>
     call<HarnessRow>('PUT', '/api/harness', { host, template }),
