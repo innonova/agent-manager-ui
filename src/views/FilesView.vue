@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import ResizeHandle from '@/components/ResizeHandle.vue'
+import { useResizable } from '@/composables/useResizable'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
@@ -15,6 +17,7 @@ import { useProjectsStore } from '@/stores/projects'
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
 
 const props = defineProps<{ id: string }>()
+const filesPane = useResizable('files-tree', 288)
 const route = useRoute()
 const router = useRouter()
 const projects = useProjectsStore()
@@ -209,10 +212,12 @@ async function createFolder() {
     <template #title><ProjectHeader :id="id" /></template>
     <div class="flex h-full">
       <aside
-        class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ width: `${filesPane.width.value}px` }"
+        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
-          <span class="text-sm font-semibold tracking-wide text-slate-900 uppercase dark:text-slate-100"
+          <span
+            class="text-sm font-semibold tracking-wide text-slate-900 uppercase dark:text-slate-100"
             >Files</span
           >
           <span class="grow" />
@@ -378,6 +383,7 @@ async function createFolder() {
           {{ files.error }}
         </p>
       </aside>
+      <ResizeHandle @start="filesPane.start" />
       <section class="flex min-w-0 grow flex-col">
         <div
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"

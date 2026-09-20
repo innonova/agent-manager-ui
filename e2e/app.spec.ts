@@ -536,7 +536,10 @@ test('changes view: the commit list, a commit diff, the working tree, and the ma
   await expect(working).toContainText('working tree')
   await working.click()
   const wfiles = page.getByTestId('commit-file')
-  await expect(wfiles.filter({ hasText: 'src/index.ts' })).toHaveAttribute('data-status', 'modified')
+  await expect(wfiles.filter({ hasText: 'src/index.ts' })).toHaveAttribute(
+    'data-status',
+    'modified',
+  )
   await expect(wfiles.filter({ hasText: 'TODO.md' })).toHaveAttribute('data-status', 'untracked')
   await wfiles.filter({ hasText: 'src/index.ts' }).click()
   await expect(page.getByTestId('diff-editor')).toBeVisible()
@@ -700,6 +703,33 @@ test('a message while the agent works steers the turn instead of being refused',
   })
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
   await expect(page.getByTestId('send')).toHaveText('send')
+})
+
+test('the left panes resize by their handle and remember the width', async ({ page }) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await expect(page.getByTestId('agent-row').first()).toBeVisible()
+  const aside = page.locator('aside').first()
+  const before = (await aside.boundingBox())!.width
+  // the drag as pointer events on the grip and the window, which is what the handle listens to
+  const grip = page.getByTestId('resize-handle').first().locator('div')
+  const box = (await grip.boundingBox())!
+  const x = box.x + box.width / 2
+  await grip.dispatchEvent('pointerdown', { clientX: x, clientY: box.y + 100, bubbles: true })
+  await page.evaluate(
+    ([x, y]) => {
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: x + 60, clientY: y }))
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: x + 120, clientY: y }))
+      window.dispatchEvent(new PointerEvent('pointerup', { clientX: x + 120, clientY: y }))
+    },
+    [x, box.y + 100],
+  )
+  await page.waitForTimeout(100)
+  const after = (await aside.boundingBox())!.width
+  expect(after).toBeGreaterThan(before + 100)
+  await page.reload()
+  await expect(page.getByTestId('agent-row').first()).toBeVisible()
+  expect((await page.locator('aside').first().boundingBox())!.width).toBeCloseTo(after, 0)
 })
 
 test('the sidebar is a tree of every project: switch projects and agents without going back', async ({

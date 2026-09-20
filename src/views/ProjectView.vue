@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import ResizeHandle from '@/components/ResizeHandle.vue'
+import { useResizable } from '@/composables/useResizable'
 import { RouterLink, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
 import type { Profile, TurnImage } from '@/api/types'
@@ -42,6 +44,7 @@ const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
 const showNote = ref(false)
 const showDetails = ref(false)
+const treePane = useResizable('project-tree', 288)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 const activity = computed(() => current.value?.status.activity ?? null)
 /** The current thinking item's live text: only the last item counts, since nothing else appends while it streams. */
@@ -239,7 +242,8 @@ async function archive() {
     <template #title><ProjectHeader :id="id" /></template>
     <div class="flex h-full">
       <aside
-        class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ width: `${treePane.width.value}px` }"
+        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
           <span
@@ -256,6 +260,7 @@ async function archive() {
         </div>
         <ProjectTree :project-id="id" :agent-id="agentId" @new-agent="openNew" />
       </aside>
+      <ResizeHandle @start="treePane.start" />
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">
         <div

@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref, watch } from 'vue'
+import ResizeHandle from '@/components/ResizeHandle.vue'
+import { useResizable } from '@/composables/useResizable'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
@@ -12,6 +14,8 @@ import { when } from '@/time'
 const DiffViewer = defineAsyncComponent(() => import('@/components/DiffViewer.vue'))
 
 const props = defineProps<{ id: string }>()
+const listPane = useResizable('changes-list', 320)
+const filesPane = useResizable('changes-files', 256)
 const route = useRoute()
 const router = useRouter()
 const changes = useChangesStore()
@@ -122,7 +126,9 @@ function onListKey(e: KeyboardEvent) {
 const selectedFileTitle = computed(() => {
   const s = changes.selection
   if (!s) return ''
-  return s.kind === 'commit' ? `${s.repo} · ${s.hash.slice(0, 8)} — ${s.label}` : `${s.repo} · working tree`
+  return s.kind === 'commit'
+    ? `${s.repo} · ${s.hash.slice(0, 8)} — ${s.label}`
+    : `${s.repo} · working tree`
 })
 </script>
 
@@ -132,7 +138,8 @@ const selectedFileTitle = computed(() => {
     <div class="flex h-full">
       <!-- left: filters, working tree, the commit list -->
       <aside
-        class="flex w-80 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ width: `${listPane.width.value}px` }"
+        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex flex-wrap items-center gap-1.5 px-3 py-2 text-sm">
           <span class="font-semibold tracking-wide text-slate-900 uppercase dark:text-slate-100"
@@ -196,7 +203,7 @@ const selectedFileTitle = computed(() => {
             data-test="working-row"
             @click="changes.openWorking(w.repo, w.head)"
           >
-            <span class="truncate italic text-slate-600 dark:text-slate-300"
+            <span class="truncate text-slate-600 italic dark:text-slate-300"
               >working tree<span v-if="repos.length > 1" class="font-mono not-italic">
                 · {{ w.repo }}</span
               ><span v-if="w.agent"> · {{ w.agent }}</span> · in progress</span
@@ -272,13 +279,18 @@ const selectedFileTitle = computed(() => {
           {{ changes.error }}
         </p>
       </aside>
+      <ResizeHandle @start="listPane.start" />
 
       <!-- middle: the selected commit's (or working tree's) files -->
       <aside
+        :style="{ width: `${filesPane.width.value}px` }"
         v-if="changes.selection"
-        class="flex w-64 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
-        <div class="truncate px-3 py-2 text-sm text-slate-500 dark:text-slate-400" data-test="commit-meta">
+        <div
+          class="truncate px-3 py-2 text-sm text-slate-500 dark:text-slate-400"
+          data-test="commit-meta"
+        >
           {{ selectedFileTitle }}
         </div>
         <div class="min-h-0 grow overflow-auto pb-4">
@@ -307,6 +319,7 @@ const selectedFileTitle = computed(() => {
           </p>
         </div>
       </aside>
+      <ResizeHandle @start="filesPane.start" />
 
       <!-- right: the diff -->
       <section class="flex min-w-0 grow flex-col">
