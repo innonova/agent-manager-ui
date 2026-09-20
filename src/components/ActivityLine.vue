@@ -14,19 +14,65 @@ const props = defineProps<{
 /** Its own measured height, so the transcript's floating buttons can shift up to clear it. */
 const emit = defineEmits<{ resize: [height: number] }>()
 
-/** Quiet words for a thinking stretch; one is picked per stretch, not per tick. */
-const THINKING_WORDS = ['thinking', 'musing', 'pondering', 'weighing', 'considering']
-let nextThinkingWord = 0
+/**
+ * Words for a thinking stretch: quiet ones and sillier ones, all of them
+ * the model turning something over. The session's first is the plain
+ * one; after that one is drawn at random, never the one just shown.
+ */
+const THINKING_WORDS = [
+  'thinking',
+  'musing',
+  'pondering',
+  'mulling',
+  'weighing',
+  'considering',
+  'contemplating',
+  'deliberating',
+  'ruminating',
+  'cogitating',
+  'noodling',
+  'percolating',
+  'brewing',
+  'simmering',
+  'stewing',
+  'marinating',
+  'incubating',
+  'hatching',
+  'scheming',
+  'puzzling',
+  'untangling',
+  'sifting',
+  'distilling',
+  'digesting',
+  'chewing on it',
+  'turning it over',
+  'working it out',
+  'connecting the dots',
+  'scratching its head',
+  'gathering wool',
+  'wondering',
+  'reckoning',
+]
+/** How long a word stays before the next: long enough to read, short enough that a real stretch shows a few. */
+const THINKING_WORD_MS = 4000
+let wordsShown = 0
 const thinkingWord = ref(THINKING_WORDS[0])
+/** When the current word was picked, so it holds for `THINKING_WORD_MS` before the next. */
+let wordPickedAt = 0
 /** The `since` of the stretch the current word was picked for, so a token-only update (same stretch) does not reroll it. */
 const wordedSince = ref<number | null>(null)
+function pickThinkingWord(at: number) {
+  wordPickedAt = at
+  if (wordsShown++ === 0) return // the plain word first
+  const others = THINKING_WORDS.filter((w) => w !== thinkingWord.value)
+  thinkingWord.value = others[Math.floor(Math.random() * others.length)]!
+}
 watch(
   () => (props.activity?.kind === 'thinking' ? props.activity.since : null),
   (thinkingSince) => {
     if (thinkingSince == null || thinkingSince === wordedSince.value) return
     wordedSince.value = thinkingSince
-    thinkingWord.value = THINKING_WORDS[nextThinkingWord % THINKING_WORDS.length]
-    nextThinkingWord++
+    pickThinkingWord(Date.now())
   },
   { immediate: true },
 )
@@ -52,7 +98,12 @@ const FALLBACK_TOOL_PHRASE = 'waiting for a tool'
 const now = ref(Date.now())
 let timer: ReturnType<typeof setInterval> | undefined
 onMounted(() => {
-  timer = setInterval(() => (now.value = Date.now()), 1000)
+  timer = setInterval(() => {
+    now.value = Date.now()
+    // a long stretch shows a few words, not one for a minute
+    if (props.activity?.kind === 'thinking' && now.value - wordPickedAt >= THINKING_WORD_MS)
+      pickThinkingWord(now.value)
+  }, 1000)
 })
 onUnmounted(() => {
   if (timer) clearInterval(timer)
@@ -147,7 +198,10 @@ onUnmounted(() => observer?.disconnect())
         class="flex items-baseline justify-between gap-2 text-sm text-slate-500 dark:text-slate-400"
         data-test="activity-label"
       >
-        <span>{{ leftText }}</span>
+        <span
+          >{{ leftText
+          }}<span v-if="timed" class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span></span
+        >
         <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
           durationText
         }}</span>
@@ -163,3 +217,41 @@ onUnmounted(() => observer?.disconnect())
     </div>
   </div>
 </template>
+
+<style scoped>
+/* An ellipsis that breathes: the three dots light up in turn, so the
+   line is visibly alive between the once-a-second status updates. Fixed
+   width, so the token count after it does not shift as they fade. */
+.dots {
+  display: inline-block;
+  width: 1.1em;
+  text-align: left;
+}
+.dots i {
+  font-style: normal;
+  animation: dot 1.2s infinite;
+  opacity: 0.25;
+}
+.dots i:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.dots i:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dots i {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+</style>

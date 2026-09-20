@@ -421,11 +421,17 @@ seconds and read as the thinking having gone missing). `requesting`,
 `thinking` and `tool` are open-ended, so they get more:
 a left-aligned word and, right-aligned on the same line, the elapsed time
 ticking locally from `since` ("12 s", then "3 min", `src/time.ts`'s
-`since`). `thinking`'s word is not always "thinking": one of a small set
-of quiet synonyms (thinking, musing, pondering, weighing, considering) is
-picked once per thinking stretch — keyed on `since`, so a `tokens`-only
-update to the same stretch does not reroll it — not per tick, so it
-holds still while the seconds advance. `tool` says what kind of thing
+`since`). `thinking`'s word is not always "thinking": the session's first stretch
+says so plainly, and after that one of some thirty words is drawn at
+random, quiet ones (musing, pondering, mulling) and sillier ones
+(noodling, percolating, gathering wool) — never the one just shown — at
+each new stretch and again every four seconds within one, so a long
+stretch shows a few and a short one holds still. A `tokens`-only update
+to the same stretch (keyed on `since`) does not reroll it. The three
+open-ended kinds end in an animated ellipsis, the dots lighting up in
+turn (CSS only, fixed width so the count after it does not shift, still
+under `prefers-reduced-motion`): the line is visibly alive between the
+once-a-second status updates. `tool` says what kind of thing
 the last `tool_use` item's name is ("running a command", "reading a
 file", "editing a file", "searching", else "waiting for a tool"), never
 the raw command or path: the transcript already has that (`Transcript
