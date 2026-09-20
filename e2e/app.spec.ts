@@ -730,6 +730,25 @@ test('the left panes resize by their handle and remember the width', async ({ pa
   await page.reload()
   await expect(page.getByTestId('agent-row').first()).toBeVisible()
   expect((await page.locator('aside').first().boundingBox())!.width).toBeCloseTo(after, 0)
+  // the changes view's list pane resizes the same way, and without a selection there is one handle, not an orphan
+  await page.getByTestId('tab-changes').click()
+  await expect(page).toHaveURL(/\/changes$/)
+  await expect(page.getByTestId('commits-list')).toBeVisible() // the view's own chunk has loaded
+  await expect(page.getByTestId('resize-handle')).toHaveCount(1)
+  const list = page.locator('aside').first()
+  const w0 = (await list.boundingBox())!.width
+  const g = page.getByTestId('resize-handle').first().locator('div')
+  const b = (await g.boundingBox())!
+  await g.dispatchEvent('pointerdown', { clientX: b.x + 1, clientY: b.y + 100, bubbles: true })
+  await page.evaluate(
+    ([x, y]) => {
+      window.dispatchEvent(new PointerEvent('pointermove', { clientX: x + 90, clientY: y }))
+      window.dispatchEvent(new PointerEvent('pointerup', { clientX: x + 90, clientY: y }))
+    },
+    [b.x + 1, b.y + 100],
+  )
+  await page.waitForTimeout(100)
+  expect((await list.boundingBox())!.width).toBeGreaterThan(w0 + 60)
 })
 
 test('the sidebar is a tree of every project: switch projects and agents without going back', async ({

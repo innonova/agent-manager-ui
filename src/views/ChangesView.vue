@@ -281,45 +281,48 @@ const selectedFileTitle = computed(() => {
       </aside>
       <ResizeHandle @start="listPane.start" />
 
-      <!-- middle: the selected commit's (or working tree's) files -->
-      <aside
-        :style="{ width: `${filesPane.width.value}px` }"
-        v-if="changes.selection"
-        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-      >
-        <div
-          class="truncate px-3 py-2 text-sm text-slate-500 dark:text-slate-400"
-          data-test="commit-meta"
+      <!-- middle: the selected commit's (or working tree's) files; its handle goes with it -->
+      <template v-if="changes.selection">
+        <aside
+          :style="{ width: `${filesPane.width.value}px` }"
+          class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
         >
-          {{ selectedFileTitle }}
-        </div>
-        <div class="min-h-0 grow overflow-auto pb-4">
-          <button
-            v-for="f in changes.selFiles"
-            :key="f.path"
-            class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
-            :class="changes.openPath === f.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : ''"
-            :title="f.oldPath ? `${f.oldPath} → ${f.path}` : f.path"
-            data-test="commit-file"
-            :data-path="f.path"
-            :data-status="f.status"
-            @click="changes.openFile(f.path)"
+          <div
+            class="truncate px-3 py-2 text-sm text-slate-500 dark:text-slate-400"
+            data-test="commit-meta"
           >
-            <span class="truncate" :class="STATUS_CLASS[f.status]">{{ f.path }}</span>
-            <span class="grow" />
-            <span class="shrink-0 text-xs" :class="STATUS_CLASS[f.status]">{{
-              STATUS_LETTER[f.status]
-            }}</span>
-          </button>
-          <p
-            v-if="!changes.selFiles.length"
-            class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500"
-          >
-            No files.
-          </p>
-        </div>
-      </aside>
-      <ResizeHandle @start="filesPane.start" />
+            {{ selectedFileTitle }}
+          </div>
+          <div class="min-h-0 grow overflow-auto pb-4">
+            <button
+              v-for="f in changes.selFiles"
+              :key="f.path"
+              class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-800"
+              :class="
+                changes.openPath === f.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : ''
+              "
+              :title="f.oldPath ? `${f.oldPath} → ${f.path}` : f.path"
+              data-test="commit-file"
+              :data-path="f.path"
+              :data-status="f.status"
+              @click="changes.openFile(f.path)"
+            >
+              <span class="truncate" :class="STATUS_CLASS[f.status]">{{ f.path }}</span>
+              <span class="grow" />
+              <span class="shrink-0 text-xs" :class="STATUS_CLASS[f.status]">{{
+                STATUS_LETTER[f.status]
+              }}</span>
+            </button>
+            <p
+              v-if="!changes.selFiles.length"
+              class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500"
+            >
+              No files.
+            </p>
+          </div>
+        </aside>
+        <ResizeHandle @start="filesPane.start" />
+      </template>
 
       <!-- right: the diff -->
       <section class="flex min-w-0 grow flex-col">
