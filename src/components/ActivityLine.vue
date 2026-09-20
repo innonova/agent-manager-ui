@@ -165,11 +165,11 @@ const stateText = computed(() => {
       return ''
   }
 })
-/** The turn's count so far, after the state and its dots, when the vendor has given one and the kind carries it. */
+/** The turn's count so far, beside the elapsed time on the right, when the vendor has given one and the kind carries it. */
 const tokensText = computed(() => {
   const a = props.activity
-  if (!a || a.tokens == null || a.kind === 'writing' || a.kind === 'waiting') return ''
-  return ` · ${a.tokens.toLocaleString('en-US')} tokens`
+  if (!a || a.tokens == null || !timed.value) return ''
+  return `${a.tokens.toLocaleString('en-US')} tokens`
 })
 
 /** Only for text the transcript doesn't already show inline (it folds above this length); nothing would be gained by repeating a short one twice. */
@@ -222,18 +222,23 @@ onUnmounted(() => observer?.disconnect())
       class="mx-auto max-w-3xl rounded bg-white/90 px-3 py-1.5 shadow-sm backdrop-blur-sm dark:bg-slate-900/90"
       data-test="activity-line"
     >
+      <!-- What it does on the left, its measures on the right: the word
+           changes every few seconds and the count every second, and neither
+           may push the other about, so each side has its own edge. -->
       <div
-        class="flex items-baseline justify-between gap-2 text-sm text-slate-500 dark:text-slate-400"
+        class="flex items-baseline justify-between gap-3 text-sm text-slate-500 dark:text-slate-400"
         data-test="activity-label"
       >
-        <span
-          >{{ stateText
-          }}<span v-if="timed" class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span
-          >{{ tokensText }}</span
-        >
-        <span v-if="durationText" class="tabular-nums" data-test="activity-duration">{{
-          durationText
-        }}</span>
+        <span class="min-w-0 truncate">
+          <Transition name="word" mode="out-in">
+            <span :key="stateText">{{ stateText }}</span>
+          </Transition>
+          <span v-if="timed" class="dots" aria-hidden="true"><i>.</i><i>.</i><i>.</i></span>
+        </span>
+        <span v-if="durationText" class="shrink-0 tabular-nums">
+          <span v-if="tokensText" data-test="activity-tokens">{{ tokensText }} · </span>
+          <span data-test="activity-duration">{{ durationText }}</span>
+        </span>
       </div>
       <div
         v-if="showThinkingBox"
@@ -248,6 +253,15 @@ onUnmounted(() => observer?.disconnect())
 </template>
 
 <style scoped>
+/* The word swaps with a short crossfade rather than a jump. */
+.word-enter-active,
+.word-leave-active {
+  transition: opacity 0.15s ease;
+}
+.word-enter-from,
+.word-leave-to {
+  opacity: 0;
+}
 /* An ellipsis that breathes: the three dots light up in turn, so the
    line is visibly alive between the once-a-second status updates. Fixed
    width, so the token count after it does not shift as they fade. */

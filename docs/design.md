@@ -419,20 +419,23 @@ a turn, not only its first, and is often the longest stretch a quick
 tool call has (a model that goes straight to the call thinks for no time
 at all, so a line that had no words for this kind stood blank for
 seconds and read as the thinking having gone missing). `requesting`,
-`thinking` and `tool` are open-ended, so they get more:
-a left-aligned word and, right-aligned on the same line, the elapsed time
-ticking locally from `since` ("12 s", then "3 min", `src/time.ts`'s
-`since`). `thinking`'s word is not always "thinking": the session's first stretch
+`thinking` and `tool` are open-ended, so they get more: the word on the
+left, and on the right, right-aligned and in tabular figures, the
+turn's `tokens` so far when the vendor has given one ("1,340 tokens")
+and the elapsed time ticking locally from `since` ("12 s", then "3
+min", `src/time.ts`'s `since`), the two joined by a dot. What it does
+and its measures each have their own edge, so a longer word or a
+growing count never pushes the other about. `thinking`'s word is not always "thinking": the session's first stretch
 says so plainly, and after that one of some thirty words is drawn at
 random, quiet ones (musing, pondering, mulling) and sillier ones
 (noodling, percolating, gathering wool) — never the one just shown — at
 each new stretch and again every four seconds within one, so a long
 stretch shows a few and a short one holds still. A `tokens`-only update
-to the same stretch (keyed on `since`) does not reroll it. The three
+to the same stretch (keyed on `since`) does not reroll it. The word
+swaps with a short crossfade rather than a jump, and the three
 open-ended kinds end in an animated ellipsis, the dots lighting up in
-turn (CSS only, fixed width so the count after it does not shift, still
-under `prefers-reduced-motion`): the line is visibly alive between the
-once-a-second status updates. `tool` says what kind of thing
+turn (CSS only, still under `prefers-reduced-motion`): the line is
+visibly alive between the once-a-second status updates. `tool` says what kind of thing
 the tool is ("running a command", "reading a file", "editing a file",
 "searching", "running a helper", and so on for the names the three CLIs
 use; a name with no phrase still shows as "running <name>", an MCP
@@ -444,11 +447,7 @@ transcript's last `tool_use` item without its result is the fallback,
 and still forces the `tool` phase whenever it is present, since the
 manager throttles `activity`-only announcements to at most one a second,
 which can otherwise leave the line saying "thinking" for a moment after
-the transcript already shows the call running. When `tokens` (the turn's output so far, one number that only grows
-within the turn, absent until a vendor has said anything usable) is
-present, it follows the word and its dots, before the elapsed time,
-with thousands separated: "musing… · 1,340 tokens" and "12 s" at the
-right. While `activity.kind` is
+the transcript already shows the call running. While `activity.kind` is
 `thinking`, the tail of the current transcript's last item streams in
 under the line — but only when that item is longer than what the
 transcript already shows inline (`THINKING_FOLD_CHARS`, `src/constants.ts`,
