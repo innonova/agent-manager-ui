@@ -57,11 +57,21 @@ async function toggle(id: string) {
   remember()
 }
 for (const id of expanded.value) if (!agents.byProject.has(id)) void loadAgents(id)
-/** A project on a machine that is down, or one deleted meanwhile, is a toast, not an unhandled rejection. */
+/**
+ * A project on a machine that is down is a toast, not an unhandled
+ * rejection. One that no longer exists (deleted, or on a spoke since
+ * disconnected, remembered as expanded by this browser) is quietly
+ * forgotten: a red box about a project you cannot see is no use.
+ */
 async function loadAgents(id: string) {
   try {
     await agents.load(id)
   } catch (e) {
+    if (e instanceof ApiError && e.status === 404) {
+      expanded.value.delete(id)
+      remember()
+      return
+    }
     useNotificationsStore().push(
       'error',
       `could not load the agents: ${e instanceof ApiError ? e.message : String(e)}`,
