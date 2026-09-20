@@ -16,6 +16,7 @@ import type {
   RepoInput,
   StoredItem,
   User,
+  HarnessRow,
 } from './types'
 
 export class ApiError extends Error {
@@ -123,6 +124,11 @@ export const api = {
   /** The vendor accounts' usage per host, as last reported through an agent. */
   usage: () =>
     call<{ hosts: { host: string; accounts: AccountUsageRow[] }[] }>('GET', '/api/usage'),
+  /** The harness note's template per host: what every agent is told at session start. */
+  harness: () => call<{ hosts: HarnessRow[] }>('GET', '/api/harness'),
+  /** Writes the host's template (empty turns the note off); null goes back to the built-in one. */
+  saveHarness: (host: string, template: string | null) =>
+    call<HarnessRow>('PUT', '/api/harness', { host, template }),
   /** Public: the manager's daemon link and, as a hub, its hosts. */
   health: () =>
     call<{ status: string; daemon: boolean; hosts: HostStatus[] }>('GET', '/api/health'),

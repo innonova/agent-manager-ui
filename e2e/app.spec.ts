@@ -717,6 +717,30 @@ test('files view: a new folder and an uploaded file land in the tree and can be 
   await expect(page.getByTestId('turn-input')).toHaveValue(/See .*logs\/app\.log/)
 })
 
+test('the harness note is edited on the projects page and reaches an agent at its restart', async ({
+  page,
+}) => {
+  await login(page)
+  await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
+  await page.getByTestId('harness-edit').click()
+  await expect(page.getByTestId('harness-template')).toHaveValue(/Running under agent-manager/)
+  await page.getByTestId('harness-template').fill('Custom note for {{agent}} in {{project}}.')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  await page.getByTestId('restart').click()
+  await page.getByTestId('harness-note-link').click()
+  await expect(page.getByTestId('harness-note')).toHaveText('Custom note for worker in Demo.')
+  await page.getByTestId('form-submit').click()
+  // back to the built-in one
+  await page.getByRole('link', { name: 'agent-manager' }).click()
+  await page.getByTestId('harness-edit').click()
+  await page.getByTestId('form-secondary').click()
+  await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
+})
+
 test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({
   page,
 }) => {

@@ -38,7 +38,9 @@ fs.writeFileSync(path.join(E2E_ROOT, 'project', 'src', 'index.ts'), 'export cons
 // A git repository with an ignored directory, for the tree's greying.
 const PROJECT = path.join(E2E_ROOT, 'project')
 const git = (...args) =>
-  execFileSync('git', ['-c', 'user.name=e2e', '-c', 'user.email=e2e@test', ...args], { cwd: PROJECT })
+  execFileSync('git', ['-c', 'user.name=e2e', '-c', 'user.email=e2e@test', ...args], {
+    cwd: PROJECT,
+  })
 git('init', '-q')
 fs.writeFileSync(path.join(PROJECT, '.gitignore'), 'dist/\n')
 fs.mkdirSync(path.join(PROJECT, 'dist'))
@@ -97,6 +99,7 @@ const manager = spawn(process.execPath, [MANAGER_MAIN], {
     AGENT_MANAGER_LOGIN_ATTEMPTS_PER_MINUTE: '1000', // every test logs in; the throttle is for the real thing
     AGENT_MANAGER_UI_DIR: path.join(E2E_ROOT, 'ui'), // pages come from Vite; this is only for build.json
     AGENT_MANAGER_EVENTS_PING_MS: '500',
+    AGENT_MANAGER_HARNESS_FILE: path.join(E2E_ROOT, 'harness.md'), // never the developer's own ~/.config file
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })

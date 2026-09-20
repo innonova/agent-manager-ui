@@ -47,6 +47,18 @@ export const useAgentsStore = defineStore('agents', () => {
       }
       return
     }
+    if (f.type === 'agent.session') {
+      // a new session: the record changed with it (session id, the harness note it was given)
+      const row = byId.get(f.agentId)
+      if (row)
+        void api
+          .agent(f.agentId)
+          .then((fresh) => {
+            row.agent = fresh.agent
+          })
+          .catch(() => undefined)
+      return
+    }
     if (f.type === 'agent.reset') {
       // the manager rebuilt this transcript from scratch; start over
       generation.set(f.agentId, (generation.get(f.agentId) ?? 0) + 1)

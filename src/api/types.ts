@@ -102,6 +102,16 @@ export interface AccountUsage {
   at: number
 }
 
+/** The harness note's template on one machine: built in, the operator's, or off (an empty file). */
+export interface HarnessRow {
+  host: string
+  source: 'built-in' | 'custom' | 'off'
+  /** The template in force (the built-in one when there is no file). */
+  template: string
+  builtIn: string
+  file: string
+}
+
 export interface AccountUsageRow {
   profile: string
   agentId: string

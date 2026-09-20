@@ -253,6 +253,18 @@ since they are persisted. If the same failure recurs within fifteen
 seconds of such a reload it is not staleness, and a toast says the page
 could not be loaded instead of looping.
 
+## Harness note
+
+The projects page has a "Harness note" block: per machine, whether
+agents there get the built-in note, a custom one or none, with "edit"
+opening the template in a textarea (the placeholders are listed under
+it; saving an empty text turns the note off, "use the built-in note"
+removes the file). It reads and writes `/api/harness`, which a hub
+forwards to its spokes by host name, so each machine's file is edited
+from the one UI. A change reaches an agent at its next restart, and
+the toast says so; what a given agent was actually told is behind
+"harness" in its header.
+
 ## Account usage
 
 The agent header has two lines: the name, state and error with the
@@ -323,7 +335,9 @@ resumes that one agent with the current settings (a repository added
 to the project, a changed harness note), conversation intact; the
 manager refuses it while the agent works, waits on a permission or has
 background jobs, and the refusal shows as a toast, so interrupt first
-when that is meant. An exited agent is simply started.
+when that is meant. An exited agent is simply started. A session frame
+makes the store refetch the agent's record, since a new session changes
+it (the session id, the harness note it was given).
 
 ## The sidebar is a tree of projects
 
