@@ -723,9 +723,16 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await login(page)
   await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
   await page.getByTestId('harness-edit').click()
-  await expect(page.getByTestId('harness-template')).toHaveValue(/Running under agent-manager/)
-  await page.getByTestId('harness-template').fill('Custom note for {{agent}} in {{project}}.')
-  await page.getByTestId('form-submit').click()
+  await expect(page).toHaveURL(/\/harness/)
+  await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
+  await expect(page.getByTestId('harness-save')).toBeDisabled() // nothing changed yet
+  await page.getByTestId('editor').click()
+  await page.keyboard.press('Control+A')
+  await page.keyboard.type('Custom note for {{agent}} in {{project}}.')
+  await expect(page.getByTestId('harness-save')).toBeEnabled()
+  await page.getByTestId('harness-save').click()
+  await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
+  await page.getByRole('link', { name: 'projects' }).click()
   await expect(page.getByTestId('harness-source')).toHaveText('a custom note')
   await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
@@ -737,8 +744,11 @@ test('the harness note is edited on the projects page and reaches an agent at it
   // back to the built-in one
   await page.getByRole('link', { name: 'agent-manager' }).click()
   await page.getByTestId('harness-edit').click()
-  await page.getByTestId('form-secondary').click()
+  await expect(page.getByTestId('harness-editor')).toContainText('Custom note for')
+  page.once('dialog', (d) => d.accept())
+  await page.getByTestId('harness-use-builtin').click()
   await expect(page.getByTestId('harness-source')).toHaveText('the built-in note')
+  await expect(page.getByTestId('harness-editor')).toContainText('Running under agent-manager')
 })
 
 test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({

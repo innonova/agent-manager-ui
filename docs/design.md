@@ -256,14 +256,18 @@ could not be loaded instead of looping.
 ## Harness note
 
 The projects page has a "Harness note" block: per machine, whether
-agents there get the built-in note, a custom one or none, with "edit"
-opening the template in a textarea (the placeholders are listed under
-it; saving an empty text turns the note off, "use the built-in note"
-removes the file). It reads and writes `/api/harness`, which a hub
-forwards to its spokes by host name, so each machine's file is edited
-from the one UI. A change reaches an agent at its next restart, and
-the toast says so; what a given agent was actually told is behind
-"harness" in its header.
+agents there get the built-in note, a custom one or none, with a link
+to `/harness`, a page that is the template in the files view's Monaco
+editor (editable, wrapped, no bracket auto-closing since it is prose)
+with a host picker when there are several machines. Its toolbar:
+"save" (enabled once the text differs from what is in force), "load
+the built-in text" (into the editor only), "use the built-in note"
+(removes the file, after a confirm), "turn off" (saves an empty file,
+after a confirm); the placeholders are listed under the editor. It
+reads and writes `/api/harness`, which a hub forwards to its spokes by
+host name, so each machine's file is edited from the one UI. A change
+reaches an agent at its next restart, and the toast says so; what a
+given agent was actually told is behind "harness" in its header.
 
 ## Account usage
 

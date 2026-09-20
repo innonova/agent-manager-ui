@@ -12,6 +12,7 @@ const router = createRouter({
     },
     { path: '/', name: 'projects', component: () => import('@/views/ProjectsView.vue') },
     { path: '/users', name: 'users', component: () => import('@/views/UsersView.vue') },
+    { path: '/harness', name: 'harness', component: () => import('@/views/HarnessView.vue') },
     {
       path: '/projects/:id',
       name: 'project',

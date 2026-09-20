@@ -49,31 +49,6 @@ const harness = ref<HarnessRow[]>([])
 async function loadHarness() {
   harness.value = (await api.harness().catch(() => ({ hosts: [] }))).hosts
 }
-const harnessEditing = ref<HarnessRow | null>(null)
-const harnessText = ref('')
-const harnessError = ref<string | null>(null)
-const harnessBusy = ref(false)
-function editHarness(row: HarnessRow) {
-  harnessEditing.value = row
-  harnessText.value = row.source === 'off' ? row.builtIn : row.template // off: start from the built-in text rather than a blank
-  harnessError.value = null
-}
-/** `template` null: back to the built-in one; empty: off; text: the operator's. */
-async function saveHarness(template: string | null) {
-  if (!harnessEditing.value) return
-  harnessBusy.value = true
-  harnessError.value = null
-  try {
-    await api.saveHarness(harnessEditing.value.host, template)
-    harnessEditing.value = null
-    await loadHarness()
-    useNotificationsStore().push('info', 'saved; agents get it at their next restart')
-  } catch (e) {
-    harnessError.value = e instanceof ApiError ? e.message : String(e)
-  } finally {
-    harnessBusy.value = false
-  }
-}
 
 function empty(): ProjectFormValue {
   return {
@@ -221,14 +196,12 @@ async function submit(restart = false) {
                 ? 'a custom note'
                 : 'off'
           }}</span>
-          <button
-            type="button"
+          <RouterLink
+            :to="{ name: 'harness', query: { host: h.host } }"
             class="text-xs text-blue-700 hover:underline dark:text-blue-300"
             data-test="harness-edit"
-            @click="editHarness(h)"
+            >view / edit</RouterLink
           >
-            edit
-          </button>
         </div>
         <p class="mt-1 text-xs text-slate-400 dark:text-slate-500">
           What every agent is told about running here, at session start; a change reaches an agent
@@ -300,36 +273,6 @@ async function submit(restart = false) {
       </ul>
     </div>
 
-    <ModalForm
-      v-if="harnessEditing"
-      :title="`Harness note${hosts.several ? ` on ${harnessEditing.host}` : ''}`"
-      :error="harnessError"
-      :busy="harnessBusy"
-      submit-label="save"
-      :secondary-label="harnessEditing.source === 'built-in' ? undefined : 'use the built-in note'"
-      @close="harnessEditing = null"
-      @submit="saveHarness(harnessText)"
-      @secondary="saveHarness(null)"
-    >
-      <textarea
-        v-model="harnessText"
-        rows="16"
-        class="w-full rounded border border-slate-300 bg-white px-2 py-1 font-mono text-xs dark:border-slate-700 dark:bg-slate-950"
-        data-test="harness-template"
-        spellcheck="false"
-      ></textarea>
-      <p class="text-xs text-slate-500 dark:text-slate-400">
-        Placeholders: <code v-pre>{{ agent }}</code
-        >, <code v-pre>{{ project }}</code
-        >, <code v-pre>{{ host }}</code
-        >, <code v-pre>{{ repos }}</code
-        >, <code v-pre>{{ cwd }}</code
-        >, <code v-pre>{{ permissions }}</code
-        >, <code v-pre>{{ profile }}</code
-        >. Saving an empty text turns the note off. Kept in <code>{{ harnessEditing.file }}</code
-        >; agents get a change at their next restart.
-      </p>
-    </ModalForm>
     <ModalForm
       v-if="showForm"
       :title="editing ? 'Edit project' : 'New project'"
