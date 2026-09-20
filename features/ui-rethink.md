@@ -1,6 +1,6 @@
 ---
-title: the UI as a reading app: hierarchy, one header line, projects first
-status: review
+title: "the UI as a reading app: hierarchy, one header line, projects first"
+status: done
 priority: 30
 ---
 

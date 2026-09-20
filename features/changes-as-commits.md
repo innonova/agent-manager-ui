@@ -1,6 +1,6 @@
 ---
-title: a changes view of its own: the project's commits, with who, when and for what
-status: review
+title: "a changes view of its own: the project's commits, with who, when and for what"
+status: done
 priority: 35
 ---
 
