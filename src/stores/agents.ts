@@ -251,6 +251,14 @@ export const useAgentsStore = defineStore('agents', () => {
     },
   ): Promise<Agent> {
     const row = await api.createAgent(projectId, input)
+    // the agent.created frame usually lands before this reply does, and
+    // has already added the row: update it rather than add a second
+    const existing = byId.get(row.agent.id)
+    if (existing) {
+      existing.agent = row.agent
+      existing.status = row.status
+      return row.agent
+    }
     byId.set(row.agent.id, row)
     byProject.set(projectId, [...(byProject.get(projectId) ?? []), row])
     return row.agent

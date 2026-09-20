@@ -400,7 +400,7 @@ async function archive() {
             <button
               v-if="current.agent.harnessNote"
               type="button"
-              class="shrink-0 hover:underline"
+              class="shrink-0 font-mono hover:underline"
               title="what the agent was told about running here, at its last session start"
               data-test="harness-note-link"
               @click="showNote = true"

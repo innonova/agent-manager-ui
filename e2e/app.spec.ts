@@ -754,6 +754,7 @@ test('archived agents are listed under the project and can be deleted for good',
   await page.getByTestId('agent-name-input').fill('temp')
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|starting/)
+  await expect(page.getByTestId('agent-row').filter({ hasText: 'temp' })).toHaveCount(1) // once, not once per source
   page.once('dialog', (d) => d.accept())
   await page.getByTestId('archive').click()
   await expect(page.getByTestId('agent-row').filter({ hasText: 'temp' })).toHaveCount(0)
