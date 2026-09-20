@@ -87,11 +87,21 @@ watch(
 )
 watch(() => props.items.length, follow)
 watch(() => props.items[props.items.length - 1]?.item, follow, { deep: true })
+// the activity overlay floats over the bottom: the scroller reserves its
+// height below the items, so the newest item scrolls up clear of it, and
+// a view that was at the end stays at the end as the reservation changes
+watch(() => props.activityHeight, follow)
 onMounted(follow)
 </script>
 
 <template>
-  <div ref="el" class="h-full overflow-y-auto px-4 py-3" data-test="transcript" @scroll="onScroll">
+  <div
+    ref="el"
+    class="h-full overflow-y-auto px-4 py-3"
+    :style="activityHeight ? { paddingBottom: `calc(0.75rem + ${activityHeight}px)` } : undefined"
+    data-test="transcript"
+    @scroll="onScroll"
+  >
     <div class="mx-auto flex max-w-3xl flex-col gap-3">
       <button
         v-if="hasEarlier"

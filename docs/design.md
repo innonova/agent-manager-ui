@@ -166,16 +166,16 @@ starts.
 
 Items from the manager map onto components:
 
-| item.kind | rendering |
-|---|---|
-| `user` | right-aligned bubble, with the sender's name above it when the manager knows it (`by`) |
-| `text` | markdown, grows while `streaming` |
-| `thinking` | shown inline as plain text, meant to be read: with summarised thinking these are short, curated remarks the CLI would show anyway; only a long one (over ~600 characters) is folded |
-| `permission` | an amber card while undecided: tool, what the agent wants, the command or input, and a button per option the vendor offers (Allow, Always allow, Deny); once decided, a plain card noting the choice. The turn input is disabled meanwhile. Only agents created with `permissions: ask` produce these |
+| item.kind                      | rendering                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user`                         | right-aligned bubble, with the sender's name above it when the manager knows it (`by`)                                                                                                                                                                                                                                                                                            |
+| `text`                         | markdown, grows while `streaming`                                                                                                                                                                                                                                                                                                                                                 |
+| `thinking`                     | shown inline as plain text, meant to be read: with summarised thinking these are short, curated remarks the CLI would show anyway; only a long one (over ~600 characters) is folded                                                                                                                                                                                               |
+| `permission`                   | an amber card while undecided: tool, what the agent wants, the command or input, and a button per option the vendor offers (Allow, Always allow, Deny); once decided, a plain card noting the choice. The turn input is disabled meanwhile. Only agents created with `permissions: ask` produce these                                                                             |
 | `tool_use` + its `tool_result` | one collapsed line: tool name, what the call is for (Claude's Bash `description`, a file tool's path, a search's pattern, else the command or a compact input), and the result's size or "error" or "running…"; unfolding shows the command (or the input as JSON) and the result. The pairing is by tool id, done in the view; a result whose call is missing renders on its own |
-| `error` | red banner with the vendor message verbatim |
-| `system` | grey note (session started, resumed, daemon notice) |
-| `turn_end` | thin rule with the time it ended, duration and cost when present |
+| `error`                        | red banner with the vendor message verbatim                                                                                                                                                                                                                                                                                                                                       |
+| `system`                       | grey note (session started, resumed, daemon notice)                                                                                                                                                                                                                                                                                                                               |
+| `turn_end`                     | thin rule with the time it ended, duration and cost when present                                                                                                                                                                                                                                                                                                                  |
 
 Every item carries the time of its daemon record: system notes show it
 inline, a permission card says since when it waits, a user bubble shows
@@ -364,7 +364,10 @@ the composer itself. Sized and centred like the transcript's own item
 column (same max width, same edges), not the pane's full width, so its
 label and elapsed time line up with what is above them; the transcript's
 own "↓ latest" button shifts up to clear it while it shows (its measured
-height, via a `ResizeObserver`, reaches `TranscriptView` as a prop).
+height, via a `ResizeObserver`, reaches `TranscriptView` as a prop), and
+the scroller reserves that height below the items, so the newest item
+(the running tool call, typically) scrolls up clear of the overlay
+instead of sitting under it, and a view that was at the end stays there.
 `writing` just says "writing" and `waiting` says "waiting for your
 answer" — both already show themselves elsewhere (the growing reply, the
 permission card). `thinking` and `tool` are open-ended, so they get more:
