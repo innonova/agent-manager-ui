@@ -375,7 +375,7 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   await expect(page.getByTestId('agent-model-chip')).toHaveText('fake-9') // the vendor reports what it runs
   await expect(page.getByTestId('agent-effort-chip')).toHaveText('effort high')
   await page.getByTestId('harness-note-link').click() // what the agent was told about running here
-  await expect(page.getByTestId('harness-note')).toContainText('agent "careful" of the project')
+  await expect(page.getByTestId('harness-note')).toContainText('Running under agent-manager')
   await page.getByTestId('form-submit').click()
   await expect(page.getByTestId('harness-note')).toHaveCount(0)
   await page.getByTestId('turn-input').fill('this needs permission')
