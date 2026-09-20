@@ -287,3 +287,42 @@ export interface FileDiff {
   binary: boolean
   truncated: boolean
 }
+export interface Commit {
+  repo: string
+  hash: string
+  shortHash: string
+  subject: string
+  /** The git author name recorded on the commit. */
+  author: string
+  /** Author time, milliseconds. */
+  at: number
+  /** The agent's name when the commit falls in a run's window, else null. */
+  agent: string | null
+  agentId: string | null
+  /** The feature slug when the commit falls in a run's window, else null. */
+  feature: string | null
+  /** After the caller's read cursor in its repository. */
+  unread: boolean
+}
+/** A repository with uncommitted work, shown above the commits. */
+export interface WorkingChange {
+  repo: string
+  agent: string | null
+  files: number
+  /** HEAD; the uncommitted diff is fetched with the changes routes at base=<head>. */
+  head: string
+}
+export interface CommitsResult {
+  commits: Commit[]
+  working: WorkingChange[]
+  sinceCount: number
+}
+/** One commit's changed files, its metadata; the `?path=` variant returns a FileDiff instead. */
+export interface CommitFiles {
+  repo: string
+  hash: string
+  subject: string
+  author: string
+  at: number
+  files: ChangedFile[]
+}

@@ -38,7 +38,8 @@ end-to-end against a manager running with the fake adapter.
 /users                          accounts: create (password shown once), rename yourself, reset, remove
 /projects/:id                   project: agents sidebar, no agent selected
 /projects/:id/agents/:agentId   the selected agent's transcript and composer
-/projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL; a changes mode with diffs
+/projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL
+/projects/:id/changes?repo=&feature=&agent=   the project's commits, with a diff; filters in the URL
 /projects/:id/features          features grouped by status; done, block, reopen, edit, respond; new feature form
 ```
 
@@ -83,19 +84,41 @@ collapses or steps out, Enter or Space opens or toggles, Home/End jump.
 
 ## Changes view
 
-The files tab has a second mode, "Changes": what differs between a base
-and the working tree, per repository, as a list of files with the tree's
-status letters and colours, and a Monaco diff editor (side by side or
-inline) for the selected file. The base is the user's read cursor by
-default ("since you last looked"; "mark as read" moves it to the current
-commit, is disabled when nothing is committed since it, and says in a
-toast how many uncommitted changes still show), a feature's recorded range ("changes" on a feature row), or a
-commit. The manager's `note` for a base that fell back to HEAD (nothing
-read yet, history rewritten, no range) shows above the list. The list
-reloads when an agent in the project stops working, like the tree. The
-agent page shows "N changed since you last looked" linking here, and the
-mode switch carries the same count. Uncommitted work always shows; the
-view never writes to the tree.
+Its own tab, between files and features, because the unit a person
+follows is the commit, not one large diff from an arbitrary moment.
+Three columns. Left: the project's commits across its repositories,
+newest first, each row the subject, the short hash, who (the agent's
+name when the commit fell in a run's window, else the git author), when,
+the repository (with more than one), and the feature slug as a chip when
+it is attributed; above them, one row per repository with uncommitted
+work ("working tree · \<agent> · in progress" with a file count); and a
+"you last looked here" divider between the commits made since the marker
+and the rest. Middle: the selected commit's (or working tree's) changed
+files, with the tree's status letters and colours. Right: the Monaco
+diff of the selected file (side by side or inline) — for a commit,
+against its parent; for the working tree, the uncommitted diff. Up and
+down move through the commit list.
+
+Filters at the top — repository (when there is more than one), feature
+and agent — live in the URL (`?repo=&feature=&agent=`), so a feature
+row's "changes" link (`feature:<slug>`) and, later, a run in the run log
+carry them and a reload keeps them. The list reloads when an agent in
+the project stops working (idle, error or exited), so a commit an agent
+just made appears without a reload; nothing polls, and nothing is cached
+below the manager, which re-reads git each request (a rebase or amend
+shows at once). It is all read-only.
+
+The marker is the per-user, per-project read cursor. It moves to HEAD
+when the reader leaves the view (a route change or an unmount), not when
+they open it, so "you last looked here" means the last time they had it
+open; a tab simply closed on the view has not looked away. The changes
+tab and the agent page's "N new since you last looked" link both count
+commits since the marker (`GET .../commits?count=1`); the count clears
+when the reader leaves. Data comes from `GET .../commits` (list and
+attribution) and `GET .../commits/:repo/:hash[?path=]` (a commit's file
+list, or one file's diff); the working tree's diff reuses the existing
+`GET .../changes` and `.../changes/file` routes at `base=<head>`. The
+files view no longer has a changes mode.
 
 ## Features view
 
@@ -506,7 +529,8 @@ clicking it brings the window up on that agent.
 - Unit: the agents store's transcript paging, and its live handling of an
   agent created (added only where the project's list is loaded, idempotent
   for the creating tab's own frame) and archived (dropped from the list)
-  (`src/stores/agents.spec.ts`).
+  (`src/stores/agents.spec.ts`); the changes store's commit list, filters,
+  refresh-on-idle and marker move (`src/stores/changes.spec.ts`).
 - End-to-end: Playwright against a real daemon (fake profile) and
   manager. The file is stateful and ordered: one manager serves the
   whole run, tests build on what earlier ones created (the "Demo"
@@ -514,16 +538,19 @@ clicking it brings the window up on that agent.
   makes its own project. It covers login, project and agent creation, a streamed turn, an error
   turn and counts, reload, stop and resume, display and Enter-key
   preferences, desktop notifications, the update badge, drafts, the files
-  and changes views, permissions, users, presence, features, editing a
+  view, permissions, users, presence, features, editing a
   project with a restart, steering, the activity line (thinking then
-  a tool call, streamed and gone at the turn's end), and a second tab
-  seeing an agent created and then archived elsewhere without a reload.
-  There is no test for
+  a tool call, streamed and gone at the turn's end), a second tab
+  seeing an agent created and then archived elsewhere without a reload,
+  and the changes view (the commit list and a commit diff, the working
+  tree, the marker moving on leave, and a commit appearing in another
+  tab without a reload). There is no test for
   a dropped socket; the store's reconnect refetch is covered by the unit
   test.
 
 ## Milestones
 
 Matches the manager's: 1 login, project list, agent view; 2 files with
-Monaco; 3 features; 4 the changes view (what changed since you last
-looked, as a diff), which settled the earlier "diff view" question.
+Monaco; 3 features; 4 the changes view — first "what changed since you
+last looked" as one diff, then reshaped into the project's commit list
+with per-commit diffs and run attribution, which is what it is now.

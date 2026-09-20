@@ -4,8 +4,6 @@ import { RouterLink, useRoute, useRouter } from 'vue-router'
 import AppShell from '@/components/AppShell.vue'
 import FileTreeNode from '@/components/FileTreeNode.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
-import { useChangesStore } from '@/stores/changes'
-import { useFeaturesStore } from '@/stores/features'
 import { useDraftsStore } from '@/stores/drafts'
 import { useAgentsStore } from '@/stores/agents'
 import { ApiError } from '@/api/client'
@@ -15,7 +13,6 @@ import { useProjectsStore } from '@/stores/projects'
 
 // Monaco is several megabytes; it loads only when a file is opened.
 const CodeViewer = defineAsyncComponent(() => import('@/components/CodeViewer.vue'))
-const DiffViewer = defineAsyncComponent(() => import('@/components/DiffViewer.vue'))
 
 const props = defineProps<{ id: string }>()
 const route = useRoute()
@@ -24,71 +21,8 @@ const projects = useProjectsStore()
 const files = useFilesStore()
 const agents = useAgentsStore()
 const drafts = useDraftsStore()
-const changes = useChangesStore()
-const features = useFeaturesStore()
-/** "tree" or "changes"; changes take a base: "read", "feature:<slug>" or a commit. */
-const mode = computed(() => (route.query.mode === 'changes' ? 'changes' : 'tree'))
-const base = computed(() => (typeof route.query.base === 'string' && route.query.base) || 'read')
-const inline = ref(false)
-const baseLabel = computed(() => {
-  if (base.value === 'read') return 'since you last looked'
-  if (base.value.startsWith('feature:')) {
-    const slug = base.value.slice(8)
-    const f = (features.byProject.get(props.id) ?? []).find((x) => x.slug === slug)
-    return `feature: ${f?.title ?? slug}`
-  }
-  return `since ${base.value.slice(0, 8)}`
-})
-const changedCount = computed(() => changes.repos.reduce((n, r) => n + r.files.length, 0))
-/** Meaningful when a cursor is missing or commits exist since it; uncommitted work is never "read". */
-const canMarkRead = computed(
-  () =>
-    base.value === 'read' &&
-    // any fallback note (nothing read yet, history rewritten) is cleared by marking read too
-    changes.repos.some((r) => r.head && (r.base !== r.head || r.note)),
-)
 const notifications = useNotificationsStore()
-async function markRead() {
-  await changes.markRead()
-  const left = changedCount.value
-  notifications.push(
-    'info',
-    left
-      ? `Marked as read. ${left} uncommitted change${left === 1 ? '' : 's'} still show${left === 1 ? 's' : ''}.`
-      : 'Marked as read; nothing left to look at.',
-  )
-}
-const STATUS_LETTER: Record<string, string> = {
-  modified: 'M',
-  added: 'A',
-  deleted: 'D',
-  renamed: 'R',
-  untracked: 'U',
-}
-const STATUS_CLASS: Record<string, string> = {
-  modified: 'text-[#895503] dark:text-[#e2c08d]',
-  added: 'text-[#587c0c] dark:text-[#81b88b]',
-  deleted: 'text-[#ad0707] dark:text-[#c74e39]',
-  renamed: 'text-[#895503] dark:text-[#e2c08d]',
-  untracked: 'text-[#007100] dark:text-[#73c991]',
-}
 
-function setMode(m: 'tree' | 'changes', b?: string) {
-  const query: Record<string, string> = {}
-  if (m === 'changes') {
-    query.mode = 'changes'
-    if (b && b !== 'read') query.base = b
-    if (changes.openPath) query.path = changes.openPath
-  } else if (files.openPath) {
-    query.path = files.openPath
-  }
-  void router.replace({ query })
-}
-
-async function openChange(path: string) {
-  await changes.openFile(path)
-  void router.replace({ query: { ...route.query, path } })
-}
 const size = computed(() => {
   const n = files.open?.size ?? 0
   return n < 1024
@@ -147,19 +81,11 @@ async function onTreeKey(e: KeyboardEvent): Promise<void> {
 
 onMounted(async () => {
   if (!projects.loaded) await projects.load()
-  if (!features.byProject.has(props.id)) void features.load(props.id)
-  void changes.countUnread(props.id)
   files.active = true
-  changes.active = mode.value === 'changes'
   const p = route.query.path // before select(), which resets the open path and the URL follows
   await files.select(props.id)
-  // remounted with a file still open (tab switch and back): put it back in the URL
-  if (mode.value === 'tree' && files.openPath && !p)
-    void router.replace({ query: { path: files.openPath } })
-  if (mode.value === 'changes') {
-    await changes.select(props.id, base.value)
-    if (typeof p === 'string' && p) await changes.openFile(p)
-  } else if (typeof p === 'string' && p) {
+  if (files.openPath && !p) void router.replace({ query: { path: files.openPath } })
+  if (typeof p === 'string' && p) {
     await files.reveal(p)
     await files.openFile(p)
   }
@@ -168,29 +94,16 @@ onMounted(async () => {
 watch(
   () => props.id,
   async (id) => {
-    if (!features.byProject.has(id)) void features.load(id)
-    void changes.countUnread(id)
     await files.select(id)
-    if (mode.value === 'changes') await changes.select(id, base.value)
-  },
-)
-
-watch(
-  () => [mode.value, base.value] as const,
-  async ([m, b]) => {
-    changes.active = m === 'changes'
-    if (m === 'changes') await changes.select(props.id, b)
   },
 )
 onUnmounted(() => {
   files.active = false
-  changes.active = false
 })
 
 watch(
   () => files.openPath,
   (p) => {
-    if (mode.value !== 'tree') return
     if (p !== (typeof route.query.path === 'string' ? route.query.path : null))
       void router.replace({ query: p ? { path: p } : {} })
   },
@@ -299,48 +212,13 @@ async function createFolder() {
         class="flex w-72 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
-          <button
-            class="text-sm font-semibold tracking-wide uppercase"
-            :class="
-              mode === 'tree'
-                ? 'text-slate-900 dark:text-slate-100'
-                : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
-            "
-            data-test="mode-tree"
-            @click="setMode('tree')"
+          <span class="text-sm font-semibold tracking-wide text-slate-900 uppercase dark:text-slate-100"
+            >Files</span
           >
-            Files
-          </button>
-          <button
-            class="ml-3 text-sm font-semibold tracking-wide uppercase"
-            :class="
-              mode === 'changes'
-                ? 'text-slate-900 dark:text-slate-100'
-                : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300'
-            "
-            data-test="mode-changes"
-            @click="setMode('changes')"
-          >
-            Changes<span
-              v-if="changes.unread.get(id)"
-              class="ml-1 rounded bg-blue-600 px-1 text-[10px] text-white"
-              data-test="unread-count"
-              >{{ changes.unread.get(id) }}</span
-            >
-          </button>
           <span class="grow" />
-          <button
-            v-if="mode === 'changes'"
-            class="text-sm text-blue-700 hover:underline dark:text-blue-300"
-            data-test="files-refresh"
-            @click="changes.load()"
-          >
-            refresh
-          </button>
         </div>
         <!-- the tree's toolbar: where writes go, and the actions as icons (VS Code's explorer header) -->
         <div
-          v-if="mode === 'tree'"
           class="flex items-center gap-1 px-2 pb-1 text-slate-500 dark:text-slate-400"
           data-test="files-toolbar"
         >
@@ -444,80 +322,8 @@ async function createFolder() {
             </svg>
           </button>
         </div>
-        <template v-if="mode === 'changes'">
-          <div class="flex items-center gap-2 px-3 pb-1 text-sm text-slate-500 dark:text-slate-400">
-            <span class="truncate" data-test="changes-base">{{ baseLabel }}</span>
-            <span class="grow" />
-            <button
-              v-if="base !== 'read'"
-              class="text-blue-700 hover:underline dark:text-blue-300"
-              @click="setMode('changes')"
-            >
-              since last read
-            </button>
-            <button
-              class="text-blue-700 hover:underline disabled:cursor-default disabled:text-slate-400 disabled:no-underline dark:text-blue-300 dark:disabled:text-slate-500"
-              :disabled="!canMarkRead"
-              :title="
-                canMarkRead
-                  ? 'Move your read cursor to the current commit'
-                  : 'Nothing committed since you last looked; uncommitted work always shows'
-              "
-              data-test="mark-read"
-              @click="markRead()"
-            >
-              mark as read
-            </button>
-          </div>
-          <div class="min-h-0 grow overflow-auto pb-4" data-test="changes-list">
-            <template v-for="r in changes.repos" :key="r.repo">
-              <div
-                v-if="changes.repos.length > 1 || r.note"
-                class="px-3 pt-2 pb-1 text-sm text-slate-500 dark:text-slate-400"
-              >
-                <span v-if="changes.repos.length > 1" class="font-mono">{{ r.repo }}</span>
-                <span v-if="r.note" class="ml-1 italic" data-test="changes-note">{{ r.note }}</span>
-              </div>
-              <button
-                v-for="f in r.files"
-                :key="f.path"
-                class="flex w-full items-center gap-2 truncate px-3 py-0.5 text-left text-base hover:bg-slate-100 dark:hover:bg-slate-800"
-                :class="
-                  changes.openPath === f.path ? 'bg-slate-200 font-medium dark:bg-slate-700' : ''
-                "
-                :title="f.oldPath ? `${f.oldPath} → ${f.path}` : f.path"
-                data-test="changed-file"
-                :data-path="f.path"
-                :data-status="f.status"
-                @click="openChange(f.path)"
-              >
-                <span class="truncate" :class="STATUS_CLASS[f.status]">{{
-                  f.path.slice(f.path.indexOf('/') + 1)
-                }}</span>
-                <span class="grow" />
-                <span class="shrink-0 text-sm" :class="STATUS_CLASS[f.status]">{{
-                  STATUS_LETTER[f.status]
-                }}</span>
-              </button>
-            </template>
-            <p
-              v-if="!changes.loading && changedCount === 0"
-              class="px-3 py-2 text-sm text-slate-400 dark:text-slate-500"
-              data-test="changes-empty"
-            >
-              No changes {{ baseLabel }}.
-            </p>
-          </div>
-          <p
-            v-if="changes.error"
-            class="px-3 py-2 text-sm text-red-700 dark:text-red-300"
-            data-test="changes-error"
-          >
-            {{ changes.error }}
-          </p>
-        </template>
         <form
-          v-if="mode === 'tree' && newFolder !== null"
+          v-if="newFolder !== null"
           class="flex items-center gap-2 px-3 pb-1 text-sm"
           data-test="new-folder-form"
           @submit.prevent="createFolder()"
@@ -538,7 +344,6 @@ async function createFolder() {
           </button>
         </form>
         <input
-          v-if="mode === 'tree'"
           v-model="files.filter"
           type="search"
           class="mx-3 mb-1 rounded border border-slate-300 px-2 py-0.5 text-sm focus:border-blue-500 focus:outline-none dark:border-slate-700"
@@ -547,7 +352,6 @@ async function createFolder() {
           @keydown.escape="files.filter = ''"
         />
         <ul
-          v-if="mode === 'tree'"
           class="min-h-0 grow overflow-auto pb-4 outline-none"
           tabindex="0"
           data-test="file-tree"
@@ -567,47 +371,14 @@ async function createFolder() {
           />
         </ul>
         <p
-          v-if="mode === 'tree' && files.error"
+          v-if="files.error"
           class="px-3 py-2 text-sm text-red-700 dark:text-red-300"
           data-test="files-error"
         >
           {{ files.error }}
         </p>
       </aside>
-      <section v-if="mode === 'changes'" class="flex min-w-0 grow flex-col">
-        <div
-          class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
-        >
-          <span class="truncate font-mono text-sm" data-test="diff-path">{{
-            changes.openPath ?? 'select a changed file'
-          }}</span>
-          <span class="grow" />
-          <label v-if="changes.open" class="flex items-center gap-1 text-sm text-slate-500">
-            <input v-model="inline" type="checkbox" /> inline
-          </label>
-        </div>
-        <div class="min-h-0 grow bg-white dark:bg-slate-950">
-          <p v-if="!changes.open" class="p-6 text-base text-slate-400">
-            Changes are measured from a base to the working tree, so uncommitted work shows too.
-            "Mark as read" moves the base to the current commit.
-          </p>
-          <p
-            v-else-if="changes.open.binary || changes.open.truncated"
-            class="p-6 text-base text-slate-400"
-            data-test="diff-unavailable"
-          >
-            {{ changes.open.binary ? 'Binary file.' : 'Too large to show.' }}
-          </p>
-          <DiffViewer
-            v-else
-            :path="changes.open.path"
-            :before="changes.open.before ?? ''"
-            :after="changes.open.after ?? ''"
-            :inline="inline"
-          />
-        </div>
-      </section>
-      <section v-else class="flex min-w-0 grow flex-col">
+      <section class="flex min-w-0 grow flex-col">
         <div
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
@@ -621,7 +392,7 @@ async function createFolder() {
           <p v-if="!files.open" class="p-6 text-base text-slate-500 dark:text-slate-400">
             Select a file in the tree, or see
             <RouterLink
-              :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
+              :to="{ name: 'changes', params: { id } }"
               class="text-blue-700 hover:underline dark:text-blue-300"
               >what changed</RouterLink
             >. Files are read-only here; agents work in the tree, and this view refreshes when one

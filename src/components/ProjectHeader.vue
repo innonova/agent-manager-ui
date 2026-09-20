@@ -34,6 +34,7 @@ const toReview = computed(
 )
 onMounted(() => {
   if (!features.byProject.has(props.id)) void features.load(props.id)
+  void changes.countUnread(props.id) // keep the changes-tab badge fresh
 })
 
 const open = ref(false)
@@ -155,11 +156,18 @@ const tab = (name: string) =>
       class="flex items-center gap-1.5 border-b-2 py-1"
       :class="tab('files')"
       data-test="tab-files"
-      >files<span
+      >files</RouterLink
+    >
+    <RouterLink
+      :to="{ name: 'changes', params: { id } }"
+      class="flex items-center gap-1.5 border-b-2 py-1"
+      :class="tab('changes')"
+      data-test="tab-changes"
+      >changes<span
         v-if="changed"
         class="rounded bg-blue-100 px-1.5 text-sm text-blue-900 dark:bg-blue-900 dark:text-blue-100"
-        :title="`${changed} changed since you last looked`"
-        >{{ changed }} changed</span
+        :title="`${changed} commit${changed === 1 ? '' : 's'} since you last looked`"
+        >{{ changed }}</span
       ></RouterLink
     >
     <RouterLink

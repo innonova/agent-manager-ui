@@ -4,6 +4,8 @@ import type {
   TurnImage,
   FileDiff,
   RepoChanges,
+  CommitsResult,
+  CommitFiles,
   Agent,
   AgentCounts,
   AgentStatus,
@@ -227,6 +229,30 @@ export const api = {
       'POST',
       `/api/projects/${projectId}/changes/read`,
       repo ? { repo } : {},
+    ),
+  commits: (
+    projectId: string,
+    opts: { repo?: string; feature?: string; agent?: string; limit?: number } = {},
+  ) => {
+    const q = new URLSearchParams()
+    if (opts.repo) q.set('repo', opts.repo)
+    if (opts.feature) q.set('feature', opts.feature)
+    if (opts.agent) q.set('agent', opts.agent)
+    if (opts.limit) q.set('limit', String(opts.limit))
+    const qs = q.toString()
+    return call<CommitsResult>('GET', `/api/projects/${projectId}/commits${qs ? `?${qs}` : ''}`)
+  },
+  /** Just the unread commit count, for the tab badge. */
+  commitCount: (projectId: string) =>
+    call<CommitsResult>('GET', `/api/projects/${projectId}/commits?count=1`),
+  /** A commit's changed-file list. */
+  commitFiles: (projectId: string, repo: string, hash: string) =>
+    call<CommitFiles>('GET', `/api/projects/${projectId}/commits/${repo}/${hash}`),
+  /** One file's before/after within a commit, for the diff viewer. */
+  commitDiff: (projectId: string, repo: string, hash: string, path: string) =>
+    call<FileDiff>(
+      'GET',
+      `/api/projects/${projectId}/commits/${repo}/${hash}?path=${encodeURIComponent(path)}`,
     ),
   respondFeature: (projectId: string, slug: string, text: string, status?: FeatureStatus) =>
     call<{ feature: Feature }>('POST', `/api/projects/${projectId}/features/${slug}/respond`, {

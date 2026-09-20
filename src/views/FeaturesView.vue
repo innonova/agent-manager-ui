@@ -206,9 +206,9 @@ async function create() {
                 <RouterLink
                   v-if="f.range"
                   :to="{
-                    name: 'files',
+                    name: 'changes',
                     params: { id },
-                    query: { mode: 'changes', base: `feature:${f.slug}` },
+                    query: { feature: f.slug },
                   }"
                   class="text-sm text-blue-700 hover:underline dark:text-blue-300"
                   data-test="feature-changes"

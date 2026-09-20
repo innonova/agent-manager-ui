@@ -324,10 +324,10 @@ async function archive() {
             </span>
             <RouterLink
               v-if="changes.unread.get(id)"
-              :to="{ name: 'files', params: { id }, query: { mode: 'changes' } }"
+              :to="{ name: 'changes', params: { id } }"
               class="text-sm text-blue-700 hover:underline dark:text-blue-300"
               data-test="unread-link"
-              >{{ changes.unread.get(id) }} changed since you last looked</RouterLink
+              >{{ changes.unread.get(id) }} new since you last looked</RouterLink
             >
             <div
               class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700"
