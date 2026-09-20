@@ -123,7 +123,10 @@ export const api = {
   remove: (id: string) => call<{ ok: true }>('DELETE', `/api/agents/${id}`),
   /** The project's archived agents, newest first. */
   archivedAgents: (projectId: string) =>
-    call<AgentRow[]>('GET', `/api/projects/${projectId}/agents?archived=1`),
+    call<{ agent: Agent; status: AgentStatus }[]>(
+      'GET',
+      `/api/projects/${projectId}/agents?archived=1`,
+    ),
 
   profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
   /** The vendor accounts' usage per host, as last reported through an agent. */

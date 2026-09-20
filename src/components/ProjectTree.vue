@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { AgentRow } from '@/api/types'
+import type { Agent, AgentStatus } from '@/api/types'
 import { events } from '@/api/events'
 import { when } from '@/time'
 import { useAgentsStore } from '@/stores/agents'
@@ -83,6 +83,7 @@ const agentsOf = (id: string) => agents.byProject.get(id) ?? []
 
 /** Archived agents, fetched when a project's "archived" row is opened; refetched when one is forgotten. */
 const archivedOpen = ref(new Set<string>())
+type AgentRow = { agent: Agent; status: AgentStatus }
 const archived = ref(new Map<string, AgentRow[]>())
 async function loadArchived(projectId: string) {
   const rows = await api.archivedAgents(projectId).catch(() => [])
