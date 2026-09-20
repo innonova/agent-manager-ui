@@ -1,6 +1,6 @@
 ---
 title: the UI as a reading app: hierarchy, one header line, projects first
-status: in-progress
+status: review
 priority: 30
 ---
 
@@ -73,3 +73,57 @@ delegated.
 **Gate.** Worked alone, in stages if it helps (type scale and header;
 transcript; projects page; files and features), each looked at in both
 modes; the full suite and lint at the end; deployed together.
+
+## Report (2026-09-20)
+
+Done on the branch `ui-rethink`, four commits (eef52ae, f885e58,
+f03fb60 and the branch's opening one), the branch build installed on
+the hub for looking; `main` is untouched, so the way back is a checkout
+of `main` and `npm run build` plus `install:ui`.
+
+**What changed.**
+- The type scale: `text-xs` and `text-sm` each moved up one step
+  across every component, the transcript's prose is the base size, so
+  at the default preference lists and navigation are 14 px, metadata
+  12 px, the conversation 14 px and larger with the preference.
+- The agent header is one line: the name with a disclosure, the state,
+  the model, "started by <agent>" for a helper, the error or the
+  background wait, the changed-files link as the line's one coloured
+  thing, and the four lifecycle actions as one grouped control with
+  borders. Profile, directory, effort, permissions, usage and the
+  harness note ("what it was told") sit under the disclosure.
+- The transcript: the person's messages are left-aligned blocks with
+  a thin blue left border and a light tint, author and time in a
+  gutter line, no bubbles; the composer and its buttons align with
+  the reading column; "steer the agent…" is the working placeholder
+  and the explanation moved to the button's tooltip.
+- The projects page leads with its list; each row carries attention
+  signals (waiting for you, to review, working, in error) and the agent
+  total; one quiet usage line above links to the machine page. The
+  four blocks (account usage, harness note, models, method and framing
+  with learnings) moved to `/machine`, reached from the gear menu.
+- State badges lost their bold weight; features list review first,
+  with one short empty state; the files toolbar says "uploads go to
+  <dir>" and the empty reader offers the tree or the changes view.
+
+**What was verified.** Playwright, 24 tests, green after the tests
+that read the header's facts open the disclosure and the tests of the
+machine's blocks visit `/machine`; type-check and lint clean. Looked
+at, by screenshot: the agent view idle, with details, working, and in
+dark mode; the projects and machine pages; the features and files
+views; at 1280 and 900 wide. The dark-mode screenshots at 900 came
+out light because the preference store reapplies the saved theme on
+navigation; the agent view's dark mode was checked at 1280.
+
+**Left open.** The features list with reports and reviews on the row
+is the next feature once the run log has a few weeks in it. The
+sidebar's "+ new" is larger by the scale change only. The machine
+page is the old blocks moved, not redesigned. The `AgentCountBadges`
+component is no longer used on the projects page and stays for the
+tree. A `data-count` assertion became an attention-signal assertion.
+
+**Noticed and left alone.** The screenshots showed each new agent
+twice in the sidebar, the creating tab hearing its own `agent.created`
+frame before the reply; fixed on `main` first (5575883), since it was
+live. The dev server's Vue devtools toolbar floats over every
+screenshot and is easy to mistake for the UI.
