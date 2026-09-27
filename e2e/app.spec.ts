@@ -98,7 +98,7 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
 
   // an error turn: state, banner, toast
   await page.getByTestId('turn-input').fill('please error')
-  await page.getByTestId('turn-input').press('Enter')
+  await page.getByTestId('turn-input').press('Control+Enter')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'error')
   await expect(page.getByTestId('agent-error')).toContainText('usage limit')
   await expect(page.locator('[data-item="error"]')).toContainText('usage limit')
@@ -163,38 +163,6 @@ test('display preferences: manual dark mode and font size persist', async ({ pag
   await expect(html).not.toHaveClass(/dark/)
   await page.getByTestId('font-smaller').click()
   await expect(page.getByTestId('font-size')).toHaveText('15px')
-})
-
-test('enter key preference: newline mode, Ctrl+Enter sends, send mode', async ({ page }) => {
-  await login(page)
-  await page.getByTestId('project-row').first().click()
-  await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
-  const input = page.getByTestId('turn-input')
-  await expect(input).toHaveAttribute('placeholder', /Enter to send/)
-
-  await page.getByTestId('settings').click()
-  await page.getByTestId('enter-newline').click()
-  await page.getByTestId('settings').click()
-  await expect(input).toHaveAttribute('placeholder', /Ctrl\+Enter/)
-  await input.click()
-  await page.keyboard.type('first')
-  await page.keyboard.press('Enter')
-  await page.keyboard.type('second')
-  await expect(input).toHaveValue('first\nsecond')
-  await page.keyboard.press('Control+Enter')
-  await expect(page.locator('[data-item="user"]').last()).toContainText('first\nsecond')
-  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
-
-  await page.reload()
-  await expect(input).toHaveAttribute('placeholder', /Ctrl\+Enter/)
-  await page.getByTestId('settings').click()
-  await page.getByTestId('enter-send').click()
-  await page.getByTestId('settings').click()
-  await input.click()
-  await page.keyboard.type('third')
-  await page.keyboard.press('Enter')
-  await expect(page.locator('[data-item="user"]').last()).toContainText('third')
-  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
 })
 
 test('desktop notifications: opt in, then a finished turn notifies when the page is not in front', async ({
@@ -266,17 +234,6 @@ test('a draft survives switching tabs and reloading', async ({ page }) => {
   await page.getByTestId('turn-input').fill('')
   await page.reload()
   await expect(page.getByTestId('turn-input')).toHaveValue('')
-})
-
-test.describe('touch-first device', () => {
-  test.use({ hasTouch: true, viewport: { width: 900, height: 1200 } })
-
-  test('auto mode makes Enter a newline', async ({ page }) => {
-    await login(page)
-    await page.getByTestId('project-row').first().click()
-    await page.locator('[data-test=agent-row]').filter({ hasText: 'worker' }).click()
-    await expect(page.getByTestId('turn-input')).toHaveAttribute('placeholder', /Ctrl\+Enter/)
-  })
 })
 
 test('files view: multi-repo tree, Monaco, refresh after an agent turn', async ({ page }) => {
@@ -746,7 +703,7 @@ test('a message while the agent works steers the turn instead of being refused',
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
   await page.getByTestId('turn-input').fill('slow please')
-  await page.getByTestId('turn-input').press('Enter')
+  await page.getByTestId('turn-input').press('Control+Enter')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
   await expect(page.getByTestId('send')).toHaveText('steer')
   await page.getByTestId('turn-input').fill('and this')
@@ -1016,7 +973,7 @@ test('an agent reporting its account usage shows a chip in its header and a bloc
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
   await page.getByTestId('turn-input').fill('usage 85')
-  await page.getByTestId('turn-input').press('Enter')
+  await page.getByTestId('turn-input').press('Control+Enter')
   await details(page)
   await expect(page.getByTestId('usage-chip').first()).toContainText('5h 85%', { timeout: 20000 })
   await expect(page.getByTestId('usage-chip').first()).toContainText('7d 43%')

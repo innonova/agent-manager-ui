@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { RouterLink } from 'vue-router'
-import { FONT_SIZES, usePreferencesStore, type EnterKey, type Theme } from '@/stores/preferences'
+import { FONT_SIZES, usePreferencesStore, type Theme } from '@/stores/preferences'
 
 const prefs = usePreferencesStore()
 const open = ref(false)
@@ -10,15 +10,6 @@ const themes: { value: Theme; label: string }[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
-]
-const enterKeys: { value: EnterKey; label: string; title: string }[] = [
-  { value: 'auto', label: 'Auto', title: 'Sends, except on touch-first devices' },
-  { value: 'send', label: 'Send', title: 'Enter sends, Shift+Enter for a newline' },
-  {
-    value: 'newline',
-    label: 'Newline',
-    title: 'Enter inserts a newline; Ctrl+Enter or the button sends',
-  },
 ]
 
 /** Tracked as state: the browser's permission can change under us when the user answers its prompt. */
@@ -98,29 +89,6 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           A+
         </button>
       </div>
-      <div
-        class="mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
-      >
-        Enter key
-      </div>
-      <div class="flex gap-1">
-        <button
-          v-for="k in enterKeys"
-          :key="k.value"
-          class="grow rounded border px-2 py-1"
-          :class="
-            prefs.enterKey === k.value
-              ? 'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-100'
-              : 'border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800'
-          "
-          :title="k.title"
-          :data-test="`enter-${k.value}`"
-          @click="prefs.setEnterKey(k.value)"
-        >
-          {{ k.label }}
-        </button>
-      </div>
-      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Ctrl+Enter always sends.</p>
       <div
         class="mt-3 mb-1 text-sm font-semibold tracking-wide text-slate-500 uppercase dark:text-slate-400"
       >

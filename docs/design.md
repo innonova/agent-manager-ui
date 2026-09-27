@@ -257,12 +257,13 @@ localStorage and applied to `<html>` before the first paint:
 - **Drafts**: unsent turn text is kept per agent in a store and persisted
   in localStorage, so switching tab, agent or project, or reloading, does
   not lose it. Sending or clearing the field drops the draft.
-- **Enter key**: what a bare Enter does in the turn input. `send` (with
-  Shift+Enter for a newline), `newline` (the button or Ctrl+Enter sends),
-  or `auto`, the default, which is `send` unless the primary pointer is
-  coarse (`(pointer: coarse)`, tracked live): on-screen keyboards have no
-  usable Shift+Enter, so a tablet or a Surface without its keyboard gets
-  newline on Enter. Ctrl+Enter and Cmd+Enter always send.
+
+In the turn input, Enter is a newline and Ctrl+Enter (Cmd+Enter on a
+Mac) or the button sends; the placeholder says which. This was once a
+preference (send, newline, or auto by the pointer type), dropped: turns
+here are more often several lines than one, Enter-to-send lost too many
+of them to a slipped finger, and one rule needs no guess about the
+device.
 
 ## Icon
 
@@ -571,8 +572,8 @@ clicking it brings the window up on that agent.
   whole run, tests build on what earlier ones created (the "Demo"
   project, the "worker" agent), and a test that wants a clean slate
   makes its own project. It covers login, project and agent creation, a streamed turn, an error
-  turn and counts, reload, stop and resume, display and Enter-key
-  preferences, desktop notifications, the update badge, drafts, the files
+  turn and counts, reload, stop and resume, display preferences,
+  desktop notifications, the update badge, drafts, the files
   view, permissions, users, presence, features, editing a
   project with a restart, steering, the activity line (thinking then
   a tool call, streamed and gone at the turn's end), a second tab

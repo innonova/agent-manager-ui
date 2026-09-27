@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { AgentState, TurnImage } from '@/api/types'
 import { useDraftsStore } from '@/stores/drafts'
-import { usePreferencesStore } from '@/stores/preferences'
 
 const props = defineProps<{
   agentId: string
@@ -103,7 +102,6 @@ function clearAttachments() {
 }
 onUnmounted(clearAttachments)
 defineExpose({ clearAttachments })
-const prefs = usePreferencesStore()
 const drafts = useDraftsStore()
 /** The draft is kept in the store, keyed by agent, so it survives navigation and reloads. */
 const text = computed({
@@ -127,12 +125,9 @@ function onInput() {
   if (text.value.trim()) emit('typing')
   else emit('stoppedTyping')
 }
-const enterSends = computed(() => prefs.enterSends())
-const hint = computed(() =>
-  enterSends.value
-    ? 'Enter to send, Shift+Enter for newline'
-    : 'Ctrl+Enter or the button to send, Enter for newline',
-)
+/** One rule, shown in the placeholder: Enter is a newline, the modifier or the button sends. */
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
+const hint = isMac ? '⌘+Enter to send' : 'Ctrl+Enter to send'
 
 function send() {
   const t = text.value.trim()
@@ -147,15 +142,15 @@ function send() {
 }
 
 /**
- * Ctrl+Enter (or Cmd+Enter) always sends. A bare Enter sends or inserts a
- * newline according to the preference; Shift+Enter is always a newline.
+ * Ctrl+Enter (or Cmd+Enter) sends; a bare Enter is a newline, as in any
+ * editor. Turns here are more often several lines than one, and a chat
+ * tool's Enter-to-send lost too many of them to a slipped finger; one rule
+ * also means nothing has to guess what kind of device this is.
  */
 function onKey(e: KeyboardEvent) {
-  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return
-  if (e.ctrlKey || e.metaKey || enterSends.value) {
-    e.preventDefault()
-    send()
-  }
+  if (e.key !== 'Enter' || e.isComposing || !(e.ctrlKey || e.metaKey)) return
+  e.preventDefault()
+  send()
 }
 </script>
 
