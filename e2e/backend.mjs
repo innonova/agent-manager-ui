@@ -103,6 +103,7 @@ const manager = spawn(process.execPath, [MANAGER_MAIN], {
     AGENT_MANAGER_MODELS_FILE: path.join(E2E_ROOT, 'models.md'),
     AGENT_MANAGER_METHOD_FILE: path.join(E2E_ROOT, 'method.md'),
     AGENT_MANAGER_FRAMING_FILE: path.join(E2E_ROOT, 'framing.md'),
+    AGENT_MANAGER_WORKSPACES_DIR: path.join(E2E_ROOT, 'workspaces'), // nor a workspace file beside a real repository
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
