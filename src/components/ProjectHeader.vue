@@ -29,6 +29,17 @@ const waiting = computed(() =>
     : 0,
 )
 const changed = computed(() => changes.unread.get(props.id) ?? 0)
+/**
+ * Opens the project in the person's own VS Code over Remote SSH: the URL
+ * names the machine as their SSH config knows it and the workspace file
+ * the manager keeps beside the repositories. The browser hands it to VS
+ * Code; nothing runs here.
+ */
+const vscodeUrl = computed(() => {
+  const p = project.value
+  if (!p?.sshHost || !p.workspace) return null
+  return `vscode://vscode-remote/ssh-remote+${p.sshHost}${p.workspace}`
+})
 const toReview = computed(
   () => (features.byProject.get(props.id) ?? []).filter((f) => f.status === 'review').length,
 )
@@ -136,6 +147,14 @@ const tab = (name: string) =>
     class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
     data-test="project-host"
     >{{ project.host }}</span
+  >
+  <a
+    v-if="vscodeUrl"
+    :href="vscodeUrl"
+    class="ml-1 rounded px-1 py-0.5 text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+    :title="`Open ${project?.name} in VS Code over SSH (${project?.sshHost})`"
+    data-test="open-vscode"
+    >VS Code</a
   >
   <!-- the project's three views, each with what it holds for attention -->
   <nav class="ml-2 flex gap-4 text-base">

@@ -40,6 +40,13 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.getByTestId('project-row')).toContainText('Demo')
   await page.getByTestId('project-row').click()
   await expect(page.getByTestId('project-title')).toHaveText('Demo')
+  // the header offers the project in VS Code over SSH: the workspace file beside the repository
+  await expect(page.getByTestId('open-vscode')).toHaveAttribute(
+    'href',
+    new RegExp(
+      `^vscode://vscode-remote/ssh-remote\\+[^/]+${PROJECT_DIR.replace(/[^/]+$/, '')}Demo\\.code-workspace$`,
+    ),
+  )
 
   // new agent: session starts, state idle
   await page.getByTestId('new-agent').click()

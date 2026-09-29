@@ -506,6 +506,17 @@ reloads to show the newcomer or its absence. A tab that has the agent's
 own page open when it is archived elsewhere is left as it is: the
 transcript stays valid and readable, as for a remove today.
 
+## Open in VS Code
+
+The project header has a muted "VS Code" link: `vscode://vscode-remote/
+ssh-remote+<sshHost><workspace>`, from the two fields the manager
+reports on the project (how a person's machine reaches that one over
+SSH, and the workspace file the manager keeps beside the repositories,
+`<name>.code-workspace`). The browser hands the URL to VS Code, which
+connects with the person's own SSH config and opens the workspace; the
+UI does nothing else, and a project on a spoke opens on the spoke. The
+link is absent when the manager reports no workspace (an older one).
+
 ## Several machines (a hub)
 
 When the manager is a hub, `hello` and `hosts` frames list the machines

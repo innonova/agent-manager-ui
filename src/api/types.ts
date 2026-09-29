@@ -22,6 +22,10 @@ export interface Project {
   name: string
   /** The machine the project is on; a hub shows several. */
   host?: string
+  /** How a person's own machine reaches that one over SSH (`host` or `user@host`), for the VS Code link. */
+  sshHost?: string
+  /** The VS Code workspace file the manager keeps beside the repositories. */
+  workspace?: string
   /** Path of the primary repository (repos[0]). */
   path: string
   repos: Repo[]
