@@ -38,7 +38,8 @@ const changed = computed(() => changes.unread.get(props.id) ?? 0)
 const vscodeUrl = computed(() => {
   const p = project.value
   if (!p?.sshHost || !p.workspace) return null
-  return `vscode://vscode-remote/ssh-remote+${p.sshHost}${p.workspace}`
+  // windowId=_blank: a new window each time, or VS Code replaces the one it has open
+  return `vscode://vscode-remote/ssh-remote+${p.sshHost}${p.workspace}?windowId=_blank`
 })
 const toReview = computed(
   () => (features.byProject.get(props.id) ?? []).filter((f) => f.status === 'review').length,

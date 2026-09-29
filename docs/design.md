@@ -509,7 +509,8 @@ transcript stays valid and readable, as for a remove today.
 ## Open in VS Code
 
 The project header has a muted "VS Code" link: `vscode://vscode-remote/
-ssh-remote+<sshHost><workspace>`, from the two fields the manager
+ssh-remote+<sshHost><workspace>?windowId=_blank` (the query asks for a
+new window; without it VS Code replaces the one it has open), from the two fields the manager
 reports on the project (how a person's machine reaches that one over
 SSH, and the workspace file the manager keeps beside the repositories,
 `<name>.code-workspace`). The browser hands the URL to VS Code, which
