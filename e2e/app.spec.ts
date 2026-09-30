@@ -46,7 +46,18 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
     /^vscode:\/\/vscode-remote\/ssh-remote\+[^/]+\/.*\/Demo\.code-workspace\?windowId=_blank$/,
   )
 
-  // new agent: session starts, state idle
+  // new agent: session starts, state idle. A click beside the form does not close it;
+  // Escape from the field drops focus, a second Escape closes; cancel closes.
+  await page.getByTestId('new-agent').click()
+  await page.getByTestId('agent-name-input').fill('worker')
+  await page.mouse.click(5, 300)
+  await expect(page.getByTestId('modal-form')).toBeVisible()
+  await expect(page.getByTestId('agent-name-input')).toHaveValue('worker')
+  await page.getByTestId('agent-name-input').focus()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('modal-form')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.getByTestId('modal-form')).toHaveCount(0)
   await page.getByTestId('new-agent').click()
   await page.getByTestId('agent-name-input').fill('worker')
   await page.getByTestId('form-submit').click()

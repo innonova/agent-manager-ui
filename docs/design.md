@@ -155,6 +155,15 @@ and priority can be overridden behind a "more options" toggle. In
 multi-repo projects each row shows which repository the feature lives
 in, since files can also be written by hand in any of them.
 
+## Dialogs
+
+The forms (new project, edit project, new agent, new feature, edit
+feature) share `ModalForm`. Only "cancel" and Escape close one; a click
+on the backdrop does not, since a form filled in over a minute and lost
+to a slipped click was the worst thing the component did. Escape from
+a text field first drops focus (a second Escape closes), so a key slip
+while typing loses nothing either.
+
 ## Presence
 
 Every tab reports which agent it has open and, at most every two

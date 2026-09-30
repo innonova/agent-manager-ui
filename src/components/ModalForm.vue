@@ -8,16 +8,34 @@ defineProps<{
   secondaryLabel?: string
 }>()
 const emit = defineEmits<{ close: []; submit: []; secondary: [] }>()
+
+/**
+ * Only cancel and Escape close the form. A click beside it does not: a
+ * dialog filled in over a minute and lost to a slipped click was the
+ * worst thing this component did. Escape with nothing typed in a field
+ * is the one keyboard way out; from a field it first drops focus, so a
+ * second Escape closes.
+ */
+function onKey(e: KeyboardEvent) {
+  if (e.key !== 'Escape') return
+  const t = e.target as HTMLElement | null
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT')) {
+    ;(e.currentTarget as HTMLElement).focus() // the form itself, so the next Escape reaches it
+    return
+  }
+  emit('close')
+}
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40"
-    @click.self="emit('close')"
-  >
+  <!-- the backdrop is inert: see onKey -->
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40">
     <form
       class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900"
+      tabindex="-1"
+      data-test="modal-form"
       @submit.prevent="emit('submit')"
+      @keydown="onKey"
     >
       <h2 class="mb-4 text-lg font-semibold">{{ title }}</h2>
       <div class="flex flex-col gap-3">
