@@ -115,6 +115,8 @@ export interface AgentStatus {
   usage: AccountUsage | null
   /** What the last thing on the stream was doing; null outside a turn. */
   activity: Activity
+  /** Until when the agent said its background wait is expected (the manager's poke waits for it); null when it said nothing. */
+  holdUntil?: number | null
 }
 
 export interface AccountUsage {

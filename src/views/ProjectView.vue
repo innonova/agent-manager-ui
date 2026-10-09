@@ -144,8 +144,7 @@ watch(
     }
     agents.lastAgent.set(props.id, id)
     // a link from the changes tab carries ?item=<index>: load back to it, then scroll
-    const n =
-      typeof itemQ === 'string' && Number.isInteger(Number(itemQ)) ? Number(itemQ) : null
+    const n = typeof itemQ === 'string' && Number.isInteger(Number(itemQ)) ? Number(itemQ) : null
     if (n != null) {
       await agents.loadUntil(id, n)
       scrollTarget.value = n
@@ -331,7 +330,10 @@ async function archive() {
               >waiting on {{ current.status.background }} background job{{
                 current.status.background === 1 ? '' : 's'
               }}
-              for {{ since(current.status.lastActivityAt) }}</span
+              for {{ since(current.status.lastActivityAt)
+              }}<template v-if="current.status.holdUntil && current.status.holdUntil > Date.now()">
+                · expected until {{ when(current.status.holdUntil) }}</template
+              ></span
             >
             <span class="grow" />
             <span

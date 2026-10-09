@@ -155,6 +155,11 @@ and priority can be overridden behind a "more options" toggle. In
 multi-repo projects each row shows which repository the feature lives
 in, since files can also be written by hand in any of them.
 
+An agent idle on background jobs says so in its header line, "waiting
+on N background jobs for 12 min", and when it has told the manager how
+long the wait is expected (`am hold`, see the manager's `holdUntil`),
+"· expected until 13:30" follows, so a reader knows the quiet is meant.
+
 ## Dialogs
 
 The forms (new project, edit project, new agent, new feature, edit
