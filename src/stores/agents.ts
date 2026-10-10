@@ -66,6 +66,15 @@ export const useAgentsStore = defineStore('agents', () => {
       }
       return
     }
+    if (f.type === 'agent.updated') {
+      // the record changed (name, model, effort, permissions): replace it where it is known
+      const row = byId.get(f.agent.id)
+      if (row) {
+        row.agent = f.agent
+        row.status = f.status
+      }
+      return
+    }
     if (f.type === 'agent.archived' || f.type === 'agent.removed') {
       // Archived agents stay readable under the project's "archived" row;
       // removed ones are gone for good. Both leave the active list.

@@ -229,6 +229,7 @@ export type EventFrame =
     }
   /** A new agent exists: add it to its project's list. */
   | { type: 'agent.created'; agent: Agent; status: AgentStatus }
+  | { type: 'agent.updated'; agent: Agent; status: AgentStatus }
   /** Archived: off the active list but still readable; drop it from the list. */
   | { type: 'agent.archived'; agentId: string; projectId: string }
   /** Forgotten for good: drop it everywhere. */

@@ -81,6 +81,49 @@ const activeToolName = computed(() =>
 const activityHeight = ref(0)
 
 const showNew = ref(false)
+/** The edit form for the current agent: name at once, the rest at its next restart. */
+const editing = ref<{
+  name: string
+  model: string
+  effort: string
+  permissions: 'bypass' | 'ask'
+} | null>(null)
+function startEditAgent() {
+  const a = current.value?.agent
+  if (!a) return
+  editing.value = {
+    name: a.name,
+    model: a.model ?? '',
+    effort: a.effort ?? '',
+    permissions: a.permissions,
+  }
+}
+/** Saves; with `andRestart`, restarts afterwards so model, effort and permissions take effect now. */
+async function saveAgent(andRestart = false) {
+  const a = current.value?.agent
+  const e = editing.value
+  if (!a || !e) return
+  error.value = null
+  busy.value = true
+  try {
+    const r = await api.updateAgent(a.id, {
+      name: e.name.trim(),
+      model: e.model.trim() || null,
+      effort: e.effort || null,
+      permissions: e.permissions,
+    })
+    const row = agents.byId.get(a.id)
+    if (row) row.agent = r.agent
+    editing.value = null
+    if (andRestart) await api.restart(a.id)
+    else if (r.appliesAtRestart.length)
+      notifications.push('info', `${r.appliesAtRestart.join(', ')} take effect at the next restart`)
+  } catch (e2) {
+    error.value = e2 instanceof ApiError ? e2.message : String(e2)
+  } finally {
+    busy.value = false
+  }
+}
 /** "+ agent" under a project in the tree: go there first when it is not the current one. */
 async function openNew(projectId: string) {
   if (projectId !== props.id) {
@@ -348,8 +391,16 @@ async function archive() {
               data-test="agent-actions"
             >
               <button
-                v-if="current.status.state !== 'exited'"
                 class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                title="edit the agent: name, model, effort, permissions"
+                data-test="edit-agent"
+                @click="startEditAgent"
+              >
+                edit
+              </button>
+              <button
+                v-if="current.status.state !== 'exited'"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                 title="end the session; the next message resumes it"
                 data-test="stop"
                 @click="stop"
@@ -478,6 +529,67 @@ async function archive() {
         >{{ current.agent.harnessNote }}</pre>
       <p class="text-sm text-slate-500 dark:text-slate-400">
         Given at session start; a changed template reaches the agent at its next restart.
+      </p>
+    </ModalForm>
+    <ModalForm
+      v-if="editing && current"
+      title="Edit agent"
+      :error="error"
+      :busy="busy"
+      submit-label="save"
+      :secondary-label="current.status.state === 'idle' ? 'save and restart' : undefined"
+      @close="editing = null"
+      @submit="saveAgent(false)"
+      @secondary="saveAgent(true)"
+    >
+      <label class="text-base">
+        <span class="text-slate-600 dark:text-slate-300">Name</span>
+        <input
+          v-model="editing.name"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          data-test="edit-agent-name"
+          required
+        />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="text-base">
+          <span class="text-slate-600 dark:text-slate-300">Model</span>
+          <input
+            v-model="editing.model"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
+            placeholder="vendor default"
+            title="The vendor's model name, passed as is at the next session start."
+            data-test="edit-agent-model"
+          />
+        </label>
+        <label class="text-base">
+          <span class="text-slate-600 dark:text-slate-300">Effort</span>
+          <select
+            v-model="editing.effort"
+            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+            data-test="edit-agent-effort"
+          >
+            <option value="">vendor default</option>
+            <option v-for="e in ['low', 'medium', 'high', 'xhigh', 'max']" :key="e" :value="e">
+              {{ e }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <label class="text-base">
+        <span class="text-slate-600 dark:text-slate-300">Permissions</span>
+        <select
+          v-model="editing.permissions"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          data-test="edit-agent-permissions"
+        >
+          <option value="bypass">bypass — the agent acts without asking</option>
+          <option value="ask">ask — gated tools wait for your answer here</option>
+        </select>
+      </label>
+      <p class="text-sm text-slate-500 dark:text-slate-400">
+        The name applies at once. Model, effort and permissions are session settings: they take
+        effect at the next restart, which "save and restart" does now while the agent is idle.
       </p>
     </ModalForm>
     <ModalForm

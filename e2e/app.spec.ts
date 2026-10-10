@@ -64,6 +64,20 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.getByTestId('agent-name')).toHaveText('worker')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
   await expect(page.locator('[data-item="system"]')).toContainText('session started')
+  // edit the agent: a rename shows at once; effort waits for a restart, which "save and restart" does
+  await page.getByTestId('edit-agent').click()
+  await page.getByTestId('edit-agent-name').fill('worker renamed')
+  await page.getByTestId('form-submit').click()
+  await expect(page.getByTestId('agent-name')).toHaveText('worker renamed')
+  await page.getByTestId('edit-agent').click()
+  await page.getByTestId('edit-agent-name').fill('worker')
+  await page.getByTestId('edit-agent-effort').selectOption('high')
+  await page.getByTestId('form-secondary').click()
+  await expect(page.getByTestId('agent-name')).toHaveText('worker')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await details(page)
+  await expect(page.getByTestId('agent-effort-chip')).toContainText('high')
+  await page.getByTestId('agent-details-toggle').click()
 
   // a turn streams and finishes; the activity line overlays the transcript
   // rather than being inserted above the composer, so neither moves when

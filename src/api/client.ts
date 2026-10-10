@@ -106,6 +106,21 @@ export const api = {
     },
   ) =>
     call<{ agent: Agent; status: AgentStatus }>('POST', `/api/projects/${projectId}/agents`, input),
+  /** Edits the record; `appliesAtRestart` names the settings that wait for the next session start. */
+  updateAgent: (
+    id: string,
+    patch: {
+      name?: string
+      model?: string | null
+      effort?: string | null
+      permissions?: 'bypass' | 'ask'
+    },
+  ) =>
+    call<{ agent: Agent; status: AgentStatus; appliesAtRestart: string[] }>(
+      'PATCH',
+      `/api/agents/${id}`,
+      patch,
+    ),
   decide: (id: string, requestId: string, option: string) =>
     call<{ ok: true }>('POST', `/api/agents/${id}/permission`, { requestId, option }),
   agent: (id: string) => call<{ agent: Agent; status: AgentStatus }>('GET', `/api/agents/${id}`),

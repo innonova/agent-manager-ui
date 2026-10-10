@@ -160,6 +160,16 @@ on N background jobs for 12 min", and when it has told the manager how
 long the wait is expected (`am hold`, see the manager's `holdUntil`),
 "· expected until 13:30" follows, so a reader knows the quiet is meant.
 
+## Editing an agent
+
+"edit" in the agent header opens a form for the name, model, effort and
+permissions (`PATCH /api/agents/:id`). The name applies at once, in
+every tab (`agent.updated`); the other three are session-start settings
+and take effect at the next restart, so the form offers "save and
+restart" while the agent is idle, and a plain save on a running agent
+says which settings wait. Profile and working directory are not
+editable: they are what the agent is.
+
 ## Dialogs
 
 The forms (new project, edit project, new agent, new feature, edit
