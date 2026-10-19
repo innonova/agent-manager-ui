@@ -147,7 +147,7 @@ const tab = (name: string) =>
     v-else-if="hosts.isRemote(project?.host)"
     class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
     data-test="project-host"
-    >{{ project.host }}</span
+    >{{ project?.host }}</span
   >
   <a
     v-if="vscodeUrl"
