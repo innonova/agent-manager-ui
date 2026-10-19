@@ -101,7 +101,7 @@ const tab = (name: string) =>
         @click="go(r.project.id)"
       >
         <span class="truncate">{{ r.project.name }}</span>
-        <span v-if="hosts.several && r.project.host" class="text-sm text-slate-400">{{
+        <span v-if="hosts.isRemote(r.project.host)" class="text-sm text-slate-400">{{
           r.project.host
         }}</span>
         <span class="grow" />
@@ -144,7 +144,7 @@ const tab = (name: string) =>
     }}</span
   >
   <span
-    v-else-if="hosts.several && project?.host"
+    v-else-if="hosts.isRemote(project?.host)"
     class="rounded bg-slate-100 px-1.5 py-0.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
     data-test="project-host"
     >{{ project.host }}</span

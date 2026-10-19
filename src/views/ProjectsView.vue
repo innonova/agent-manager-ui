@@ -197,7 +197,7 @@ async function submit(restart = false) {
               <div class="font-medium">
                 {{ r.project.name }}
                 <span
-                  v-if="hosts.several && r.project.host"
+                  v-if="hosts.isRemote(r.project.host)"
                   class="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-sm font-normal text-slate-600 dark:bg-slate-800 dark:text-slate-300"
                   :class="
                     hosts.byName(r.project.host)?.connected === false ||

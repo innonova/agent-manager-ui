@@ -181,7 +181,7 @@ events.on((f) => {
         >
           <span class="truncate">{{ r.project.name }}</span>
           <span
-            v-if="hosts.several && r.project.host"
+            v-if="hosts.isRemote(r.project.host)"
             class="rounded bg-slate-100 px-1 text-[10px] font-normal text-slate-500 dark:bg-slate-800 dark:text-slate-400"
             :class="
               hosts.byName(r.project.host)?.connected === false ||

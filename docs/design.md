@@ -544,6 +544,11 @@ link is absent when the manager reports no workspace (an older one).
 
 ## Several machines (a hub)
 
+A project's host is labelled only when it is not the machine this UI
+is served from: on a hub every local project would otherwise carry the
+same name, which says nothing. A spoke's projects, and a host that is
+unreachable, are labelled as before.
+
 An agent of a project here can run on another machine (the manager's
 design doc, Hub and spokes): the new-agent form has a "Machine" select
 when there are several hosts, offering the spokes whose daemon the hub

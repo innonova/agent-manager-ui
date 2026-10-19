@@ -25,5 +25,8 @@ export const useHostsStore = defineStore('hosts', () => {
   const several = computed(() => list.value.length > 1)
   const byName = (name: string | undefined) => list.value.find((h) => h.name === name)
   const local = computed(() => list.value.find((h) => h.local))
-  return { list, several, byName, local }
+  /** Worth a label: a host other than the one this UI is served from. The local name on every row says nothing. */
+  const isRemote = (name: string | null | undefined) =>
+    !!name && several.value && name !== local.value?.name
+  return { list, several, byName, local, isRemote }
 })
