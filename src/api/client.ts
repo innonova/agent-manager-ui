@@ -98,6 +98,8 @@ export const api = {
     projectId: string,
     input: {
       name: string
+      /** A spoke the agent's session runs on; then `cwd` is an absolute path there. */
+      host?: string
       profile?: string
       cwd?: string
       permissions?: 'bypass' | 'ask'
@@ -153,7 +155,12 @@ export const api = {
       `/api/projects/${projectId}/agents?archived=1`,
     ),
 
-  profiles: () => call<{ profiles: Profile[] }>('GET', '/api/profiles'),
+  /** Daemon profiles of this machine, or of a spoke's with `host`. */
+  profiles: (host?: string | null) =>
+    call<{ profiles: Profile[] }>(
+      'GET',
+      `/api/profiles${host ? `?host=${encodeURIComponent(host)}` : ''}`,
+    ),
   /** The vendor accounts' usage per host, as last reported through an agent. */
   usage: () =>
     call<{ hosts: { host: string; accounts: AccountUsageRow[] }[] }>('GET', '/api/usage'),

@@ -264,6 +264,7 @@ export const useAgentsStore = defineStore('agents', () => {
     projectId: string,
     input: {
       name: string
+      host?: string
       profile?: string
       cwd?: string
       permissions?: 'bypass' | 'ask'

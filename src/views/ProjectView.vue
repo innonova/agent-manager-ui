@@ -19,6 +19,7 @@ import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { since, when } from '@/time'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
 
 const props = defineProps<{ id: string; agentId?: string }>()
@@ -34,6 +35,7 @@ const othersHere = computed(() => (props.agentId ? presence.others(props.agentId
 const othersTyping = computed(() => othersHere.value.filter((u) => u.typing))
 const router = useRouter()
 const projects = useProjectsStore()
+const hosts = useHostsStore()
 const agents = useAgentsStore()
 const notifications = useNotificationsStore()
 
@@ -135,6 +137,8 @@ async function openNew(projectId: string) {
 const form = ref({
   name: '',
   profile: '',
+  /** '' for this project's own machine; a spoke's name puts the agent's session there, with `cwd` a path on it. */
+  host: '',
   cwd: '',
   permissions: 'bypass' as 'bypass' | 'ask',
   model: '',
@@ -161,6 +165,7 @@ async function loadProject() {
   ).profiles.filter((p) => p.supported)
   if (gen !== loadGen) return
   profiles.value = fetched
+  form.value.host = ''
   form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
   form.value.cwd = project.value?.repos[0]?.name ?? ''
   if (!props.agentId && rows.value[0])
@@ -199,6 +204,19 @@ watch(
   { immediate: true },
 )
 
+/** The profiles a form offers are the chosen host's: its daemon runs the CLI. */
+async function hostChanged() {
+  const host = form.value.host || null
+  const fetched = (await api.profiles(host).catch(() => ({ profiles: [] }))).profiles.filter(
+    (p) => p.supported,
+  )
+  if ((form.value.host || null) !== host) return
+  profiles.value = fetched
+  if (!profiles.value.some((p) => p.name === form.value.profile))
+    form.value.profile = profiles.value[0]?.name ?? ''
+  if (!host) form.value.cwd = ''
+}
+
 async function create() {
   error.value = null
   busy.value = true
@@ -206,6 +224,7 @@ async function create() {
     const agent = await agents.create(props.id, {
       name: form.value.name,
       profile: form.value.profile || undefined,
+      host: form.value.host || undefined,
       cwd: form.value.cwd || undefined,
       permissions: form.value.permissions,
       model: form.value.model.trim() || undefined,
@@ -442,6 +461,13 @@ async function archive() {
             <span
               >profile <span class="font-mono">{{ current.agent.profile }}</span></span
             >
+            <span
+              v-if="current.agent.host"
+              class="rounded bg-slate-100 px-1.5 py-0.5 font-mono dark:bg-slate-800"
+              title="the machine this agent's session runs on"
+              data-test="agent-host-chip"
+              >{{ current.agent.host }}</span
+            >
             <span class="font-mono" data-test="agent-cwd-label">{{ current.agent.cwd }}</span>
             <span v-if="current.agent.effort" data-test="agent-effort-chip"
               >effort {{ current.agent.effort }}</span
@@ -609,6 +635,26 @@ async function archive() {
           required
         />
       </label>
+      <label v-if="hosts.several" class="text-base">
+        <span class="text-slate-600 dark:text-slate-300">Machine</span>
+        <select
+          v-model="form.host"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 dark:border-slate-700"
+          title="Where the agent's session runs. The project and its repositories stay here; on another machine the agent works in a directory there."
+          data-test="agent-host"
+          @change="hostChanged"
+        >
+          <option value="">{{ hosts.local?.name ?? 'this machine' }} — where the project is</option>
+          <option
+            v-for="h in hosts.list.filter((x) => !x.local)"
+            :key="h.name"
+            :value="h.name"
+            :disabled="!h.daemon"
+          >
+            {{ h.name }}<template v-if="!h.daemon"> — daemon not reachable</template>
+          </option>
+        </select>
+      </label>
       <label class="text-base">
         <span class="text-slate-600 dark:text-slate-300">Profile</span>
         <select
@@ -658,7 +704,20 @@ async function archive() {
           <option value="ask">ask — gated tools wait for your answer here</option>
         </select>
       </label>
-      <label v-if="(project?.repos.length ?? 0) > 1" class="text-base">
+      <label v-if="form.host" class="text-base">
+        <span class="text-slate-600 dark:text-slate-300"
+          >Working directory on {{ form.host }} (an absolute path there, usually a checkout of the
+          project)</span
+        >
+        <input
+          v-model="form.cwd"
+          class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono dark:border-slate-700"
+          placeholder="C:\Users\me\checkout or /home/me/checkout"
+          data-test="agent-remote-cwd"
+          required
+        />
+      </label>
+      <label v-else-if="(project?.repos.length ?? 0) > 1" class="text-base">
         <span class="text-slate-600 dark:text-slate-300"
           >Working repository (the others are passed as extra directories)</span
         >

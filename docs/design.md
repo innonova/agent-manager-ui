@@ -544,6 +544,13 @@ link is absent when the manager reports no workspace (an older one).
 
 ## Several machines (a hub)
 
+An agent of a project here can run on another machine (the manager's
+design doc, Hub and spokes): the new-agent form has a "Machine" select
+when there are several hosts, offering the spokes whose daemon the hub
+reaches (the others disabled with a note), and for a remote one a path
+field replaces the repository select and the profile list becomes that
+host's. The agent's details line shows the host as a chip.
+
 When the manager is a hub, `hello` and `hosts` frames list the machines
 (`hosts` store). Projects carry `host`; with more than one host the
 project list and the project header show it as a badge, struck through

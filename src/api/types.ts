@@ -45,6 +45,8 @@ export interface Agent {
   projectId: string
   name: string
   profile: string
+  /** The machine its sessions run on: null for the project's own, else a spoke's name; `cwd` is a path there. */
+  host?: string | null
   cwd: string
   vendorConversationId: string | null
   currentSessionId: string | null
