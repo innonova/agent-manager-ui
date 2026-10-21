@@ -179,6 +179,20 @@ to a slipped click was the worst thing the component did. Escape from
 a text field first drops focus (a second Escape closes), so a key slip
 while typing loses nothing either.
 
+## Notes view
+
+The project's notes (the manager's design doc, Notes): a fourth tab,
+with the count of open notes as a plain badge (not attention: nothing
+here waits on the reader). The view is an add box first and always, a
+textarea where Ctrl+Enter adds and the first line is the title, so a
+thing can be written down while an agent works without a word reaching
+it; then the open notes as a checklist (tick to mark done, × to remove,
+double-click to edit in place, each with its date and id), and the done
+ones folded away under a toggle, struck through, untickable to reopen.
+The store follows `notes.changed`, so an agent ticking a note shows
+within seconds in every tab. The draft of a new note is kept in the
+drafts store, like a turn's text.
+
 ## Presence
 
 Every tab reports which agent it has open and, at most every two

@@ -708,6 +708,69 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
 })
 
+test('notes: add while an agent works, tick, edit, remove; the file is under notes/', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('tab-notes').click()
+  await expect(page).toHaveURL(/\/notes$/)
+  // Ctrl+Enter adds; the first line is the title, the rest the body
+  await page
+    .getByTestId('note-input')
+    .fill('show the stats of the selected weapon\n\nin the right panel')
+  await page.getByTestId('note-input').press('Control+Enter')
+  const row = page.getByTestId('note-row').first()
+  await expect(row.getByTestId('note-title')).toHaveText('show the stats of the selected weapon')
+  await expect(row.getByTestId('note-body')).toHaveText('in the right panel')
+  await expect(page.getByTestId('note-input')).toHaveValue('')
+  await expect(page.getByTestId('tab-notes')).toContainText('1')
+  const id = (await row.getAttribute('data-id'))!
+  expect(fs.existsSync(path.join(PROJECT_DIR, 'notes', `${id}.md`))).toBe(true)
+  // a second one by the button, then the first ticked: it folds under 'done'
+  await page.getByTestId('note-input').fill('second thing')
+  await page.getByTestId('note-add').click()
+  await expect(page.getByTestId('note-row')).toHaveCount(2)
+  await page
+    .getByTestId('note-row')
+    .filter({ hasText: 'show the stats' })
+    .getByTestId('note-tick')
+    .check()
+  await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(1)
+  await expect(page.getByTestId('notes-done-toggle')).toContainText('1 done')
+  expect(fs.readFileSync(path.join(PROJECT_DIR, 'notes', `${id}.md`), 'utf8')).toContain(
+    'done: true',
+  )
+  // an agent ticking by hand (the file edited) reaches the page without a reload
+  const second = page.getByTestId('note-row').filter({ hasText: 'second thing' })
+  const secondId = (await second.getAttribute('data-id'))!
+  const file = path.join(PROJECT_DIR, 'notes', `${secondId}.md`)
+  fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('done: false', 'done: true'))
+  await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(0, {
+    timeout: 10000,
+  })
+  // reopen, edit in place, remove
+  await page.getByTestId('notes-done-toggle').click()
+  await page
+    .getByTestId('notes-done')
+    .getByTestId('note-row')
+    .filter({ hasText: 'second thing' })
+    .getByTestId('note-untick')
+    .click()
+  await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(1)
+  await page.getByTestId('notes-open').getByTestId('note-title').dblclick()
+  await page.getByTestId('note-edit').fill('second thing, reworded')
+  await page.getByTestId('note-edit').press('Control+Enter')
+  await expect(page.getByTestId('notes-open').getByTestId('note-title')).toHaveText(
+    'second thing, reworded',
+  )
+  await page.getByTestId('notes-open').getByTestId('note-remove').click()
+  await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(0)
+  expect(fs.existsSync(file)).toBe(false)
+  await page.getByTestId('notes-done').getByTestId('note-remove').click()
+  await expect(page.getByTestId('notes-done-toggle')).toHaveCount(0)
+})
+
 test('edit a project from inside it; save and restart resumes its idle agents', async ({
   page,
 }) => {

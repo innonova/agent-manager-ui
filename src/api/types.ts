@@ -224,6 +224,7 @@ export type EventFrame =
   | { type: 'agent.item'; agentId: string; item: StoredItem }
   | { type: 'agent.reset'; agentId: string }
   | { type: 'feature.changed'; projectId: string; feature: Feature }
+  | { type: 'notes.changed'; projectId: string; notes: Notes }
   | {
       type: 'agent.session'
       agentId: string
@@ -341,4 +342,23 @@ export interface CommitFiles {
   author: string
   at: number
   files: ChangedFile[]
+}
+
+/** A small actionable item about the project: one file under `notes/` in the primary repository. */
+export interface NoteItem {
+  id: string
+  done: boolean
+  /** YYYY-MM-DD of when it was written; empty for a file written by hand without one. */
+  date: string
+  /** The first line of the text. */
+  title: string
+  /** The rest; empty when there is none. */
+  body: string
+}
+
+export interface Notes {
+  dir: string
+  /** Open first, then by date. */
+  items: NoteItem[]
+  open: number
 }

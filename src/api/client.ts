@@ -1,6 +1,7 @@
 import type {
   AccountUsageRow,
   HostStatus,
+  Notes,
   TurnImage,
   FileDiff,
   RepoChanges,
@@ -192,6 +193,15 @@ export const api = {
   /** The profiles a project's agents can use: those of the machine it is on. */
   projectProfiles: (projectId: string) =>
     call<{ profiles: Profile[] }>('GET', `/api/projects/${projectId}/profiles`),
+
+  /** The project's notes: small actionable items, one file each under notes/ in the primary repository. */
+  notes: (projectId: string) => call<Notes>('GET', `/api/projects/${projectId}/notes`),
+  addNote: (projectId: string, text: string) =>
+    call<Notes>('POST', `/api/projects/${projectId}/notes`, { text }),
+  updateNote: (projectId: string, id: string, patch: { done?: boolean; text?: string }) =>
+    call<Notes>('PATCH', `/api/projects/${projectId}/notes/${id}`, patch),
+  removeNote: (projectId: string, id: string) =>
+    call<Notes>('DELETE', `/api/projects/${projectId}/notes/${id}`),
 
   users: () => call<{ users: User[] }>('GET', '/api/users'),
   createUser: (name: string) =>

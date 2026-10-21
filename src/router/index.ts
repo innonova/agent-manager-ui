@@ -63,6 +63,12 @@ const router = createRouter({
       component: () => import('@/views/FeaturesView.vue'),
       props: true,
     },
+    {
+      path: '/projects/:id/notes',
+      name: 'notes',
+      component: () => import('@/views/NotesView.vue'),
+      props: true,
+    },
   ],
 })
 

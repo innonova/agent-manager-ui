@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useChangesStore } from '@/stores/changes'
 import { useFeaturesStore } from '@/stores/features'
+import { useNotesStore } from '@/stores/notes'
 import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
 
@@ -18,6 +19,8 @@ const router = useRouter()
 const projects = useProjectsStore()
 const changes = useChangesStore()
 const features = useFeaturesStore()
+const notesStore = useNotesStore()
+const openNotes = computed(() => notesStore.byProject.get(props.id)?.open ?? 0)
 const hosts = useHostsStore()
 
 const row = computed(() => projects.byId.get(props.id))
@@ -46,6 +49,7 @@ const toReview = computed(
 )
 onMounted(() => {
   if (!features.byProject.has(props.id)) void features.load(props.id)
+  if (!notesStore.byProject.has(props.id)) void notesStore.load(props.id).catch(() => undefined)
   void changes.countUnread(props.id) // keep the changes-tab badge fresh
 })
 
@@ -200,6 +204,18 @@ const tab = (name: string) =>
         class="rounded bg-violet-100 px-1.5 text-sm text-violet-900 dark:bg-violet-900 dark:text-violet-100"
         :title="`${toReview} to review`"
         >{{ toReview }} to review</span
+      ></RouterLink
+    >
+    <RouterLink
+      :to="{ name: 'notes', params: { id } }"
+      class="border-b-2 py-0.5"
+      :class="tab('notes')"
+      data-test="tab-notes"
+      >notes<span
+        v-if="openNotes"
+        class="rounded bg-slate-100 px-1.5 text-sm text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+        :title="`${openNotes} open`"
+        >{{ openNotes }}</span
       ></RouterLink
     >
   </nav>
