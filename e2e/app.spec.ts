@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
 import { expect, test, type Page } from '@playwright/test'
-import { ADMIN_PASSWORD, PROJECT_DIR, SECOND_DIR } from './constants'
+import { ADMIN_PASSWORD, E2E_ROOT, PROJECT_DIR, SECOND_DIR } from './constants'
 
 /** The agent header's facts fold away under the name; open them when a test needs one. */
 async function details(page: Page) {
@@ -708,7 +708,7 @@ test('features view: create, watch the agent work the file, respond, done', asyn
   await expect(row.getByTestId('feature-status')).toHaveAttribute('data-status', 'done')
 })
 
-test('notes: add while an agent works, tick, edit, remove; the file is under notes/', async ({
+test('notes: add while an agent works, tick, edit, remove; kept by the manager, not in the repository', async ({
   page,
 }) => {
   await login(page)
@@ -726,7 +726,15 @@ test('notes: add while an agent works, tick, edit, remove; the file is under not
   await expect(page.getByTestId('note-input')).toHaveValue('')
   await expect(page.getByTestId('tab-notes')).toContainText('1')
   const id = (await row.getAttribute('data-id'))!
-  expect(fs.existsSync(path.join(PROJECT_DIR, 'notes', `${id}.md`))).toBe(true)
+  // the file is the manager's, under its data dir by project, and nothing landed in the repository
+  const projectId = (
+    (await (await page.request.get('/api/projects')).json()) as {
+      project: { id: string; name: string }
+    }[]
+  ).find((r) => r.project.name === 'Demo')!.project.id
+  const notesDir = path.join(E2E_ROOT, 'manager-data', 'notes', projectId)
+  await expect.poll(() => fs.existsSync(path.join(notesDir, `${id}.md`))).toBe(true)
+  expect(fs.existsSync(path.join(PROJECT_DIR, 'notes'))).toBe(false)
   // a second one by the button, then the first ticked: it folds under 'done'
   await page.getByTestId('note-input').fill('second thing')
   await page.getByTestId('note-add').click()
@@ -738,13 +746,11 @@ test('notes: add while an agent works, tick, edit, remove; the file is under not
     .check()
   await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(1)
   await expect(page.getByTestId('notes-done-toggle')).toContainText('1 done')
-  expect(fs.readFileSync(path.join(PROJECT_DIR, 'notes', `${id}.md`), 'utf8')).toContain(
-    'done: true',
-  )
+  expect(fs.readFileSync(path.join(notesDir, `${id}.md`), 'utf8')).toContain('done: true')
   // an agent ticking by hand (the file edited) reaches the page without a reload
   const second = page.getByTestId('note-row').filter({ hasText: 'second thing' })
   const secondId = (await second.getAttribute('data-id'))!
-  const file = path.join(PROJECT_DIR, 'notes', `${secondId}.md`)
+  const file = path.join(notesDir, `${secondId}.md`)
   fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('done: false', 'done: true'))
   await expect(page.getByTestId('notes-open').getByTestId('note-row')).toHaveCount(0, {
     timeout: 10000,

@@ -190,7 +190,8 @@ it; then the open notes as a checklist (tick to mark done, × to remove,
 double-click to edit in place, each with its date and id), and the done
 ones folded away under a toggle, struck through, untickable to reopen.
 The store follows `notes.changed`, so an agent ticking a note shows
-within seconds in every tab. The draft of a new note is kept in the
+within seconds in every tab. The files are the manager's, not the
+repository's, so nothing here ever shows in the changes view. The draft of a new note is kept in the
 drafts store, like a turn's text.
 
 ## Presence

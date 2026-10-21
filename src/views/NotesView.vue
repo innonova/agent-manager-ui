@@ -102,9 +102,9 @@ async function saveEdit() {
         </button>
       </div>
       <p v-if="all.length === 0" class="text-base text-slate-500 dark:text-slate-400">
-        Small actionable items about the project, never features: one file each under
-        <code>notes/</code> in the primary repository. Tell an agent to take care of the notes when
-        there are enough; it ticks them off as it goes.
+        Small actionable items about the project, never features. Kept by the manager, not in a
+        repository, so adding one while an agent works touches nothing it commits. Tell an agent to
+        take care of the notes when there are enough; it ticks them off as it goes.
       </p>
       <div class="min-h-0 grow overflow-y-auto">
         <ul class="divide-y divide-slate-100 dark:divide-slate-800" data-test="notes-open">
