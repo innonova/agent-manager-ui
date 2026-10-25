@@ -314,6 +314,14 @@ test.describe('phone', () => {
     await page.getByTestId('tree-open').click()
     await page.getByTestId('agent-row').filter({ hasText: 'pocket' }).click()
     await expect(page.getByTestId('project-tree-pane')).toBeHidden()
+    // the project switcher opens over the page (the bar must not clip it) and goes elsewhere
+    await page.getByTestId('project-switcher').click()
+    await expect(page.getByTestId('project-switcher-menu')).toBeVisible()
+    await expect(page.getByTestId('project-switcher-menu')).toBeInViewport()
+    await page.getByTestId('project-switcher-menu').getByText('all projects').click()
+    await expect(page.getByTestId('new-project')).toBeVisible() // the projects page
+    await page.goBack()
+    await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
     // a turn still works at this width
     await page.getByTestId('turn-input').fill('hello')
     await page.getByTestId('send').click()

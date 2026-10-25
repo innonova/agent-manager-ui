@@ -602,9 +602,12 @@ translucent one blurred the header and sat over it, and
 `viewport-fit=cover` invited iOS to draw its bar over the page even
 with the opaque style, so neither is used. Fields never go under 16 px
 on a phone, since iOS zooms into a smaller one and a home-screen app
-never zooms back. The top bar scrolls
-sideways rather than wrapping, the brand link and the VS Code link stay
-off a phone, and the resize handles are gone below `md`. Wider screens
+never zooms back. In the top bar only
+the tab row scrolls sideways; the bar itself never clips, so the
+project switcher's menu can open over the page (a scroll box would
+cut it off). The brand link, the user's name and the VS Code link stay
+off a phone, the switcher's rows are taller for a thumb, and the
+resize handles are gone below `md`. Wider screens
 are unchanged, pane widths included.
 
 ## Several machines (a hub)
