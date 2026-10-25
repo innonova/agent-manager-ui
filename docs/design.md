@@ -174,10 +174,11 @@ editable: they are what the agent is.
 
 "withdraw" in the agent header takes back the last message sent to a
 Claude agent (the manager's design doc, Withdrawing a message). It is
-shown when the agent is idle and nothing after the message committed;
-whether the reply left changed files behind is the manager's to decide
-from the repositories' state, and its refusal names them. A confirm
-says what it does. The
+always there for a Claude agent, disabled with the reason in its
+tooltip when it cannot be used (the agent busy, the last message
+already withdrawn, a commit after it); whether the reply left changed
+files behind is the manager's to decide from the repositories' state,
+and its refusal names them. A confirm says what it does. The
 withdrawn items are hidden: the marker the manager appends is one
 line, "withdrawn: …", with a show/hide toggle for the record, since the
 daemon's log keeps them and they say what the agent did. Shown, they

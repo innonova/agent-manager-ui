@@ -259,38 +259,38 @@ async function decide(requestId: string, option: string) {
 }
 
 /**
- * Whether the last message can be offered for taking back: a Claude agent,
- * idle or exited, with a last message that was not already withdrawn and no commit
- * after it. Whether the reply left changed files behind is the manager's
- * to decide, from the repositories' state; it refuses with the list.
+ * Why the last message cannot be taken back right now, or null when it can:
+ * the button is always there for a Claude agent and says why when it is
+ * off, so nobody has to guess. Whether the reply left changed files behind
+ * is the manager's to decide from the repositories' state; it refuses
+ * with the list.
  */
-const canWithdraw = computed(() => {
+const withdrawReason = computed((): string | null => {
   const row = current.value
-  if (
-    !row ||
-    row.agent.profile !== 'claude' ||
-    (row.status.state !== 'idle' && row.status.state !== 'exited') // exited: nothing to interrupt; the withdrawal resumes afresh
-  )
-    return false
+  if (!row) return 'no agent'
+  if (row.agent.profile !== 'claude')
+    return `only for Claude agents (this one is ${row.agent.profile})`
+  if (row.status.state !== 'idle' && row.status.state !== 'exited')
+    return `the agent is ${row.status.state}; interrupt it first`
   let from = -1
   for (let i = items.value.length - 1; i >= 0; i--) {
     const it = items.value[i]?.item
+    if (it?.kind === 'system' && it.withdrawnFrom !== undefined)
+      return 'the last message was already withdrawn'
     if (it?.kind === 'user' && it.text) {
       from = i
       break
     }
   }
-  if (from < 0) return false
+  if (from < 0) return 'no message to take back'
   for (let i = from + 1; i < items.value.length; i++) {
     const it = items.value[i]?.item
-    if (
-      it?.kind === 'system' &&
-      (it.text.startsWith('committed') || it.withdrawnFrom !== undefined)
-    )
-      return false
+    if (it?.kind === 'system' && it.text.startsWith('committed'))
+      return 'the reply committed; that cannot be taken back'
   }
-  return true
+  return null
 })
+const canWithdraw = computed(() => withdrawReason.value === null)
 async function withdraw() {
   if (!props.agentId) return
   if (!confirm('Take back your last message? The agent will have no memory of it or of its reply.'))
@@ -506,9 +506,13 @@ async function archive() {
                 edit
               </button>
               <button
-                v-if="canWithdraw"
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
-                title="take back your last message: the agent will have no memory of it or of its reply (refused when the reply committed or left changed files)"
+                v-if="current.agent.profile === 'claude'"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
+                :disabled="!canWithdraw"
+                :title="
+                  withdrawReason ??
+                  'take back your last message: the agent will have no memory of it or of its reply (refused when the reply committed or left changed files)'
+                "
                 data-test="withdraw"
                 @click="withdraw"
               >
