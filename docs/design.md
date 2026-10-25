@@ -619,9 +619,12 @@ under it rather than squeeze it. The files and changes views stack
 their panes top to bottom instead of left to right. The page itself
 never scrolls: the body is pinned with `position: fixed` (iOS ignores
 `overflow: hidden` on it for touch scrolling), every view scrolls
-inside the shell's main area, and the shell is as tall as the visual
+inside the shell's main area, and, below `md` only, the shell is as tall as the visual
 viewport and offset by its pan (`--app-h`, `--app-top`, set from
-`visualViewport` in `main.ts`). That is what keeps the header and the
+`visualViewport` in `main.ts`; a desktop with a touch keyboard, a
+Surface, keeps its full height, since the browser pans the field into
+view there and squeezing the app above the keyboard only shortens the
+transcript). That is what keeps the header and the
 composer put on iOS while the content scrolls, and brings the composer
 up with the keyboard, which shrinks and pans the visual viewport, not
 the layout one. iOS reads the status bar tag when the app is added to the home

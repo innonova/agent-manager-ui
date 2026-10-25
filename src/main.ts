@@ -19,13 +19,23 @@ app.mount('#app')
 // not shrink for the keyboard but the visual one does, and this is what
 // brings the composer up with it. iOS also scrolls the page itself to show
 // a focused field; with the page never meant to scroll, that is undone.
+// Phones only: on a desktop (a Surface with its touch keyboard, say) the
+// browser already pans the focused field into view, and squeezing the whole
+// app into the space above the keyboard only makes the transcript short.
 const vv = window.visualViewport
+const phone = window.matchMedia('(max-width: 767px)')
 if (vv) {
   const fit = () => {
     const root = document.documentElement.style
+    if (!phone.matches) {
+      root.removeProperty('--app-h')
+      root.removeProperty('--app-top')
+      return
+    }
     root.setProperty('--app-h', `${Math.round(vv.height)}px`)
     root.setProperty('--app-top', `${Math.round(vv.offsetTop)}px`) // iOS pans the visual viewport for the keyboard
   }
+  phone.addEventListener('change', fit)
   vv.addEventListener('resize', fit)
   vv.addEventListener('scroll', fit)
   fit()
