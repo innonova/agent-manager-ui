@@ -586,7 +586,17 @@ beside it or choosing an agent closes it), and the page itself when no
 agent is chosen. The transcript takes the width, the agent header line
 wraps, the composer's field keeps a minimum width so the buttons wrap
 under it rather than squeeze it. The files and changes views stack
-their panes top to bottom instead of left to right. The top bar scrolls
+their panes top to bottom instead of left to right. The page itself
+never scrolls: `html`, `body` and `#app` are `overflow: hidden`, every
+view scrolls inside the shell's main area, and the shell is as tall as
+the visual viewport (`--app-h`, set from `visualViewport` in `main.ts`,
+`100dvh` until then). That is what keeps the header and the composer
+put on iOS while the content scrolls, and brings the composer up with
+the keyboard, which iOS does not shrink the layout viewport for; iOS's
+own scroll to a focused field is undone. The status bar is opaque (the
+Apple meta tag's `default`): the translucent one blurred the header
+and sat over it. `viewport-fit=cover`, and the composer pads for the
+home indicator with `env(safe-area-inset-bottom)`. The top bar scrolls
 sideways rather than wrapping, the brand link and the VS Code link stay
 off a phone, and the resize handles are gone below `md`. Wider screens
 are unchanged, pane widths included.
