@@ -31,10 +31,10 @@ type Row =
 const withdrawn = computed(() => {
   const out = new Set<number>()
   for (const s of props.items) {
-    const it = s.item
-    if (it.kind !== 'system' || it.withdrawnFrom === undefined) continue
+    const it = s?.item // the array can have holes while history is paged in
+    if (!it || it.kind !== 'system' || it.withdrawnFrom === undefined) continue
     for (const t of props.items)
-      if (t.index >= it.withdrawnFrom && t.index < s.index && t.item.kind !== 'system')
+      if (t && t.index >= it.withdrawnFrom && t.index < s.index && t.item.kind !== 'system')
         out.add(t.index)
   }
   return out
