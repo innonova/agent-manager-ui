@@ -500,11 +500,11 @@ async function archive() {
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
             </span>
             <div
-              class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700 pointer-coarse:text-base"
+              class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700 max-md:pointer-coarse:text-base"
               data-test="agent-actions"
             >
               <button
-                class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="edit the agent: name, model, effort, permissions"
                 data-test="edit-agent"
                 @click="startEditAgent"
@@ -513,7 +513,7 @@ async function archive() {
               </button>
               <button
                 v-if="canWithdraw"
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="take back your last message: the agent will have no memory of it or of its reply (offered only when the reply did nothing but read)"
                 data-test="withdraw"
                 @click="withdraw"
@@ -522,7 +522,7 @@ async function archive() {
               </button>
               <button
                 v-if="current.status.state !== 'exited'"
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="end the session; the next message resumes it"
                 data-test="stop"
                 @click="stop"
@@ -530,7 +530,7 @@ async function archive() {
                 stop
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="stop and resume with the current settings (repositories, harness note); the conversation continues"
                 data-test="restart"
                 @click="restart"
@@ -538,7 +538,7 @@ async function archive() {
                 restart
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="end the session and take the agent off the list; its transcript stays"
                 data-test="archive"
                 @click="archive"
@@ -546,7 +546,7 @@ async function archive() {
                 archive
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-red-950 pointer-coarse:px-3 pointer-coarse:py-2"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-red-950 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
                 title="forget this agent for good: its process, the daemon's logs of its sessions, the cached transcript; the vendor's own store stays"
                 data-test="delete"
                 @click="remove"

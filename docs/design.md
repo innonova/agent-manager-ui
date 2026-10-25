@@ -589,8 +589,11 @@ toggle is disabled with a line saying so.
 
 ## Touch
 
-Tailwind's `pointer-coarse:` variant carries the touch changes, so a
-mouse sees nothing of them: the agent actions, the tabs, the
+Tailwind's `pointer-coarse:` variant, stacked with `max-md:` for the
+sizing, carries the touch changes: a mouse sees nothing of them, and a
+touch screen at desktop width (a Surface) keeps the desktop sizes,
+since a tablet with a keyboard is a desktop. Only the touch-only
+buttons (the camera, a note's edit) follow the pointer alone. So: the agent actions, the tabs, the
 permission card's buttons, the note rows' controls and the composer's
 buttons are taller for a thumb; the composer's placeholder drops the
 modifier hint (a phone keyboard has none, the button is the way) and

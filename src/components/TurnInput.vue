@@ -213,7 +213,7 @@ function onKey(e: KeyboardEvent) {
           ref="box"
           v-model="text"
           rows="2"
-          class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700 pointer-coarse:py-3"
+          class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700 max-md:pointer-coarse:py-3"
           :placeholder="
             state === 'exited'
               ? 'Send a message to resume the agent…'
@@ -233,7 +233,7 @@ function onKey(e: KeyboardEvent) {
         <button
           v-if="state === 'working'"
           type="button"
-          class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950 pointer-coarse:py-3"
+          class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950 max-md:pointer-coarse:py-3"
           data-test="interrupt"
           @click="emit('interrupt')"
         >
@@ -259,7 +259,7 @@ function onKey(e: KeyboardEvent) {
         </button>
         <button
           type="submit"
-          class="ml-auto rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50 md:ml-0 pointer-coarse:px-5 pointer-coarse:py-3"
+          class="ml-auto rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50 md:ml-0 max-md:pointer-coarse:px-5 max-md:pointer-coarse:py-3"
           :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
           data-test="send"
           :title="

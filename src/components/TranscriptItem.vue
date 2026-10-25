@@ -151,7 +151,7 @@ const cost = computed(() =>
       <button
         v-for="o in item.options"
         :key="o.id"
-        class="rounded border px-3 py-1 disabled:opacity-50 pointer-coarse:px-4 pointer-coarse:py-2.5"
+        class="rounded border px-3 py-1 disabled:opacity-50 max-md:pointer-coarse:px-4 max-md:pointer-coarse:py-2.5"
         :class="OPTION_CLASS[o.kind]"
         :disabled="deciding"
         :data-test="`permission-${o.kind}`"

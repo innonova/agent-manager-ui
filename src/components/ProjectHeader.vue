@@ -211,7 +211,7 @@ const tab = (name: string) =>
     >
     <RouterLink
       :to="{ name: 'notes', params: { id } }"
-      class="border-b-2 py-0.5 pointer-coarse:py-2"
+      class="border-b-2 py-0.5 max-md:pointer-coarse:py-2"
       :class="tab('notes')"
       data-test="tab-notes"
       >notes<span
