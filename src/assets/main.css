@@ -6,16 +6,26 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* The page never scrolls as a whole: every view scrolls inside the shell's
-   main area, and the shell is as tall as the visual viewport (--app-h,
-   set from visualViewport in main.ts; 100dvh until then). On iOS that is
-   what keeps the header and the composer put while the content scrolls,
-   and brings the composer up when the keyboard does. */
+   main area. iOS ignores overflow: hidden on the body for touch scrolling,
+   so the body is pinned with position: fixed, which cannot scroll at all.
+   The shell is as tall as the visual viewport and offset by its pan
+   (--app-h and --app-top, set from visualViewport in main.ts): on iOS the
+   keyboard shrinks and pans the visual viewport, not the layout one, and
+   following it is what brings the composer up with the keyboard and keeps
+   the header in view. */
 html,
-body,
-#app {
+body {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
+}
+body {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+}
+#app {
+  height: 100%;
 }
 
 /* Dark palette: VS Code's Dark+ rather than Tailwind's blue-tinted slate.

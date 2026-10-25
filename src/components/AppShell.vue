@@ -21,10 +21,10 @@ async function logout() {
 
 <template>
   <div
-    class="flex h-[var(--app-h,100dvh)] flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+    class="flex h-[var(--app-h,100%)] translate-y-[var(--app-top,0px)] flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
   >
     <header
-      class="flex items-center gap-3 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 whitespace-nowrap md:gap-4 md:overflow-visible md:px-4 md:whitespace-normal dark:border-slate-800 dark:bg-slate-900"
+      class="flex items-center gap-3 overflow-x-auto border-b border-slate-200 bg-white px-3 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 whitespace-nowrap md:gap-4 md:overflow-visible md:px-4 md:whitespace-normal dark:border-slate-800 dark:bg-slate-900"
     >
       <RouterLink :to="{ name: 'projects' }" class="hidden font-semibold md:inline"
         >agent-manager</RouterLink
