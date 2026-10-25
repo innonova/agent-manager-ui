@@ -83,6 +83,15 @@ const activeToolName = computed(() =>
 const activityHeight = ref(0)
 
 const showNew = ref(false)
+/** The tree as a drawer on a phone; closes when an agent is chosen, the one already open included. */
+const drawer = ref(false)
+watch(
+  () => props.agentId,
+  () => (drawer.value = false),
+)
+function onTreeClick(e: MouseEvent) {
+  if ((e.target as HTMLElement | null)?.closest('[data-test=agent-row]')) drawer.value = false
+}
 /** The edit form for the current agent: name at once, the rest at its next restart. */
 const editing = ref<{
   name: string
@@ -316,9 +325,28 @@ async function archive() {
   <AppShell>
     <template #title><ProjectHeader :id="id" /></template>
     <div class="flex h-full">
+      <!-- On a phone the tree is a drawer: the transcript needs the whole
+           width, and the tree is what you open to go somewhere else. With no
+           agent chosen it is the page itself. On wider screens it is the pane
+           it always was, at its remembered width. -->
+      <div
+        v-if="drawer"
+        class="fixed inset-0 z-30 bg-slate-900/40 md:hidden"
+        data-test="tree-backdrop"
+        @click="drawer = false"
+      />
       <aside
-        :style="{ width: `${treePane.width.value}px` }"
-        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ '--tree-w': `${treePane.width.value}px` }"
+        class="min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white md:static md:z-auto md:flex md:w-[var(--tree-w)] md:shadow-none dark:border-slate-800 dark:bg-slate-900"
+        :class="
+          !agentId
+            ? 'flex w-full'
+            : drawer
+              ? 'fixed inset-y-0 left-0 z-40 flex w-72 shadow-xl'
+              : 'hidden'
+        "
+        data-test="project-tree-pane"
+        @click="onTreeClick"
       >
         <div class="flex items-center px-3 py-2">
           <span
@@ -335,14 +363,23 @@ async function archive() {
         </div>
         <ProjectTree :project-id="id" :agent-id="agentId" @new-agent="openNew" />
       </aside>
-      <ResizeHandle @start="treePane.start" />
+      <div class="hidden md:contents"><ResizeHandle @start="treePane.start" /></div>
 
       <section v-if="current" class="relative flex min-w-0 grow flex-col">
         <div
           class="border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
           <!-- one line: who, how it is doing, what you can do; the facts fold away under the name -->
-          <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <button
+              type="button"
+              class="rounded px-1 text-slate-500 md:hidden dark:text-slate-400"
+              title="projects and agents"
+              data-test="tree-open"
+              @click="drawer = true"
+            >
+              ☰
+            </button>
             <button
               type="button"
               class="flex items-center gap-1.5 text-left"

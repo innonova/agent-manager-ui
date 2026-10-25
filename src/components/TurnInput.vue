@@ -194,7 +194,7 @@ function onKey(e: KeyboardEvent) {
           ref="box"
           v-model="text"
           rows="2"
-          class="max-h-72 grow resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none dark:border-slate-700"
+          class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700"
           :placeholder="
             state === 'exited'
               ? 'Send a message to resume the agent…'

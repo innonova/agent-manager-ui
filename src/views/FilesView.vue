@@ -210,10 +210,10 @@ async function createFolder() {
 <template>
   <AppShell>
     <template #title><ProjectHeader :id="id" /></template>
-    <div class="flex h-full">
+    <div class="flex h-full flex-col md:flex-row">
       <aside
-        :style="{ width: `${filesPane.width.value}px` }"
-        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ '--pane-w': `${filesPane.width.value}px` }"
+        class="flex max-h-[45%] min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white md:max-h-none md:w-[var(--pane-w)] dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex items-center px-3 py-2">
           <span
@@ -383,7 +383,7 @@ async function createFolder() {
           {{ files.error }}
         </p>
       </aside>
-      <ResizeHandle @start="filesPane.start" />
+      <div class="hidden md:contents"><ResizeHandle @start="filesPane.start" /></div>
       <section class="flex min-w-0 grow flex-col">
         <div
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"

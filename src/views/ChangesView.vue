@@ -145,11 +145,11 @@ const selectedFileTitle = computed(() => {
 <template>
   <AppShell>
     <template #title><ProjectHeader :id="id" /></template>
-    <div class="flex h-full">
-      <!-- left: filters, working tree, the commit list -->
+    <div class="flex h-full flex-col md:flex-row">
+      <!-- left: filters, working tree, the commit list; on a phone the panes stack -->
       <aside
-        :style="{ width: `${listPane.width.value}px` }"
-        class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+        :style="{ '--pane-w': `${listPane.width.value}px` }"
+        class="flex max-h-[40%] min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white md:max-h-none md:w-[var(--pane-w)] dark:border-slate-800 dark:bg-slate-900"
       >
         <div class="flex flex-wrap items-center gap-1.5 px-3 py-2 text-sm">
           <span class="font-semibold tracking-wide text-slate-900 uppercase dark:text-slate-100"
@@ -301,13 +301,13 @@ const selectedFileTitle = computed(() => {
           {{ changes.error }}
         </p>
       </aside>
-      <ResizeHandle @start="listPane.start" />
+      <div class="hidden md:contents"><ResizeHandle @start="listPane.start" /></div>
 
       <!-- middle: the selected commit's (or working tree's) files; its handle goes with it -->
       <template v-if="changes.selection">
         <aside
-          :style="{ width: `${filesPane.width.value}px` }"
-          class="flex min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          :style="{ '--pane-w': `${filesPane.width.value}px` }"
+          class="flex max-h-[30%] min-w-0 shrink-0 flex-col border-r border-slate-200 bg-white md:max-h-none md:w-[var(--pane-w)] dark:border-slate-800 dark:bg-slate-900"
         >
           <div
             class="truncate px-3 py-2 text-sm text-slate-500 dark:text-slate-400"
@@ -343,7 +343,7 @@ const selectedFileTitle = computed(() => {
             </p>
           </div>
         </aside>
-        <ResizeHandle @start="filesPane.start" />
+        <div class="hidden md:contents"><ResizeHandle @start="filesPane.start" /></div>
       </template>
 
       <!-- right: the diff -->

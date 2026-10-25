@@ -557,6 +557,20 @@ connects with the person's own SSH config and opens the workspace; the
 UI does nothing else, and a project on a spoke opens on the spoke. The
 link is absent when the manager reports no workspace (an older one).
 
+## Phone widths
+
+Below Tailwind's `md` (768 px) the panes give way to one thing at a
+time. On the agent view the tree is a drawer: hidden while an agent is
+open (☰ in the agent's header line opens it over the transcript, a tap
+beside it or choosing an agent closes it), and the page itself when no
+agent is chosen. The transcript takes the width, the agent header line
+wraps, the composer's field keeps a minimum width so the buttons wrap
+under it rather than squeeze it. The files and changes views stack
+their panes top to bottom instead of left to right. The top bar scrolls
+sideways rather than wrapping, the brand link and the VS Code link stay
+off a phone, and the resize handles are gone below `md`. Wider screens
+are unchanged, pane widths included.
+
 ## Several machines (a hub)
 
 A project's host is labelled only when it is not the machine this UI

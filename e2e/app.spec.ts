@@ -266,6 +266,44 @@ test('a draft survives switching tabs and reloading', async ({ page }) => {
   await expect(page.getByTestId('turn-input')).toHaveValue('')
 })
 
+test.describe('phone', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+
+  test('the tree is a drawer and the transcript takes the width', async ({ page }) => {
+    await login(page)
+    const created = await page.request.post('/api/projects', {
+      data: { name: 'Pocket', repos: [{ path: PROJECT_DIR }], defaultProfile: 'fake' },
+    })
+    const projectId = ((await created.json()) as { project: { id: string } }).project.id
+    await page.goto(`/projects/${projectId}`)
+    // no agent chosen: the tree is the page
+    await expect(page.getByTestId('project-tree-pane')).toBeVisible()
+    await page.getByTestId('new-agent').click()
+    await page.getByTestId('agent-name-input').fill('pocket')
+    await page.getByTestId('form-submit').click()
+    await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+    // an agent open: the tree is gone, the transcript spans the viewport
+    await expect(page.getByTestId('project-tree-pane')).toBeHidden()
+    const box = (await page.getByTestId('turn-input').boundingBox())!
+    expect(box.width).toBeGreaterThan(250) // the field with the send button beside it, across a 390 px screen
+    // the drawer: opens over the transcript, closes on the backdrop and on choosing an agent
+    await page.getByTestId('tree-open').click()
+    await expect(page.getByTestId('project-tree-pane')).toBeVisible()
+    await page.getByTestId('tree-backdrop').click({ position: { x: 380, y: 400 } })
+    await expect(page.getByTestId('project-tree-pane')).toBeHidden()
+    await page.getByTestId('tree-open').click()
+    await page.getByTestId('agent-row').filter({ hasText: 'pocket' }).click()
+    await expect(page.getByTestId('project-tree-pane')).toBeHidden()
+    // a turn still works at this width
+    await page.getByTestId('turn-input').fill('hello')
+    await page.getByTestId('send').click()
+    await expect(page.locator('[data-item="text"]').last()).toContainText('You said: hello')
+    await page.getByTestId('tree-open').click()
+    await page.screenshot({ path: 'test-results/phone-drawer.png' })
+    await page.request.delete(`/api/projects/${projectId}`) // later cases count projects
+  })
+})
+
 test('files view: multi-repo tree, Monaco, refresh after an agent turn', async ({ page }) => {
   await login(page)
   await page.getByTestId('new-project').click()

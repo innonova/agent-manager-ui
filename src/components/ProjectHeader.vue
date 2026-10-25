@@ -156,13 +156,13 @@ const tab = (name: string) =>
   <a
     v-if="vscodeUrl"
     :href="vscodeUrl"
-    class="ml-1 rounded px-1 py-0.5 text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+    class="ml-1 hidden rounded px-1 py-0.5 text-sm text-slate-400 hover:bg-slate-100 hover:text-slate-700 md:inline dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-200"
     :title="`Open ${project?.name} in VS Code over SSH (${project?.sshHost})`"
     data-test="open-vscode"
     >VS Code</a
   >
-  <!-- the project's three views, each with what it holds for attention -->
-  <nav class="ml-2 flex gap-4 text-base">
+  <!-- the project's views, each with what it holds for attention; one row, scrolling on a phone -->
+  <nav class="ml-2 flex shrink-0 gap-4 overflow-x-auto text-base whitespace-nowrap">
     <RouterLink
       :to="{ name: 'project', params: { id } }"
       class="flex items-center gap-1.5 border-b-2 py-1"
