@@ -260,13 +260,18 @@ async function decide(requestId: string, option: string) {
 
 /**
  * Whether the last message can be offered for taking back: a Claude agent,
- * idle, with a last message that was not already withdrawn and no commit
+ * idle or exited, with a last message that was not already withdrawn and no commit
  * after it. Whether the reply left changed files behind is the manager's
  * to decide, from the repositories' state; it refuses with the list.
  */
 const canWithdraw = computed(() => {
   const row = current.value
-  if (!row || row.agent.profile !== 'claude' || row.status.state !== 'idle') return false
+  if (
+    !row ||
+    row.agent.profile !== 'claude' ||
+    (row.status.state !== 'idle' && row.status.state !== 'exited') // exited: nothing to interrupt; the withdrawal resumes afresh
+  )
+    return false
   let from = -1
   for (let i = items.value.length - 1; i >= 0; i--) {
     const it = items.value[i]?.item
