@@ -5,6 +5,19 @@
    the class on <html>, so `dark:` variants follow it rather than the OS. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* The page never scrolls as a whole: every view scrolls inside the shell's
+   main area, and the shell is as tall as the visual viewport (--app-h,
+   set from visualViewport in main.ts; 100dvh until then). On iOS that is
+   what keeps the header and the composer put while the content scrolls,
+   and brings the composer up when the keyboard does. */
+html,
+body,
+#app {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* Dark palette: VS Code's Dark+ rather than Tailwind's blue-tinted slate.
    Components keep using slate-* and blue-* classes; in dark mode those
    utilities resolve to these variables instead, so one table restyles the

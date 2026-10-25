@@ -31,7 +31,9 @@ async function submit() {
 </script>
 
 <template>
-  <div class="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-950">
+  <div
+    class="flex h-[var(--app-h,100dvh)] items-center justify-center bg-slate-50 dark:bg-slate-950"
+  >
     <form
       class="w-80 rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"
       @submit.prevent="submit"

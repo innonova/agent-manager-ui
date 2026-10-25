@@ -21,7 +21,7 @@ async function logout() {
 
 <template>
   <div
-    class="flex h-screen flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
+    class="flex h-[var(--app-h,100dvh)] flex-col bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100"
   >
     <header
       class="flex items-center gap-3 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 whitespace-nowrap md:gap-4 md:overflow-visible md:px-4 md:whitespace-normal dark:border-slate-800 dark:bg-slate-900"
@@ -61,7 +61,7 @@ async function logout() {
         log out
       </button>
     </header>
-    <main class="min-h-0 grow">
+    <main class="min-h-0 grow overflow-y-auto">
       <slot />
     </main>
   </div>
