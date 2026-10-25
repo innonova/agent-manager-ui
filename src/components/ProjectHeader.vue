@@ -162,7 +162,9 @@ const tab = (name: string) =>
     >VS Code</a
   >
   <!-- the project's views, each with what it holds for attention; one row, scrolling on a phone -->
-  <nav class="ml-2 flex shrink-0 gap-4 overflow-x-auto text-base whitespace-nowrap">
+  <nav
+    class="ml-2 flex shrink-0 gap-4 overflow-x-auto text-base whitespace-nowrap md:shrink md:overflow-visible"
+  >
     <RouterLink
       :to="{ name: 'project', params: { id } }"
       class="flex items-center gap-1.5 border-b-2 py-1"
