@@ -261,8 +261,8 @@ async function decide(requestId: string, option: string) {
 /** The permission waiting for an answer, for the phone's bar above the composer: the one place a thumb needs to reach first. */
 const pendingPermission = computed(() => {
   for (let i = items.value.length - 1; i >= 0; i--) {
-    const it = items.value[i]!.item
-    if (it.kind === 'permission') return it.decision ? null : it
+    const it = items.value[i]?.item // the array can have holes while history is paged in
+    if (it?.kind === 'permission') return it.decision ? null : it
   }
   return null
 })
