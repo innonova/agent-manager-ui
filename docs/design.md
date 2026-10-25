@@ -172,10 +172,11 @@ editable: they are what the agent is.
 
 ## Withdrawing a message
 
-"withdraw" in the agent header takes back the last message sent to a
-Claude agent (the manager's design doc, Withdrawing a message). It is
-always there for a Claude agent, disabled with the reason in its
-tooltip when it cannot be used (the agent busy, the last message
+"withdraw", at the bottom right of the last message sent, takes it
+back from a Claude agent (the manager's design doc, Withdrawing a
+message): the action sits on the thing it is about. It is always there
+on that message, disabled with the reason in its tooltip when it cannot
+be used (the agent busy, the last message
 already withdrawn, a commit after it); whether the reply left changed
 files behind is the manager's to decide from the repositories' state,
 and its refusal names them. A confirm says what it does. The

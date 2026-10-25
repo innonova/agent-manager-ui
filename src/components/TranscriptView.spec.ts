@@ -32,7 +32,7 @@ describe('TranscriptView', () => {
     })
     items[9] = stored(9, { kind: 'system', text: 'withdrawn: …', withdrawnFrom: 7 })
     const w = mount(TranscriptView, {
-      props: { items, agentId: 'a', working: false },
+      props: { items, agentId: 'a', working: false, withdrawIndex: 7, withdrawReason: null },
       global: { stubs: { RouterLink: true } },
     })
     // hidden by default, shown on request from the marker line
@@ -40,5 +40,8 @@ describe('TranscriptView', () => {
     expect(w.text()).toContain('withdrawn')
     await w.find('[data-test="withdrawn-toggle"]').trigger('click')
     expect(w.findAll('[data-withdrawn="true"]')).toHaveLength(2)
+    // the withdraw action sits on the message it is about, and emits
+    await w.find('[data-test="withdraw"]').trigger('click')
+    expect(w.emitted('withdraw')).toHaveLength(1)
   })
 })

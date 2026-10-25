@@ -6,9 +6,18 @@ import type { Item } from '@/api/types'
 import { THINKING_FOLD_CHARS } from '@/constants'
 import { when } from '@/time'
 
-const props = defineProps<{ item: Item; at?: number }>()
+const props = defineProps<{
+  item: Item
+  at?: number
+  /**
+   * On the last message sent: the withdrawal's availability, null when it
+   * can be taken back, else why not (the button shows disabled with it).
+   * Undefined on every other item.
+   */
+  withdraw?: string | null
+}>()
 const time = computed(() => (props.at ? when(props.at) : ''))
-const emit = defineEmits<{ decide: [requestId: string, option: string] }>()
+const emit = defineEmits<{ decide: [requestId: string, option: string]; withdraw: [] }>()
 /** Set on the first click; the manager's item update replaces the card with the decision. */
 const deciding = ref(false)
 /** Browsers refuse to navigate to a data: URL from a page; a blob URL opens fine. */
@@ -92,6 +101,21 @@ const cost = computed(() =>
       <span>{{ time }}</span>
     </div>
     <div class="whitespace-pre-wrap">{{ item.text }}</div>
+    <!-- the last message sent: it can be taken back from here, where it is -->
+    <div v-if="withdraw !== undefined" class="mt-1 flex justify-end">
+      <button
+        class="text-sm text-slate-500 hover:text-slate-900 hover:underline disabled:opacity-40 disabled:hover:no-underline dark:text-slate-400 dark:hover:text-slate-100"
+        :disabled="withdraw !== null"
+        :title="
+          withdraw ??
+          'take back this message: the agent will have no memory of it or of its reply (refused when the reply committed or left changed files)'
+        "
+        data-test="withdraw"
+        @click="emit('withdraw')"
+      >
+        withdraw
+      </button>
+    </div>
     <div v-if="item.images?.length" class="mt-2 flex flex-wrap gap-2" data-test="user-images">
       <a
         v-for="(img, i) in item.images"

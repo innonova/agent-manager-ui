@@ -13,8 +13,15 @@ const props = defineProps<{
   activityHeight?: number
   /** An item index to scroll to and highlight (a link from the changes tab); null to leave the view at the end. */
   scrollTo?: number | null
+  /** The last message sent, by index, and whether it can be taken back (null) or why not. */
+  withdrawIndex?: number | null
+  withdrawReason?: string | null
 }>()
-const emit = defineEmits<{ decide: [requestId: string, option: string]; loadEarlier: [] }>()
+const emit = defineEmits<{
+  decide: [requestId: string, option: string]
+  loadEarlier: []
+  withdraw: []
+}>()
 
 type ToolUse = Extract<Item, { kind: 'tool_use' }>
 type ToolResult = Extract<Item, { kind: 'tool_result' }>
@@ -197,7 +204,9 @@ onMounted(follow)
               :item="r.item"
               :at="r.at"
               :data-index="r.key"
+              :withdraw="r.key === withdrawIndex ? (withdrawReason ?? null) : undefined"
               @decide="(id, o) => emit('decide', id, o)"
+              @withdraw="emit('withdraw')"
             />
           </div>
         </template>
