@@ -178,8 +178,10 @@ shown when the agent is idle and nothing after the message committed;
 whether the reply left changed files behind is the manager's to decide
 from the repositories' state, and its refusal names them. A confirm
 says what it does. The
-withdrawn items stay in the transcript at reduced opacity under the
-marker the manager appends, titled as no longer in the agent's context.
+withdrawn items are hidden: the marker the manager appends is one
+line, "withdrawn: …", with a show/hide toggle for the record, since the
+daemon's log keeps them and they say what the agent did. Shown, they
+are at reduced opacity and titled as no longer in the agent's context.
 
 ## Dialogs
 

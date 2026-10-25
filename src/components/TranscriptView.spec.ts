@@ -20,7 +20,7 @@ const stored = (index: number, item: StoredItem['item']): StoredItem => ({
 })
 
 describe('TranscriptView', () => {
-  it('renders a sparse item array and folds the withdrawn range', () => {
+  it('renders a sparse item array and hides the withdrawn range until asked', async () => {
     setActivePinia(createPinia())
     const items: StoredItem[] = []
     items.length = 10 // holes 0..6: earlier history not loaded
@@ -35,7 +35,10 @@ describe('TranscriptView', () => {
       props: { items, agentId: 'a', working: false },
       global: { stubs: { RouterLink: true } },
     })
-    expect(w.findAll('[data-withdrawn="true"]')).toHaveLength(2)
+    // hidden by default, shown on request from the marker line
+    expect(w.findAll('[data-withdrawn="true"]')).toHaveLength(0)
     expect(w.text()).toContain('withdrawn')
+    await w.find('[data-test="withdrawn-toggle"]').trigger('click')
+    expect(w.findAll('[data-withdrawn="true"]')).toHaveLength(2)
   })
 })

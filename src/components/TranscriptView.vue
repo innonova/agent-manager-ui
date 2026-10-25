@@ -39,6 +39,18 @@ const withdrawn = computed(() => {
   }
   return out
 })
+/** Withdrawn items shown on request, by index; a marker's toggle flips its whole range. */
+const shown = ref(new Set<number>())
+function toggleWithdrawn(from: number, marker: number) {
+  const next = new Set(shown.value)
+  const on = !next.has(from)
+  for (const t of props.items)
+    if (t && t.index >= from && t.index < marker) {
+      if (on) next.add(t.index)
+      else next.delete(t.index)
+    }
+  shown.value = next
+}
 const rows = computed<Row[]>(() => {
   const out: Row[] = []
   const calls = new Map<string, Row & { kind: 'tool' }>()
@@ -149,26 +161,46 @@ onMounted(follow)
         {{ loadingEarlier ? 'loading earlier…' : 'load earlier' }}
       </button>
       <template v-for="r in rows" :key="r.key">
-        <!-- withdrawn: still the record of what happened, no longer in the agent's context -->
-        <div
-          :class="withdrawn.has(r.key) ? 'opacity-40' : ''"
-          :title="withdrawn.has(r.key) ? 'withdrawn: no longer in the agent\'s context' : undefined"
-          :data-withdrawn="withdrawn.has(r.key) ? 'true' : undefined"
-        >
-          <ToolCallItem
-            v-if="r.kind === 'tool'"
-            :call="r.call"
-            :result="r.result"
-            :data-index="r.key"
-          />
-          <TranscriptItem
-            v-else
-            :item="r.item"
-            :at="r.at"
-            :data-index="r.key"
-            @decide="(id, o) => emit('decide', id, o)"
-          />
-        </div>
+        <!-- withdrawn: out of the agent's context and out of the way here; the marker line shows them on request -->
+        <template v-if="!withdrawn.has(r.key) || shown.has(r.key)">
+          <div
+            :class="withdrawn.has(r.key) ? 'opacity-40' : ''"
+            :title="
+              withdrawn.has(r.key) ? 'withdrawn: no longer in the agent\'s context' : undefined
+            "
+            :data-withdrawn="withdrawn.has(r.key) ? 'true' : undefined"
+          >
+            <ToolCallItem
+              v-if="r.kind === 'tool'"
+              :call="r.call"
+              :result="r.result"
+              :data-index="r.key"
+            />
+            <template v-else-if="r.item.kind === 'system' && r.item.withdrawnFrom !== undefined">
+              <div
+                class="text-sm text-slate-400 dark:text-slate-500"
+                data-item="system"
+                :data-index="r.key"
+              >
+                {{ r.item.text }}
+                <button
+                  class="ml-2 hover:underline"
+                  data-test="withdrawn-toggle"
+                  @click="toggleWithdrawn(r.item.withdrawnFrom, r.key)"
+                >
+                  {{ shown.has(r.item.withdrawnFrom) ? 'hide' : 'show' }}
+                </button>
+              </div>
+            </template>
+            <TranscriptItem
+              v-else
+              :item="r.item"
+              :at="r.at"
+              :data-index="r.key"
+              @decide="(id, o) => emit('decide', id, o)"
+            />
+          </div>
+        </template>
       </template>
       <p v-if="rows.length === 0" class="text-base text-slate-400 dark:text-slate-500">
         No transcript yet.
