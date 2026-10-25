@@ -28,6 +28,17 @@ body {
   height: 100%;
 }
 
+/* iOS zooms into a field whose text is under 16 px, and a home-screen
+   app never zooms back out; the app's base size is 14. Fields keep the
+   page's look but never go under 16 px on a phone. */
+@media (max-width: 767px) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* Dark palette: VS Code's Dark+ rather than Tailwind's blue-tinted slate.
    Components keep using slate-* and blue-* classes; in dark mode those
    utilities resolve to these variables instead, so one table restyles the

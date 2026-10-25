@@ -594,12 +594,15 @@ viewport and offset by its pan (`--app-h`, `--app-top`, set from
 `visualViewport` in `main.ts`). That is what keeps the header and the
 composer put on iOS while the content scrolls, and brings the composer
 up with the keyboard, which shrinks and pans the visual viewport, not
-the layout one. The header pads for a translucent status bar
-(`env(safe-area-inset-top)`, 0 with the opaque one), since iOS reads
-the status bar tag when the app is added to the home screen, not after. The status bar is opaque (the
-Apple meta tag's `default`): the translucent one blurred the header
-and sat over it. `viewport-fit=cover`, and the composer pads for the
-home indicator with `env(safe-area-inset-bottom)`. The top bar scrolls
+the layout one. iOS reads the status bar tag when the app is added to the home
+screen, not after, so an app added under the translucent setting keeps
+it until it is removed and added again. The status bar is opaque (the
+Apple meta tag's `default`) and the page starts below it: the
+translucent one blurred the header and sat over it, and
+`viewport-fit=cover` invited iOS to draw its bar over the page even
+with the opaque style, so neither is used. Fields never go under 16 px
+on a phone, since iOS zooms into a smaller one and a home-screen app
+never zooms back. The top bar scrolls
 sideways rather than wrapping, the brand link and the VS Code link stay
 off a phone, and the resize handles are gone below `md`. Wider screens
 are unchanged, pane widths included.
