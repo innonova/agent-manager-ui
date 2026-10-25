@@ -587,13 +587,16 @@ agent is chosen. The transcript takes the width, the agent header line
 wraps, the composer's field keeps a minimum width so the buttons wrap
 under it rather than squeeze it. The files and changes views stack
 their panes top to bottom instead of left to right. The page itself
-never scrolls: `html`, `body` and `#app` are `overflow: hidden`, every
-view scrolls inside the shell's main area, and the shell is as tall as
-the visual viewport (`--app-h`, set from `visualViewport` in `main.ts`,
-`100dvh` until then). That is what keeps the header and the composer
-put on iOS while the content scrolls, and brings the composer up with
-the keyboard, which iOS does not shrink the layout viewport for; iOS's
-own scroll to a focused field is undone. The status bar is opaque (the
+never scrolls: the body is pinned with `position: fixed` (iOS ignores
+`overflow: hidden` on it for touch scrolling), every view scrolls
+inside the shell's main area, and the shell is as tall as the visual
+viewport and offset by its pan (`--app-h`, `--app-top`, set from
+`visualViewport` in `main.ts`). That is what keeps the header and the
+composer put on iOS while the content scrolls, and brings the composer
+up with the keyboard, which shrinks and pans the visual viewport, not
+the layout one. The header pads for a translucent status bar
+(`env(safe-area-inset-top)`, 0 with the opaque one), since iOS reads
+the status bar tag when the app is added to the home screen, not after. The status bar is opaque (the
 Apple meta tag's `default`): the translucent one blurred the header
 and sat over it. `viewport-fit=cover`, and the composer pads for the
 home indicator with `env(safe-area-inset-bottom)`. The top bar scrolls

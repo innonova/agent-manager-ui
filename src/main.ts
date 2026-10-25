@@ -22,8 +22,9 @@ app.mount('#app')
 const vv = window.visualViewport
 if (vv) {
   const fit = () => {
-    document.documentElement.style.setProperty('--app-h', `${Math.round(vv.height)}px`)
-    if (window.scrollY) window.scrollTo(0, 0)
+    const root = document.documentElement.style
+    root.setProperty('--app-h', `${Math.round(vv.height)}px`)
+    root.setProperty('--app-top', `${Math.round(vv.offsetTop)}px`) // iOS pans the visual viewport for the keyboard
   }
   vv.addEventListener('resize', fit)
   vv.addEventListener('scroll', fit)
