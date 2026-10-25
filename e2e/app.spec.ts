@@ -233,6 +233,26 @@ test('desktop notifications: opt in, then a finished turn notifies when the page
   await expect(page.getByTestId('notify-toggle')).toBeChecked() // persisted
 })
 
+test('installable: the manifest and the push worker are served, and the settings menu offers push', async ({
+  page,
+}) => {
+  const manifest = await page.request.get('/manifest.webmanifest')
+  expect(manifest.status()).toBe(200)
+  expect(await manifest.json()).toMatchObject({ name: 'agent-manager', display: 'standalone' })
+  for (const p of ['/sw.js', '/icon-192.png', '/icon-512.png'])
+    expect((await page.request.get(p)).status(), p).toBe(200)
+  await login(page)
+  await expect(page.locator('link[rel=manifest]')).toHaveAttribute('href', '/manifest.webmanifest')
+  await page.getByTestId('settings').click()
+  await expect(page.getByTestId('push-toggle')).toBeVisible()
+  await expect(page.getByTestId('push-hint')).toContainText(/tab closed|Not available|Blocked/)
+  // the manager's side: a key, and a test with no device says so
+  expect((await (await page.request.get('/api/push/key')).json()).publicKey).toMatch(
+    /^[A-Za-z0-9_-]{80,}$/,
+  )
+  expect(await (await page.request.post('/api/push/test')).json()).toEqual({ sent: 0 })
+})
+
 test('a newer build on the server shows an update badge that reloads', async ({ page }) => {
   await login(page)
   await expect(page.getByTestId('update-available')).toHaveCount(0)

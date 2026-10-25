@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { RouterLink } from 'vue-router'
+import { api, ApiError } from '@/api/client'
+import { disable as pushDisable, enable as pushEnable, state as pushState } from '@/push'
+import { useNotificationsStore } from '@/stores/notifications'
 import { FONT_SIZES, usePreferencesStore, type Theme } from '@/stores/preferences'
 
 const prefs = usePreferencesStore()
+const notifications = useNotificationsStore()
 const open = ref(false)
 const el = ref<HTMLElement | null>(null)
 const themes: { value: Theme; label: string }[] = [
@@ -14,6 +18,42 @@ const themes: { value: Theme; label: string }[] = [
 
 /** Tracked as state: the browser's permission can change under us when the user answers its prompt. */
 const permission = ref(prefs.notificationPermission())
+/** Web push for this browser; read when the menu opens, since a subscription lives outside our store. */
+const push = ref<'unsupported' | 'off' | 'on' | 'blocked'>('unsupported')
+const pushBusy = ref(false)
+watch(open, (o) => {
+  if (o) void pushState().then((s) => (push.value = s))
+})
+async function togglePush(e: Event) {
+  const box = e.target as HTMLInputElement
+  pushBusy.value = true
+  try {
+    if (box.checked) {
+      const ok = await pushEnable()
+      push.value = ok ? 'on' : await pushState()
+    } else {
+      await pushDisable()
+      push.value = 'off'
+    }
+  } catch (err) {
+    notifications.push('error', err instanceof ApiError ? err.message : String(err))
+    push.value = await pushState()
+  } finally {
+    pushBusy.value = false
+    box.checked = push.value === 'on'
+  }
+}
+async function testPush() {
+  try {
+    const { sent } = await api.pushTest()
+    notifications.push(
+      'info',
+      sent ? `sent to ${sent} device${sent === 1 ? '' : 's'}` : 'no device is subscribed',
+    )
+  } catch (err) {
+    notifications.push('error', err instanceof ApiError ? err.message : String(err))
+  }
+}
 async function toggleNotifications(e: Event) {
   const box = e.target as HTMLInputElement
   await prefs.setDesktopNotifications(box.checked)
@@ -109,6 +149,33 @@ onBeforeUnmount(() => document.removeEventListener('click', onDocClick))
           permission === 'denied'
             ? 'Blocked by the browser; allow notifications for this site first.'
             : 'When an agent is ready or needs input and this page is not in front.'
+        }}
+      </p>
+      <label class="mt-2 flex items-center gap-2">
+        <input
+          type="checkbox"
+          :checked="push === 'on'"
+          :disabled="push === 'unsupported' || push === 'blocked' || pushBusy"
+          data-test="push-toggle"
+          @change="togglePush($event)"
+        />
+        <span>Push to this device</span>
+        <button
+          v-if="push === 'on'"
+          class="ml-auto text-sm text-blue-700 hover:underline dark:text-blue-300"
+          data-test="push-test"
+          @click="testPush"
+        >
+          send a test
+        </button>
+      </label>
+      <p class="mt-1 text-sm text-slate-500 dark:text-slate-400" data-test="push-hint">
+        {{
+          push === 'unsupported'
+            ? 'Not available in this browser; on an iPhone, add the site to the home screen first.'
+            : push === 'blocked'
+              ? 'Blocked by the browser; allow notifications for this site first.'
+              : 'The same, with the tab closed and the phone in a pocket: an agent needs your input, failed, or finished a turn you sent.'
         }}
       </p>
       <RouterLink

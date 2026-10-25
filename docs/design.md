@@ -557,6 +557,26 @@ connects with the person's own SSH config and opens the workspace; the
 UI does nothing else, and a project on a spoke opens on the spoke. The
 link is absent when the manager reports no workspace (an older one).
 
+## Installable, and push
+
+`manifest.webmanifest` (name, icons at 192 and 512, standalone
+display) and the Apple meta tags make the site an app on a home
+screen: full screen, its own icon, and on iOS the only way push works
+at all. `sw.js` is a service worker for push and nothing else: no
+caching, since the app needs the manager anyway and a stale build
+arguing with the update badge is a bug nobody wants. A push shows a
+notification (title, body, one per agent by `tag`); a tap opens the
+agent in a window of the app if one is open, else a new one. The
+settings menu has "Push to this device" under the desktop
+notifications: on, it asks the browser, subscribes with the manager's
+public key and hands the subscription over (`src/push.ts`); off, it
+unsubscribes both ends; "send a test" asks the manager to push to this
+user's devices and says how many. The state is read from the browser
+when the menu opens, since a subscription lives outside the store. What
+is pushed and when is the manager's rule (its design doc, Push). On a
+browser without the APIs, or an iPhone not on the home screen, the
+toggle is disabled with a line saying so.
+
 ## Phone widths
 
 Below Tailwind's `md` (768 px) the panes give way to one thing at a

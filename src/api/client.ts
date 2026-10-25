@@ -203,6 +203,17 @@ export const api = {
   removeNote: (projectId: string, id: string) =>
     call<Notes>('DELETE', `/api/projects/${projectId}/notes/${id}`),
 
+  /** Web push: the manager's public key, this browser's subscription in and out, and a test to see it arrive. */
+  pushKey: () => call<{ publicKey: string }>('GET', '/api/push/key'),
+  pushSubscribe: (subscription: unknown) =>
+    call<{ count: number }>('POST', '/api/push/subscriptions', { subscription }),
+  pushUnsubscribe: (endpoint: string) =>
+    call<{ count: number }>(
+      'DELETE',
+      `/api/push/subscriptions?endpoint=${encodeURIComponent(endpoint)}`,
+    ),
+  pushTest: () => call<{ sent: number }>('POST', '/api/push/test', {}),
+
   users: () => call<{ users: User[] }>('GET', '/api/users'),
   createUser: (name: string) =>
     call<{ user: User; password: string }>('POST', '/api/users', { name }),
