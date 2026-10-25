@@ -287,7 +287,7 @@ test('a draft survives switching tabs and reloading', async ({ page }) => {
 })
 
 test.describe('phone', () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true })
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true })
 
   test('the tree is a drawer and the transcript takes the width', async ({ page }) => {
     await login(page)
@@ -305,7 +305,7 @@ test.describe('phone', () => {
     // an agent open: the tree is gone, the transcript spans the viewport
     await expect(page.getByTestId('project-tree-pane')).toBeHidden()
     const box = (await page.getByTestId('turn-input').boundingBox())!
-    expect(box.width).toBeGreaterThan(250) // the field with the send button beside it, across a 390 px screen
+    expect(box.width).toBeGreaterThan(330) // the field takes its whole row on a phone; the buttons sit under it
     // the drawer: opens over the transcript, closes on the backdrop and on choosing an agent
     await page.getByTestId('tree-open').click()
     await expect(page.getByTestId('project-tree-pane')).toBeVisible()
@@ -326,6 +326,26 @@ test.describe('phone', () => {
     await page.getByTestId('turn-input').fill('hello')
     await page.getByTestId('send').click()
     await expect(page.locator('[data-item="text"]').last()).toContainText('You said: hello')
+    // touch: the camera button shows, the placeholder has no modifier hint
+    await expect(page.getByTestId('attach')).toBeVisible()
+    await expect(page.getByTestId('turn-input')).toHaveAttribute(
+      'placeholder',
+      /^Message the agent…$/,
+    )
+    // a permission asked by an ask-mode agent: answered from the bar above the composer
+    await page.getByTestId('tree-open').click()
+    await page.getByTestId('new-agent').click()
+    await page.getByTestId('agent-name-input').fill('careful')
+    await page.getByTestId('agent-permissions').selectOption('ask')
+    await page.getByTestId('form-submit').click()
+    await expect(page.getByTestId('agent-name')).toHaveText('careful') // the new agent's own composer
+    await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+    await page.getByTestId('turn-input').fill('ask permission please')
+    await page.getByTestId('send').click()
+    await expect(page.getByTestId('permission-bar')).toBeVisible()
+    await page.getByTestId('permission-bar-allow').click()
+    await expect(page.getByTestId('permission-bar')).toHaveCount(0)
+    await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
     await page.getByTestId('tree-open').click()
     await page.screenshot({ path: 'test-results/phone-drawer.png' })
     await page.request.delete(`/api/projects/${projectId}`) // later cases count projects

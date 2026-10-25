@@ -117,7 +117,7 @@ async function saveEdit() {
           >
             <input
               type="checkbox"
-              class="mt-1.5 h-4 w-4"
+              class="mt-1.5 h-4 w-4 pointer-coarse:h-6 pointer-coarse:w-6"
               :checked="false"
               title="done"
               data-test="note-tick"
@@ -136,8 +136,18 @@ async function saveEdit() {
                 />
               </template>
               <template v-else>
-                <div class="text-base" data-test="note-title" @dblclick="startEdit(n)">
-                  {{ n.title }}
+                <div class="flex items-baseline gap-2">
+                  <div class="text-base" data-test="note-title" @dblclick="startEdit(n)">
+                    {{ n.title }}
+                  </div>
+                  <button
+                    class="hidden text-sm text-slate-400 dark:text-slate-500 pointer-coarse:inline"
+                    title="edit"
+                    data-test="note-edit-button"
+                    @click.stop="startEdit(n)"
+                  >
+                    edit
+                  </button>
                 </div>
                 <div
                   v-if="n.body"
@@ -155,7 +165,7 @@ async function saveEdit() {
               >{{ n.date }} #{{ n.id }}</span
             >
             <button
-              class="shrink-0 pt-1 text-sm text-slate-400 hover:text-red-700 dark:text-slate-500 dark:hover:text-red-300"
+              class="shrink-0 pt-1 text-sm text-slate-400 hover:text-red-700 dark:text-slate-500 dark:hover:text-red-300 pointer-coarse:px-3 pointer-coarse:text-lg"
               title="remove this note"
               data-test="note-remove"
               @click="remove(n)"
@@ -186,7 +196,7 @@ async function saveEdit() {
             >
               <input
                 type="checkbox"
-                class="mt-1.5 h-4 w-4"
+                class="mt-1.5 h-4 w-4 pointer-coarse:h-6 pointer-coarse:w-6"
                 checked
                 title="reopen"
                 data-test="note-untick"

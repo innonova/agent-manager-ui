@@ -31,6 +31,13 @@ body {
 /* iOS zooms into a field whose text is under 16 px, and a home-screen
    app never zooms back out; the app's base size is 14. Fields keep the
    page's look but never go under 16 px on a phone. */
+/* No double-tap zoom on anything meant to be tapped. */
+button,
+a,
+input[type='checkbox'] {
+  touch-action: manipulation;
+}
+
 @media (max-width: 767px) {
   input,
   textarea,

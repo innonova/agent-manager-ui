@@ -258,6 +258,14 @@ async function decide(requestId: string, option: string) {
   }
 }
 
+/** The permission waiting for an answer, for the phone's bar above the composer: the one place a thumb needs to reach first. */
+const pendingPermission = computed(() => {
+  for (let i = items.value.length - 1; i >= 0; i--) {
+    const it = items.value[i]!.item
+    if (it.kind === 'permission') return it.decision ? null : it
+  }
+  return null
+})
 const turnInput = ref<InstanceType<typeof TurnInput> | null>(null)
 async function send(text: string, images: TurnImage[] = []) {
   if (!props.agentId) return
@@ -443,11 +451,11 @@ async function archive() {
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
             </span>
             <div
-              class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700"
+              class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700 pointer-coarse:text-base"
               data-test="agent-actions"
             >
               <button
-                class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                class="px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
                 title="edit the agent: name, model, effort, permissions"
                 data-test="edit-agent"
                 @click="startEditAgent"
@@ -456,7 +464,7 @@ async function archive() {
               </button>
               <button
                 v-if="current.status.state !== 'exited'"
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
                 title="end the session; the next message resumes it"
                 data-test="stop"
                 @click="stop"
@@ -464,7 +472,7 @@ async function archive() {
                 stop
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
                 title="stop and resume with the current settings (repositories, harness note); the conversation continues"
                 data-test="restart"
                 @click="restart"
@@ -472,7 +480,7 @@ async function archive() {
                 restart
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
                 title="end the session and take the agent off the list; its transcript stays"
                 data-test="archive"
                 @click="archive"
@@ -480,7 +488,7 @@ async function archive() {
                 archive
               </button>
               <button
-                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-red-950"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-red-50 hover:text-red-700 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-red-950 pointer-coarse:px-3 pointer-coarse:py-2"
                 title="forget this agent for good: its process, the daemon's logs of its sessions, the cached transcript; the vendor's own store stays"
                 data-test="delete"
                 @click="remove"
@@ -558,6 +566,31 @@ async function archive() {
             :tool-name="activeToolName"
             @resize="activityHeight = $event"
           />
+        </div>
+        <!-- a phone: the permission's answers as big buttons above the composer, until answered -->
+        <div
+          v-if="pendingPermission"
+          class="flex items-center gap-2 border-t border-amber-400 bg-amber-50 px-3 py-2 md:hidden dark:border-amber-600 dark:bg-amber-950"
+          data-test="permission-bar"
+        >
+          <span class="min-w-0 grow truncate text-sm text-amber-900 dark:text-amber-100"
+            ><span class="font-mono font-semibold">{{ pendingPermission.tool }}</span>
+            {{ pendingPermission.title }}</span
+          >
+          <button
+            v-for="o in pendingPermission.options"
+            :key="o.id"
+            class="shrink-0 rounded border px-4 py-3 text-base"
+            :class="
+              o.kind === 'deny'
+                ? 'border-red-400 text-red-800 dark:border-red-700 dark:text-red-200'
+                : 'border-emerald-500 bg-white text-emerald-800 dark:bg-slate-900 dark:text-emerald-200'
+            "
+            :data-test="`permission-bar-${o.kind}`"
+            @click="decide(pendingPermission.requestId, o.id)"
+          >
+            {{ o.label }}
+          </button>
         </div>
         <TurnInput
           ref="turnInput"

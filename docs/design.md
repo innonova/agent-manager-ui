@@ -577,6 +577,23 @@ is pushed and when is the manager's rule (its design doc, Push). On a
 browser without the APIs, or an iPhone not on the home screen, the
 toggle is disabled with a line saying so.
 
+## Touch
+
+Tailwind's `pointer-coarse:` variant carries the touch changes, so a
+mouse sees nothing of them: the agent actions, the tabs, the
+permission card's buttons, the note rows' controls and the composer's
+buttons are taller for a thumb; the composer's placeholder drops the
+modifier hint (a phone keyboard has none, the button is the way) and
+gains a camera button that opens the photo roll into the same
+attachments a desktop pastes into; a note gets an edit button where
+double-click is not a thing. The composer's field grows with its text
+up to its cap on every pointer, and on a phone takes its whole row with
+the buttons under it. A permission waiting for an answer is also, below
+`md`, a bar above the composer with its options as big buttons, until
+answered, since that is what a thumb reaches for first. Everything
+tappable has `touch-action: manipulation`, so a double tap does not
+zoom.
+
 ## Phone widths
 
 Below Tailwind's `md` (768 px) the panes give way to one thing at a

@@ -125,9 +125,28 @@ function onInput() {
   if (text.value.trim()) emit('typing')
   else emit('stoppedTyping')
 }
-/** One rule, shown in the placeholder: Enter is a newline, the modifier or the button sends. */
+/** One rule, shown in the placeholder: Enter is a newline, the modifier or the button sends. A phone keyboard has no modifier; there the button is the way and the placeholder says nothing. */
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform)
-const hint = isMac ? '⌘+Enter to send' : 'Ctrl+Enter to send'
+const coarse = window.matchMedia('(pointer: coarse)').matches
+const hint = coarse ? '' : isMac ? ' (⌘+Enter to send)' : ' (Ctrl+Enter to send)'
+
+/** The field grows with its text up to its cap, so a long message is read whole while it is written. */
+function grow() {
+  const el = box.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${Math.min(el.scrollHeight, 288)}px`
+}
+watch(text, () => void nextTick(grow))
+onMounted(grow)
+
+/** A phone attaches from the camera roll; a desktop pastes or drops. */
+const picker = ref<HTMLInputElement | null>(null)
+function onPick(e: Event) {
+  const input = e.target as HTMLInputElement
+  void attach(Array.from(input.files ?? []))
+  input.value = ''
+}
 
 function send() {
   const t = text.value.trim()
@@ -189,20 +208,20 @@ function onKey(e: KeyboardEvent) {
           attachError
         }}</span>
       </div>
-      <div class="flex items-end gap-2">
+      <div class="flex flex-wrap items-end gap-2 md:flex-nowrap">
         <textarea
           ref="box"
           v-model="text"
           rows="2"
-          class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700"
+          class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700 pointer-coarse:py-3"
           :placeholder="
             state === 'exited'
               ? 'Send a message to resume the agent…'
               : state === 'waiting-permission'
                 ? 'The agent is waiting for your answer above.'
                 : state === 'working'
-                  ? `Steer the agent… (${hint})`
-                  : `Message the agent… (${hint})`
+                  ? `Steer the agent…${hint}`
+                  : `Message the agent…${hint}`
           "
           :disabled="disabled"
           spellcheck="true"
@@ -214,15 +233,33 @@ function onKey(e: KeyboardEvent) {
         <button
           v-if="state === 'working'"
           type="button"
-          class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950"
+          class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950 pointer-coarse:py-3"
           data-test="interrupt"
           @click="emit('interrupt')"
         >
           interrupt
         </button>
+        <input
+          ref="picker"
+          type="file"
+          accept="image/png,image/jpeg,image/gif,image/webp"
+          multiple
+          class="hidden"
+          data-test="attach-picker"
+          @change="onPick"
+        />
+        <button
+          type="button"
+          class="hidden rounded border border-slate-300 px-3 py-3 text-base text-slate-600 dark:border-slate-700 dark:text-slate-300 pointer-coarse:inline-block"
+          title="attach a photo"
+          data-test="attach"
+          @click="picker?.click()"
+        >
+          📷
+        </button>
         <button
           type="submit"
-          class="rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50"
+          class="ml-auto rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50 md:ml-0 pointer-coarse:px-5 pointer-coarse:py-3"
           :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
           data-test="send"
           :title="
