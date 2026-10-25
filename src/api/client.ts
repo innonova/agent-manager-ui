@@ -143,6 +143,8 @@ export const api = {
       ...(images.length ? { images } : {}),
     }),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),
+  /** Withdraws the last message sent to the agent; 409 with a code when it cannot be. */
+  undo: (id: string) => call<{ withdrawn: number }>('POST', `/api/agents/${id}/undo`, {}),
   stop: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/stop`, {}),
   /** Stops and resumes one agent with the current settings; the manager refuses (409) while it is busy. */
   restart: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/restart`, {}),

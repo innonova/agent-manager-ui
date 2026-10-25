@@ -187,7 +187,12 @@ export type Item =
   | { kind: 'tool_use'; id: string; name: string; input: unknown }
   | { kind: 'tool_result'; toolUseId: string; output: string; isError: boolean }
   | { kind: 'error'; message: string }
-  | { kind: 'system'; text: string }
+  | {
+      kind: 'system'
+      text: string
+      /** On a withdrawal's marker: the items from this index to the marker are no longer in the agent's context. */
+      withdrawnFrom?: number
+    }
   | { kind: 'turn_end'; usage?: Record<string, unknown>; costUsd?: number; durationMs?: number }
 
 export interface StoredItem {

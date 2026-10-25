@@ -258,6 +258,55 @@ async function decide(requestId: string, option: string) {
   }
 }
 
+/** Tools that only look; the manager keeps the same list and decides. */
+const READ_ONLY_TOOLS = new Set([
+  'Read',
+  'Glob',
+  'Grep',
+  'LS',
+  'WebFetch',
+  'WebSearch',
+  'ToolSearch',
+  'view',
+  'grep',
+  'glob',
+])
+/**
+ * Whether the last message can be taken back: a Claude agent, idle, and
+ * nothing after the message but reads. Offered only then, since a turn
+ * that ran a command or edited is not undone by taking the text back.
+ */
+const canWithdraw = computed(() => {
+  const row = current.value
+  if (!row || row.agent.profile !== 'claude' || row.status.state !== 'idle') return false
+  let from = -1
+  for (let i = items.value.length - 1; i >= 0; i--) {
+    const it = items.value[i]?.item
+    if (it?.kind === 'user' && it.text) {
+      from = i
+      break
+    }
+  }
+  if (from < 0) return false
+  for (let i = from + 1; i < items.value.length; i++) {
+    const it = items.value[i]?.item
+    if (!it) continue
+    if (it.kind === 'tool_use' && !READ_ONLY_TOOLS.has(it.name)) return false
+    if (it.kind === 'system' && (it.text.startsWith('committed') || it.withdrawnFrom !== undefined))
+      return false
+  }
+  return true
+})
+async function withdraw() {
+  if (!props.agentId) return
+  if (!confirm('Take back your last message? The agent will have no memory of it or of its reply.'))
+    return
+  try {
+    await api.undo(props.agentId)
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
 /** The permission waiting for an answer, for the phone's bar above the composer: the one place a thumb needs to reach first. */
 const pendingPermission = computed(() => {
   for (let i = items.value.length - 1; i >= 0; i--) {
@@ -461,6 +510,15 @@ async function archive() {
                 @click="startEditAgent"
               >
                 edit
+              </button>
+              <button
+                v-if="canWithdraw"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 pointer-coarse:px-3 pointer-coarse:py-2"
+                title="take back your last message: the agent will have no memory of it or of its reply (offered only when the reply did nothing but read)"
+                data-test="withdraw"
+                @click="withdraw"
+              >
+                withdraw
               </button>
               <button
                 v-if="current.status.state !== 'exited'"

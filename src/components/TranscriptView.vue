@@ -27,6 +27,18 @@ type Row =
  * is folded under the call that produced it rather than listed after it.
  * Results whose call is not in the transcript stay as plain items.
  */
+/** Indexes of items a withdrawal took out of the agent's context: from each marker's `withdrawnFrom` up to the marker, system lines aside. */
+const withdrawn = computed(() => {
+  const out = new Set<number>()
+  for (const s of props.items) {
+    const it = s.item
+    if (it.kind !== 'system' || it.withdrawnFrom === undefined) continue
+    for (const t of props.items)
+      if (t.index >= it.withdrawnFrom && t.index < s.index && t.item.kind !== 'system')
+        out.add(t.index)
+  }
+  return out
+})
 const rows = computed<Row[]>(() => {
   const out: Row[] = []
   const calls = new Map<string, Row & { kind: 'tool' }>()
@@ -137,19 +149,26 @@ onMounted(follow)
         {{ loadingEarlier ? 'loading earlier…' : 'load earlier' }}
       </button>
       <template v-for="r in rows" :key="r.key">
-        <ToolCallItem
-          v-if="r.kind === 'tool'"
-          :call="r.call"
-          :result="r.result"
-          :data-index="r.key"
-        />
-        <TranscriptItem
-          v-else
-          :item="r.item"
-          :at="r.at"
-          :data-index="r.key"
-          @decide="(id, o) => emit('decide', id, o)"
-        />
+        <!-- withdrawn: still the record of what happened, no longer in the agent's context -->
+        <div
+          :class="withdrawn.has(r.key) ? 'opacity-40' : ''"
+          :title="withdrawn.has(r.key) ? 'withdrawn: no longer in the agent\'s context' : undefined"
+          :data-withdrawn="withdrawn.has(r.key) ? 'true' : undefined"
+        >
+          <ToolCallItem
+            v-if="r.kind === 'tool'"
+            :call="r.call"
+            :result="r.result"
+            :data-index="r.key"
+          />
+          <TranscriptItem
+            v-else
+            :item="r.item"
+            :at="r.at"
+            :data-index="r.key"
+            @decide="(id, o) => emit('decide', id, o)"
+          />
+        </div>
       </template>
       <p v-if="rows.length === 0" class="text-base text-slate-400 dark:text-slate-500">
         No transcript yet.
