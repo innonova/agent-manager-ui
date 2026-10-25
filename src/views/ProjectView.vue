@@ -258,23 +258,11 @@ async function decide(requestId: string, option: string) {
   }
 }
 
-/** Tools that only look; the manager keeps the same list and decides. */
-const READ_ONLY_TOOLS = new Set([
-  'Read',
-  'Glob',
-  'Grep',
-  'LS',
-  'WebFetch',
-  'WebSearch',
-  'ToolSearch',
-  'view',
-  'grep',
-  'glob',
-])
 /**
- * Whether the last message can be taken back: a Claude agent, idle, and
- * nothing after the message but reads. Offered only then, since a turn
- * that ran a command or edited is not undone by taking the text back.
+ * Whether the last message can be offered for taking back: a Claude agent,
+ * idle, with a last message that was not already withdrawn and no commit
+ * after it. Whether the reply left changed files behind is the manager's
+ * to decide, from the repositories' state; it refuses with the list.
  */
 const canWithdraw = computed(() => {
   const row = current.value
@@ -290,9 +278,10 @@ const canWithdraw = computed(() => {
   if (from < 0) return false
   for (let i = from + 1; i < items.value.length; i++) {
     const it = items.value[i]?.item
-    if (!it) continue
-    if (it.kind === 'tool_use' && !READ_ONLY_TOOLS.has(it.name)) return false
-    if (it.kind === 'system' && (it.text.startsWith('committed') || it.withdrawnFrom !== undefined))
+    if (
+      it?.kind === 'system' &&
+      (it.text.startsWith('committed') || it.withdrawnFrom !== undefined)
+    )
       return false
   }
   return true
@@ -514,7 +503,7 @@ async function archive() {
               <button
                 v-if="canWithdraw"
                 class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
-                title="take back your last message: the agent will have no memory of it or of its reply (offered only when the reply did nothing but read)"
+                title="take back your last message: the agent will have no memory of it or of its reply (refused when the reply committed or left changed files)"
                 data-test="withdraw"
                 @click="withdraw"
               >

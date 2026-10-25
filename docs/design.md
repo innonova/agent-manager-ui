@@ -174,9 +174,10 @@ editable: they are what the agent is.
 
 "withdraw" in the agent header takes back the last message sent to a
 Claude agent (the manager's design doc, Withdrawing a message). It is
-shown only when the withdrawal would be clean: the agent idle, and
-nothing after the message but reads, by the same list of read-only
-tools the manager decides with; a confirm says what it does. The
+shown when the agent is idle and nothing after the message committed;
+whether the reply left changed files behind is the manager's to decide
+from the repositories' state, and its refusal names them. A confirm
+says what it does. The
 withdrawn items stay in the transcript at reduced opacity under the
 marker the manager appends, titled as no longer in the agent's context.
 
