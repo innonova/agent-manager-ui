@@ -37,7 +37,11 @@ onMounted(() => {
     renderOverviewRuler: false,
   })
   setModels()
-  observer = new ResizeObserver(() => editor?.layout())
+  // explicit dimensions: the diff editor asked to measure itself keeps its old height
+  observer = new ResizeObserver(() => {
+    const box = el.value
+    if (box) editor?.layout({ width: box.clientWidth, height: box.clientHeight })
+  })
   observer.observe(el.value!)
 })
 

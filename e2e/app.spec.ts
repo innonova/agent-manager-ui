@@ -10,6 +10,12 @@ async function details(page: Page) {
     await page.getByTestId('agent-details-toggle').click()
 }
 
+/** How far the shell's main area overflows, in px: the page never scrolls as a whole. */
+const pageOverflow = (page: Page) =>
+  page
+    .locator('main')
+    .evaluate((m) => Math.max(m.scrollHeight - m.clientHeight, m.scrollWidth - m.clientWidth))
+
 async function login(page: Page) {
   await page.goto('/')
   await expect(page).toHaveURL(/\/login/)
@@ -408,6 +414,26 @@ test('files view: multi-repo tree, Monaco, refresh after an agent turn', async (
   await expect(page.getByTestId('file-path')).toHaveText('project/src/index.ts')
   await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('answer = 42')
   await expect(page).toHaveURL(/path=project(%2F|\/)src(%2F|\/)index\.ts/)
+  // a Markdown file opens rendered; the switch shows its source in the editor and sticks
+  await page.locator('[data-test=tree-file][data-path="project/README.md"]').click()
+  await expect(page.getByTestId('markdown-rendered').locator('h1')).toHaveText('demo project')
+  await page.getByTestId('markdown-source').click()
+  await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('# demo project')
+  await page.getByTestId('markdown-rendered-button').click()
+  await expect(page.getByTestId('markdown-rendered').locator('h1')).toHaveText('demo project')
+  // the page never grows a scrollbar of its own, whatever the window's size: the editor's
+  // column shrinks with it (stacked under the tree below md, beside it above)
+  await page.locator('[data-test=tree-file][data-path="project/src/index.ts"]').click()
+  await expect(page.getByTestId('editor').locator('.view-lines')).toContainText('answer = 42')
+  for (const size of [
+    { width: 700, height: 420 },
+    { width: 900, height: 380 },
+    { width: 1100, height: 300 },
+  ]) {
+    await page.setViewportSize(size)
+    await expect.poll(() => pageOverflow(page)).toBe(0)
+  }
+  await page.setViewportSize({ width: 1280, height: 720 })
   await page.locator('[data-test=tree-dir][data-path="second"]').click()
   await page.locator('[data-test=tree-dir][data-path="second/lib"]').click()
   await page.locator('[data-test=tree-file][data-path="second/lib/util.ts"]').click()
@@ -625,6 +651,10 @@ test('changes view: the commit list, a commit diff, the working tree, and the ma
   await expect(page.getByTestId('commit-file').filter({ hasText: 'src/index.ts' })).toBeVisible()
   await page.getByTestId('commit-file').filter({ hasText: 'src/index.ts' }).click()
   await expect(page.getByTestId('diff-editor')).toContainText('answer = 42')
+  // stacked under the lists on a small window, the diff shrinks with it: no page scrollbar
+  await page.setViewportSize({ width: 700, height: 420 })
+  await expect.poll(() => pageOverflow(page)).toBe(0)
+  await page.setViewportSize({ width: 1280, height: 720 })
 
   // the marker moves to HEAD on leaving the view, so the count clears
   await expect(page.getByTestId('tab-changes')).toContainText(/\d/)

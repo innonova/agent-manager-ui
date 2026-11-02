@@ -346,8 +346,9 @@ const selectedFileTitle = computed(() => {
         <div class="hidden md:contents"><ResizeHandle @start="filesPane.start" /></div>
       </template>
 
-      <!-- right: the diff -->
-      <section class="flex min-w-0 grow flex-col">
+      <!-- right: the diff; min-h-0 so the column shrinks with the window when stacked
+           under the lists, or the diff's pixel height gives the page a scrollbar -->
+      <section class="flex min-h-0 min-w-0 grow flex-col">
         <div
           class="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >

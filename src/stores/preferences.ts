@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 export type Theme = 'system' | 'light' | 'dark'
+export type MarkdownView = 'rendered' | 'source'
 export const FONT_SIZES = [12, 13, 14, 15, 16, 18, 20] as const
 const KEY = 'agent-manager-ui.preferences'
 
@@ -16,6 +17,8 @@ export const usePreferencesStore = defineStore('preferences', () => {
   const fontSize = ref<number>(14)
   /** Browser notifications when an agent is ready or needs input and the page is not focused. */
   const desktopNotifications = ref(false)
+  /** How a Markdown file opens in the files view: rendered, or its source in the editor. */
+  const markdownView = ref<MarkdownView>('rendered')
 
   function load(): void {
     try {
@@ -25,8 +28,11 @@ export const usePreferencesStore = defineStore('preferences', () => {
         theme: Theme
         fontSize: number
         desktopNotifications: boolean
+        markdownView: MarkdownView
       }>
       if (saved.desktopNotifications === true) desktopNotifications.value = true
+      if (saved.markdownView === 'rendered' || saved.markdownView === 'source')
+        markdownView.value = saved.markdownView
       if (saved.theme === 'light' || saved.theme === 'dark' || saved.theme === 'system')
         theme.value = saved.theme
       if (
@@ -47,6 +53,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
           theme: theme.value,
           fontSize: fontSize.value,
           desktopNotifications: desktopNotifications.value,
+          markdownView: markdownView.value,
         }),
       )
     } catch {
@@ -100,7 +107,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
 
   load()
   apply()
-  watch([theme, fontSize, desktopNotifications], () => {
+  watch([theme, fontSize, desktopNotifications, markdownView], () => {
     apply()
     save()
   })
@@ -110,6 +117,7 @@ export const usePreferencesStore = defineStore('preferences', () => {
     theme,
     fontSize,
     desktopNotifications,
+    markdownView,
     isDark,
     setTheme,
     stepFontSize,
