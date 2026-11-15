@@ -37,7 +37,7 @@ end-to-end against a manager running with the fake adapter.
 /                               project list: name, repositories, agent counts by state; new/edit project form with repo rows
 /users                          accounts: create (password shown once), rename yourself, reset, remove
 /projects/:id                   project: agents sidebar, no agent selected
-/projects/:id/agents/:agentId   the selected agent: the flow of its work, the chat beside it, the composer
+/projects/:id/agents/:agentId   the selected agent: the flow of its work and the chat beside it, each with its input
 /projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL
 /projects/:id/changes?repo=&feature=&agent=   the project's commits, with a diff; filters in the URL
 /projects/:id/features          features grouped by status; done, block, reopen, edit, respond; new feature form
@@ -45,7 +45,7 @@ end-to-end against a manager running with the fake adapter.
 
 Project view layout: left column lists agents with a state badge; main
 column shows the selected agent as two panes, the flow of its work (the
-transcript) and the chat, with the composer under both (see "The chat
+transcript) and the chat, each with its own input (see "The chat
 beside the flow"); header shows project name and a "new agent" action. A project is
 an ordered set of repositories (the first is primary, see the manager's
 design doc); the project form edits them as rows of name + absolute path,
@@ -450,11 +450,14 @@ manager keeps the chat as its own record per agent (its design doc,
 
 **Two panes, either of which can be put away.** The agent's view is a
 grid: the flow on the left (the transcript, complete, with the activity
-line over its foot), the chat on the right, and one composer under
-both. The composer belongs to the agent, not to a pane: outside a turn
-what is written is a turn, a conversation in the flow, asked under it
-and answered in it; under the chat alone it made that conversation
-feel like writing somewhere else. The divider between the panes is
+line over its foot) and the chat on the right, each with its own
+input under it, and what is written goes to the pane above it. Under
+the flow it is the direct conversation, asked under it and answered in
+it; under the chat it is said beside the work. (Two earlier shapes had
+one composer: under the chat alone it made a direct conversation feel
+like writing somewhere else, and under both panes it belonged to
+neither.) The two inputs share a row of the grid, so their tops stay
+level when one grows. The divider between the panes is
 dragged and remembered (`pane-width:agent-chat`, the chat's width, 520
 px to start with; a drag starts from the width the chat has, which in
 a small window is less than the one remembered), and the flow keeps 18
@@ -463,7 +466,7 @@ rem however far it goes.
 A switch in the header, "flow · both · chat", says which panes are
 shown, remembered in `agent-panes`. **The chat is not enforced**:
 "flow" puts it away and leaves the view there was before it, the
-transcript with the composer under it. What the chat holds meanwhile
+transcript with its input under it. What the chat holds meanwhile
 that the flow does not show is counted on the switch's "chat": open
 questions ("1 ?"), what the agent said since the chat was last in
 sight ("2 new", per tab, kept nowhere), and what was written beside
@@ -474,18 +477,19 @@ a click opens the flow again).
 
 The section is a Tailwind container, so the layout follows the room
 the view has, not the window: under 48 rem (`@3xl`; a phone, a small
-window, a wide tree) the panes are tabs with the composer under both,
+window, a wide tree) the panes are tabs, each with its own input,
 the chat in front unless it was put away, and the chat's tab carries
 the count of open questions. Sizes are in rem, so they follow the
 font-size preference.
 
-**What is in it.** What people said to the agent, however it was sent,
-and what the agent chose to say: messages, decisions, questions. The
-agent's last words of a turn are not copied into it: they are the last
-thing in the flow, beside it. An agent's message is Markdown; a
+**What is in it.** What was said in it: what people wrote under the
+chat, and what the agent chose to say (messages, decisions,
+questions). The direct conversation is not copied into it, neither
+side of it: a turn or a steer written under the flow is in the flow,
+and so are the agent's last words of a turn, beside it. An agent's message is Markdown; a
 decision carries the word, one marked important is red, an open
 question is amber. Every open question is also pinned at the top of
-the pane, however much was said since, with "answer" (the composer
+the pane, however much was said since, with "answer" (the chat's input
 takes it: a chip names the question, the placeholder says "Your
 answer…", and what is sent goes with `replyTo`, which closes it) and
 "dismiss" (it needs no answer). A closed question says how it closed:
@@ -493,17 +497,25 @@ answered, dismissed, or no longer needed by the agent. A person's
 message says how it reached the agent: "sent as a turn", "steered",
 "not read yet" (amber), "read 14:02".
 
-**The composer.** Outside a turn a message starts one, as before.
-While the agent is in a turn (working, starting, waiting on a
-permission) "send" leaves the message beside the work: the manager
-tells the agent a message waits, and the agent reads it when it
-chooses, or gets it as its next turn if the turn ends first. "steer",
-shown only while the agent works (Ctrl+Shift+Enter), puts it into the
-running turn as an instruction, where the vendor can take one; where
-it cannot, it stays an aside and a toast says so. An image goes with a
-turn or a steer, not with an aside, and the composer says so instead
-of sending. Interrupt is unchanged. Everything goes through
-`POST /api/agents/:id/chat`.
+**The two inputs.** One component (`TurnInput`), twice, with a draft
+each (the chat's is kept under `<agent>:chat`).
+
+Under the flow it is the conversation as it was before there was a
+chat: a message starts a turn; while the agent works the button reads
+"steer" and the message goes into the running turn, or is queued by
+the manager where the vendor cannot take one (a toast says so); while
+it starts or waits on a permission nothing can be sent. Through `POST
+/api/agents/:id/turn`, and not listed in the chat.
+
+Under the chat a message is said beside the work: while the agent is
+in a turn (working, starting, waiting on a permission) the manager
+tells it a message waits, and it reads it when it chooses, or gets it
+as its next turn if the turn ends first; an agent that is not in a
+turn is woken with it, as a turn. No steer here: to interrupt, write
+under the flow. An image cannot wait beside the work, and the input
+says so instead of sending. Through `POST /api/agents/:id/chat`.
+Interrupt is on the flow's input, and on the chat's where the flow's
+is out of sight (the chat alone, or as tabs).
 
 **Its place in the flow.** A message's time is a link once the agent
 has it: it scrolls the flow to the agent's call that said it, the turn
@@ -690,7 +702,7 @@ double-click is not a thing. The composer's field grows with its text
 up to its cap on every pointer, and on a phone takes its whole row with
 the buttons under it. A permission waiting for an answer is also,
 wherever the flow and its card may be out of sight (the panes as tabs,
-or the chat alone with the flow folded to its line), a bar above the composer with its
+or the chat alone with the flow folded to its line), a bar above the input with its
 options as big buttons, until answered, since that is what a thumb
 reaches for first. Everything
 tappable has `touch-action: manipulation`, so a double tap does not
@@ -835,8 +847,10 @@ state change would say it.
   decisions and questions (spoken with the fake agent's own token, which
   it says when asked), a question pinned, counted, answered, dismissed
   and withdrawn, the divider, the switch between the panes and their
-memory, the composer under both panes, the chat put away (the view as
-it was, and what is counted on the switch meanwhile), the
+memory, an input under each pane (a turn under the flow that the chat
+does not list, a draft each, steer on one and an aside from the other,
+the interrupt on the chat's when it is alone), the chat put away (the
+view as it was, and what is counted on the switch meanwhile), the
   page's and the panes' overflow at widths from 1600 to 640 px with a
   table, an address and a line of code wider than any pane, the
   notification, and the tabs on a phone. There is no test for

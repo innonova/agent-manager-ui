@@ -50,12 +50,14 @@ const showNote = ref(false)
 const showDetails = ref(false)
 const treePane = useResizable('project-tree', 288)
 /**
- * The agent's view is two panes: the flow of its work on the left and the
- * chat on the right, whose width is the one dragged and remembered, with
- * one composer under both. Either pane can be put away: the flow alone is
- * the conversation as it was before there was a chat, the chat alone has
- * the flow folded to a line above it. Where the view is too narrow for
- * two panes (a phone, a small window) they are tabs.
+ * The agent's view is two panes, each with its own input: the flow of its
+ * work on the left, where a message is the direct conversation (a turn,
+ * or a steer into the one it is in), and the chat on the right, whose
+ * width is the one dragged and remembered, where a message is left beside
+ * the work. Either pane can be put away: the flow alone is the
+ * conversation as it was before there was a chat, the chat alone has the
+ * flow folded to a line above it. Where the view is too narrow for two
+ * panes (a phone, a small window) they are tabs.
  */
 const chatPane = useResizable('agent-chat', 520, 320, 1400, 'left')
 const chatEl = ref<HTMLElement | null>(null)
@@ -70,7 +72,7 @@ type Layout = (typeof LAYOUTS)[number]
 const LAYOUT_KEY = 'agent-panes'
 const LAYOUT_TITLE: Record<Layout, string> = {
   flow: 'the flow alone, the conversation as it was: the chat is put away, and what the agent asks or says in it is counted here',
-  both: 'the flow and the chat side by side',
+  both: 'the flow and the chat side by side, each with its own input',
   chat: 'the chat alone, the flow folded to one line above it',
 }
 const layout = ref<Layout>(
@@ -94,7 +96,15 @@ const openQuestions = computed(() => (props.agentId ? chat.questionsOf(props.age
  */
 const seenUpTo = ref(new Map<string, number>())
 watch(
-  [() => props.agentId, () => messages.value[messages.value.length - 1]?.id, layout],
+  [
+    () => props.agentId,
+    // a chat that is loaded and empty has been seen as far as it goes
+    () =>
+      props.agentId && chat.messages.has(props.agentId)
+        ? (messages.value.at(-1)?.id ?? 0)
+        : undefined,
+    layout,
+  ],
   ([id, last]) => {
     if (!id || last === undefined) return
     if (layout.value !== 'flow' || !seenUpTo.value.has(id))
@@ -147,7 +157,7 @@ function showChat() {
   if (layout.value === 'flow') setLayout('both')
   tab.value = 'chat'
 }
-/** The agent's open question the composer is answering. */
+/** The agent's open question the chat's input is answering. */
 const replyTo = ref<ChatMessage | null>(null)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 const route = useRoute()
@@ -438,25 +448,43 @@ const pendingPermission = computed(() => {
   }
   return null
 })
-const turnInput = ref<InstanceType<typeof TurnInput> | null>(null)
+const flowInput = ref<InstanceType<typeof TurnInput> | null>(null)
+const chatInput = ref<InstanceType<typeof TurnInput> | null>(null)
 /**
- * Everything said to the agent goes through its chat; the manager decides
- * how it travels (a turn when the agent is not in one, else beside its
- * work, or into the turn when steering) and the chat shows which.
+ * The flow's input is the direct conversation: a turn, or into the turn
+ * the agent is in. It is not copied into the chat; its place is the flow,
+ * where the answer follows it.
  */
-async function send(text: string, images: TurnImage[] = [], steer = false) {
+async function send(text: string, images: TurnImage[] = []) {
   if (!props.agentId) return
   const agentId = props.agentId
   try {
-    const mode = await chat.say(agentId, { text, images, steer, replyTo: replyTo.value?.id })
+    const steer = current.value?.status.state === 'working'
+    const { mode } = await api.turn(agentId, text, steer, images)
     drafts.set(agentId, '') // accepted: the draft is done; refused: it stays
-    turnInput.value?.clearAttachments()
-    replyTo.value = null
-    if (steer && mode === 'aside')
+    flowInput.value?.clearAttachments()
+    if (mode === 'queued')
       notifications.push(
         'info',
-        'this agent cannot be steered in the middle of a turn; the message waits beside its work',
+        'the agent cannot take a message mid-turn; queued for when it finishes',
       )
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
+/**
+ * The chat's input: beside the work while the agent is in a turn (it is
+ * told a message waits, and reads it when it chooses), and what wakes it
+ * when it is not; the chat shows which.
+ */
+async function say(text: string, images: TurnImage[] = []) {
+  if (!props.agentId) return
+  const agentId = props.agentId
+  try {
+    await chat.say(agentId, { text, images, replyTo: replyTo.value?.id })
+    drafts.set(`${agentId}:chat`, '')
+    chatInput.value?.clearAttachments()
+    replyTo.value = null
   } catch (e) {
     notifications.push('error', e instanceof ApiError ? e.message : String(e))
   }
@@ -464,7 +492,7 @@ async function send(text: string, images: TurnImage[] = [], steer = false) {
 function answer(m: ChatMessage) {
   replyTo.value = m
   void nextTick(() =>
-    document.querySelector<HTMLTextAreaElement>('[data-test=turn-input]')?.focus(),
+    document.querySelector<HTMLTextAreaElement>('[data-test=chat-input]')?.focus(),
   )
 }
 async function dismiss(m: ChatMessage) {
@@ -927,7 +955,7 @@ async function archive() {
             <ResizeHandle @start="startChatDrag" />
           </div>
           <!-- where the flow may be out of sight (tabs, or folded to its line): the permission's
-               answers as big buttons above the composer, until answered -->
+               answers as big buttons above the input, until answered -->
           <div
             v-if="pendingPermission"
             class="flex items-center gap-2 border-t border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-600 dark:bg-amber-950"
@@ -953,14 +981,14 @@ async function archive() {
               {{ o.label }}
             </button>
           </div>
-          <!-- one composer for the agent, under whichever panes are shown: what is written goes
-               to the flow as a turn or beside it as an aside, and the manager decides which -->
+          <!-- an input under each pane, and what is written goes to the pane above it: under the
+               flow a turn or a steer, under the chat a message beside the work -->
           <div
-            class="relative min-w-0"
-            :class="layout === 'both' ? '@3xl:col-span-2' : ''"
+            class="relative grid min-w-0 grid-cols-1"
+            :class="layout === 'both' ? '@3xl:col-span-2 @3xl:grid-cols-subgrid' : ''"
             data-test="composer"
           >
-            <!-- typing floats right above the input, without moving anything -->
+            <!-- typing floats right above the inputs, without moving anything -->
             <div
               v-if="othersTyping.length"
               class="pointer-events-none absolute bottom-full left-4 mb-2 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
@@ -970,19 +998,52 @@ async function archive() {
                 othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
               }}</span>
             </div>
-            <TurnInput
-              ref="turnInput"
-              :key="current.agent.id"
-              :agent-id="current.agent.id"
-              :state="current.status.state"
-              :queued="current.status.queued"
-              :reply="replyTo ? { id: replyTo.id, excerpt: replyTo.text } : null"
-              @send="send"
-              @interrupt="interrupt"
-              @typing="presence.typed()"
-              @stopped-typing="presence.stoppedTyping()"
-              @cancel-reply="replyTo = null"
-            />
+            <div
+              class="min-w-0"
+              :class="[
+                tab === 'flow' ? 'block' : 'hidden',
+                layout === 'chat' ? '@3xl:hidden' : '@3xl:block',
+              ]"
+            >
+              <TurnInput
+                ref="flowInput"
+                :key="current.agent.id"
+                :agent-id="current.agent.id"
+                :state="current.status.state"
+                :queued="current.status.queued"
+                @send="send"
+                @interrupt="interrupt"
+                @typing="presence.typed()"
+                @stopped-typing="presence.stoppedTyping()"
+              />
+            </div>
+            <div
+              class="min-w-0 border-slate-200 dark:border-slate-800"
+              :class="[
+                tab === 'chat' ? 'block' : 'hidden',
+                layout === 'flow'
+                  ? '@3xl:hidden'
+                  : layout === 'both'
+                    ? '@3xl:block @3xl:border-l'
+                    : '@3xl:block',
+              ]"
+            >
+              <!-- beside the flow's input, that one's interrupt is the one -->
+              <TurnInput
+                ref="chatInput"
+                :key="current.agent.id"
+                chat
+                :agent-id="current.agent.id"
+                :state="current.status.state"
+                :reply="replyTo ? { id: replyTo.id, excerpt: replyTo.text } : null"
+                :interrupt-class="layout === 'both' ? '@3xl:hidden' : ''"
+                @send="say"
+                @interrupt="interrupt"
+                @typing="presence.typed()"
+                @stopped-typing="presence.stoppedTyping()"
+                @cancel-reply="replyTo = null"
+              />
+            </div>
           </div>
         </div>
       </section>
