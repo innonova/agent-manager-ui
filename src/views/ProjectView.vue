@@ -1,12 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import ResizeHandle from '@/components/ResizeHandle.vue'
 import { useResizable } from '@/composables/useResizable'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { Profile, TurnImage } from '@/api/types'
+import type { ChatMessage, Profile, TurnImage } from '@/api/types'
 import ActivityLine from '@/components/ActivityLine.vue'
 import AppShell from '@/components/AppShell.vue'
+import ChatPane from '@/components/ChatPane.vue'
+import FlowStrip from '@/components/FlowStrip.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
@@ -15,6 +17,7 @@ import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
 import { useAgentsStore } from '@/stores/agents'
+import { useChatStore } from '@/stores/chat'
 import { useDraftsStore } from '@/stores/drafts'
 import { usePresenceStore } from '@/stores/presence'
 import { since, when } from '@/time'
@@ -37,6 +40,7 @@ const router = useRouter()
 const projects = useProjectsStore()
 const hosts = useHostsStore()
 const agents = useAgentsStore()
+const chat = useChatStore()
 const notifications = useNotificationsStore()
 
 const project = computed(() => projects.byId.get(props.id)?.project)
@@ -45,6 +49,31 @@ const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) :
 const showNote = ref(false)
 const showDetails = ref(false)
 const treePane = useResizable('project-tree', 288)
+/**
+ * The agent's view is two panes: the flow of its work on the left and the
+ * chat on the right, whose width is the one dragged and remembered. The
+ * flow folds to a line above the chat. Where the view is too narrow for
+ * two panes (a phone, a small window) they are tabs, the chat first.
+ */
+const chatPane = useResizable('agent-chat', 520, 320, 1400, 'left')
+const chatEl = ref<HTMLElement | null>(null)
+/** A drag starts from the width the chat has, which in a small window is less than the one remembered. */
+function startChatDrag(e: PointerEvent) {
+  const shown = chatEl.value?.getBoundingClientRect().width
+  if (shown) chatPane.width.value = Math.round(shown)
+  chatPane.start(e)
+}
+const FLOW_KEY = 'agent-flow-collapsed'
+const flowCollapsed = ref(localStorage.getItem(FLOW_KEY) === '1')
+function setFlowCollapsed(v: boolean) {
+  flowCollapsed.value = v
+  localStorage.setItem(FLOW_KEY, v ? '1' : '0')
+}
+const tab = ref<'chat' | 'flow'>('chat')
+const messages = computed(() => (props.agentId ? chat.of(props.agentId) : []))
+const openQuestions = computed(() => (props.agentId ? chat.questionsOf(props.agentId) : 0))
+/** The agent's open question the composer is answering. */
+const replyTo = ref<ChatMessage | null>(null)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
 const route = useRoute()
 /** An item index to scroll the transcript to (a link from the changes tab). */
@@ -87,7 +116,33 @@ const showNew = ref(false)
 const drawer = ref(false)
 watch(
   () => props.agentId,
-  () => (drawer.value = false),
+  () => {
+    drawer.value = false
+    replyTo.value = null
+    tab.value = 'chat'
+  },
+)
+watch(
+  () => props.agentId,
+  (id) => {
+    if (id)
+      chat
+        .load(id, props.id)
+        .catch((e) =>
+          notifications.push(
+            'error',
+            `could not load the chat: ${e instanceof ApiError ? e.message : String(e)}`,
+          ),
+        )
+  },
+  { immediate: true },
+)
+// answered or dismissed meanwhile, here or by someone else: nothing left to answer
+watch(
+  () => messages.value.find((m) => m.id === replyTo.value?.id)?.closedAt,
+  (closedAt) => {
+    if (closedAt) replyTo.value = null
+  },
 )
 function onTreeClick(e: MouseEvent) {
   if ((e.target as HTMLElement | null)?.closest('[data-test=agent-row]')) drawer.value = false
@@ -309,22 +364,91 @@ const pendingPermission = computed(() => {
   return null
 })
 const turnInput = ref<InstanceType<typeof TurnInput> | null>(null)
-async function send(text: string, images: TurnImage[] = []) {
+/**
+ * Everything said to the agent goes through its chat; the manager decides
+ * how it travels (a turn when the agent is not in one, else beside its
+ * work, or into the turn when steering) and the chat shows which.
+ */
+async function send(text: string, images: TurnImage[] = [], steer = false) {
   if (!props.agentId) return
   const agentId = props.agentId
   try {
-    const steer = current.value?.status.state === 'working'
-    const { mode } = await api.turn(agentId, text, steer, images)
+    const mode = await chat.say(agentId, { text, images, steer, replyTo: replyTo.value?.id })
     drafts.set(agentId, '') // accepted: the draft is done; refused: it stays
     turnInput.value?.clearAttachments()
-    if (mode === 'queued')
+    replyTo.value = null
+    if (steer && mode === 'aside')
       notifications.push(
         'info',
-        'the agent cannot take a message mid-turn; queued for when it finishes',
+        'this agent cannot be steered in the middle of a turn; the message waits beside its work',
       )
   } catch (e) {
     notifications.push('error', e instanceof ApiError ? e.message : String(e))
   }
+}
+function answer(m: ChatMessage) {
+  replyTo.value = m
+  void nextTick(() =>
+    document.querySelector<HTMLTextAreaElement>('[data-test=turn-input]')?.focus(),
+  )
+}
+async function dismiss(m: ChatMessage) {
+  try {
+    await chat.close(m.agentId, m.id)
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  }
+}
+/**
+ * Scrolls the flow to where a chat message is in it: the agent's own
+ * call that said it, a person's turn or steer where it arrived, an aside
+ * where the agent read it. The two records share a clock and nothing
+ * else, so the place is found by time; what was handed over as it was
+ * written (a turn, a steer, an aside the turn ended before) is the
+ * person's own item with the text in it, which settles it between two
+ * sent close together.
+ */
+async function locate(m: ChatMessage) {
+  const agentId = props.agentId
+  if (!agentId) return
+  const aside = m.from === 'person' && m.via === 'aside'
+  const t = aside ? m.readAt : m.at
+  if (t == null) return
+  const first = () => agents.items.get(agentId)?.find((s) => s)?.at ?? 0
+  for (let guard = 0; guard < 200 && agents.hasEarlier(agentId) && first() > t; guard++)
+    await agents.loadEarlier(agentId)
+  const list = agents.items.get(agentId) ?? []
+  let index: number | null = null
+  if (m.from === 'person') {
+    // an aside is marked read once the turn that carries it is under way, which can take a moment
+    const near = list.filter(
+      (s) =>
+        s &&
+        s.item.kind === 'user' &&
+        s.at >= t - (aside ? 10_000 : 2000) &&
+        (!aside || s.at <= t + 2000),
+    )
+    const own = near.find((s) => s.item.kind === 'user' && s.item.text.includes(m.text))
+    index = (own ?? (aside ? undefined : near.find((s) => s.at >= t)))?.index ?? null
+  }
+  if (index === null)
+    for (let i = list.length - 1; i >= 0; i--) {
+      const s = list[i]
+      // a result is folded under its call: the call is the row to land on
+      if (s && s.at <= t && s.item.kind !== 'tool_result') {
+        index = s.index
+        break
+      }
+    }
+  if (index === null) {
+    notifications.push('info', 'that moment is not in the flow')
+    return
+  }
+  setFlowCollapsed(false)
+  tab.value = 'flow'
+  scrollTarget.value = null // the same place again is still a request to go there
+  await nextTick()
+  scrollTarget.value = index
 }
 
 async function interrupt() {
@@ -415,7 +539,7 @@ async function archive() {
       </aside>
       <div class="hidden md:contents"><ResizeHandle @start="treePane.start" /></div>
 
-      <section v-if="current" class="relative flex min-w-0 grow flex-col">
+      <section v-if="current" class="@container relative flex min-w-0 grow flex-col">
         <div
           class="border-b border-slate-200 bg-white px-4 py-2 text-base dark:border-slate-800 dark:bg-slate-900"
         >
@@ -451,6 +575,13 @@ async function archive() {
               :background="current.status.background"
               data-test="agent-state"
             />
+            <span
+              v-if="openQuestions"
+              class="rounded bg-amber-100 px-1.5 py-0.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+              title="asked in the chat and not answered yet; the agent carries on meanwhile"
+              data-test="agent-questions"
+              >{{ openQuestions }} open question{{ openQuestions === 1 ? '' : 's' }}</span
+            >
             <span
               v-if="current.status.model"
               class="font-mono text-sm text-slate-500 dark:text-slate-400"
@@ -492,6 +623,19 @@ async function archive() {
             >
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
             </span>
+            <button
+              type="button"
+              class="hidden rounded border border-slate-300 px-2 py-0.5 text-sm text-slate-600 hover:bg-slate-100 @3xl:block dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+              :title="
+                flowCollapsed
+                  ? 'show the flow beside the chat: everything the agent does, as it does it'
+                  : 'fold the flow to one line above the chat'
+              "
+              data-test="flow-toggle"
+              @click="setFlowCollapsed(!flowCollapsed)"
+            >
+              {{ flowCollapsed ? 'show flow' : 'hide flow' }}
+            </button>
             <div
               class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700 max-md:pointer-coarse:text-base"
               data-test="agent-actions"
@@ -580,74 +724,156 @@ async function archive() {
             </button>
           </div>
         </div>
-        <div class="relative min-h-0 grow">
-          <TranscriptView
-            :items="items"
-            :has-earlier="!!props.agentId && agents.hasEarlier(props.agentId)"
-            :loading-earlier="!!props.agentId && agents.loadingEarlier.has(props.agentId)"
-            :activity-height="activityHeight"
-            :scroll-to="scrollTarget"
-            :withdraw-index="lastPromptIndex"
-            :withdraw-reason="withdrawReason"
-            @decide="decide"
-            @withdraw="withdraw"
-            @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"
-          />
-          <!-- typing floats over the bottom of the transcript, right above the
-               input, without moving anything -->
-          <div
-            v-if="othersTyping.length"
-            class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
-            data-test="presence-typing"
-          >
-            <span class="animate-pulse">{{
-              othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
-            }}</span>
-          </div>
-          <!-- also an overlay, not inserted in flow: see ActivityLine.vue -->
-          <ActivityLine
-            :activity="effectiveActivity"
-            :thinking-text="liveThinkingText"
-            :tool-name="activeToolName"
-            @resize="activityHeight = $event"
-          />
-        </div>
-        <!-- a phone: the permission's answers as big buttons above the composer, until answered -->
+        <!-- too narrow for two panes: tabs, the chat first -->
         <div
-          v-if="pendingPermission"
-          class="flex items-center gap-2 border-t border-amber-400 bg-amber-50 px-3 py-2 md:hidden dark:border-amber-600 dark:bg-amber-950"
-          data-test="permission-bar"
+          class="flex border-b border-slate-200 bg-white text-base @3xl:hidden dark:border-slate-800 dark:bg-slate-900"
+          data-test="pane-tabs"
         >
-          <span class="min-w-0 grow truncate text-sm text-amber-900 dark:text-amber-100"
-            ><span class="font-mono font-semibold">{{ pendingPermission.tool }}</span>
-            {{ pendingPermission.title }}</span
-          >
           <button
-            v-for="o in pendingPermission.options"
-            :key="o.id"
-            class="shrink-0 rounded border px-4 py-3 text-base"
+            v-for="t in ['chat', 'flow'] as const"
+            :key="t"
+            type="button"
+            class="grow border-b-2 px-3 py-2"
             :class="
-              o.kind === 'deny'
-                ? 'border-red-400 text-red-800 dark:border-red-700 dark:text-red-200'
-                : 'border-emerald-500 bg-white text-emerald-800 dark:bg-slate-900 dark:text-emerald-200'
+              tab === t
+                ? 'border-blue-600 font-medium'
+                : 'border-transparent text-slate-500 dark:text-slate-400'
             "
-            :data-test="`permission-bar-${o.kind}`"
-            @click="decide(pendingPermission.requestId, o.id)"
+            :data-test="`pane-tab-${t}`"
+            :aria-selected="tab === t"
+            @click="tab = t"
           >
-            {{ o.label }}
+            {{ t }}
+            <span
+              v-if="t === 'chat' && openQuestions"
+              class="ml-1 rounded bg-amber-100 px-1.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+              >{{ openQuestions }} ?</span
+            >
           </button>
         </div>
-        <TurnInput
-          ref="turnInput"
-          :key="current.agent.id"
-          :agent-id="current.agent.id"
-          :state="current.status.state"
-          :queued="current.status.queued"
-          @send="send"
-          @interrupt="interrupt"
-          @typing="presence.typed()"
-          @stopped-typing="presence.stoppedTyping()"
-        />
+        <div
+          class="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(0,1fr)_auto_auto]"
+          :class="flowCollapsed ? '' : '@3xl:grid-cols-[minmax(18rem,1fr)_minmax(0,var(--chat-w))]'"
+          :style="{ '--chat-w': `${chatPane.width.value}px` }"
+          data-test="agent-panes"
+        >
+          <div
+            class="relative min-h-0 min-w-0"
+            :class="[
+              tab === 'flow' ? 'block' : 'hidden',
+              flowCollapsed
+                ? '@3xl:hidden'
+                : '@3xl:col-start-1 @3xl:row-span-3 @3xl:row-start-1 @3xl:block',
+            ]"
+            data-test="flow-pane"
+          >
+            <TranscriptView
+              :items="items"
+              :has-earlier="!!props.agentId && agents.hasEarlier(props.agentId)"
+              :loading-earlier="!!props.agentId && agents.loadingEarlier.has(props.agentId)"
+              :activity-height="activityHeight"
+              :scroll-to="scrollTarget"
+              :withdraw-index="lastPromptIndex"
+              :withdraw-reason="withdrawReason"
+              @decide="decide"
+              @withdraw="withdraw"
+              @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"
+            />
+            <!-- an overlay, not inserted in flow: see ActivityLine.vue -->
+            <ActivityLine
+              :activity="effectiveActivity"
+              :thinking-text="liveThinkingText"
+              :tool-name="activeToolName"
+              @resize="activityHeight = $event"
+            />
+          </div>
+          <div
+            ref="chatEl"
+            class="relative min-h-0 min-w-0 flex-col border-slate-200 @3xl:flex dark:border-slate-800"
+            :class="[
+              tab === 'chat' ? 'flex' : 'hidden',
+              flowCollapsed ? '' : '@3xl:col-start-2 @3xl:row-start-1 @3xl:border-l',
+            ]"
+            data-test="chat-pane"
+          >
+            <div v-if="flowCollapsed" class="hidden shrink-0 @3xl:block">
+              <FlowStrip
+                :state="current.status.state"
+                :activity="effectiveActivity"
+                :tool-name="activeToolName"
+                @open="setFlowCollapsed(false)"
+              />
+            </div>
+            <ChatPane
+              :messages="messages"
+              :has-earlier="chat.earlier.has(current.agent.id)"
+              :loading-earlier="chat.loadingEarlier.has(current.agent.id)"
+              @answer="answer"
+              @dismiss="dismiss"
+              @locate="locate"
+              @load-earlier="chat.loadEarlier(current.agent.id)"
+            />
+            <!-- typing floats over the bottom of the chat, right above the
+                 input, without moving anything -->
+            <div
+              v-if="othersTyping.length"
+              class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
+              data-test="presence-typing"
+            >
+              <span class="animate-pulse">{{
+                othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
+              }}</span>
+            </div>
+          </div>
+          <!-- the divider between the panes, on the chat's left edge down to the composer -->
+          <div
+            v-if="!flowCollapsed"
+            class="z-10 hidden justify-self-start @3xl:col-start-2 @3xl:row-span-3 @3xl:row-start-1 @3xl:flex"
+          >
+            <ResizeHandle @start="startChatDrag" />
+          </div>
+          <!-- where the flow may be out of sight (tabs, or folded to its line): the permission's
+               answers as big buttons above the composer, until answered -->
+          <div
+            v-if="pendingPermission"
+            class="flex items-center gap-2 border-t border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-600 dark:bg-amber-950"
+            :class="flowCollapsed ? '' : '@3xl:hidden'"
+            data-test="permission-bar"
+          >
+            <span class="min-w-0 grow truncate text-sm text-amber-900 dark:text-amber-100"
+              ><span class="font-mono font-semibold">{{ pendingPermission.tool }}</span>
+              {{ pendingPermission.title }}</span
+            >
+            <button
+              v-for="o in pendingPermission.options"
+              :key="o.id"
+              class="shrink-0 rounded border px-4 py-3 text-base"
+              :class="
+                o.kind === 'deny'
+                  ? 'border-red-400 text-red-800 dark:border-red-700 dark:text-red-200'
+                  : 'border-emerald-500 bg-white text-emerald-800 dark:bg-slate-900 dark:text-emerald-200'
+              "
+              :data-test="`permission-bar-${o.kind}`"
+              @click="decide(pendingPermission.requestId, o.id)"
+            >
+              {{ o.label }}
+            </button>
+          </div>
+          <TurnInput
+            ref="turnInput"
+            :key="current.agent.id"
+            :class="flowCollapsed ? '' : '@3xl:col-start-2 @3xl:row-start-3 @3xl:border-l'"
+            :agent-id="current.agent.id"
+            :state="current.status.state"
+            :queued="current.status.queued"
+            :reply="replyTo ? { id: replyTo.id, excerpt: replyTo.text } : null"
+            @send="send"
+            @interrupt="interrupt"
+            @typing="presence.typed()"
+            @stopped-typing="presence.stoppedTyping()"
+            @cancel-reply="replyTo = null"
+          />
+        </div>
       </section>
       <section
         v-else

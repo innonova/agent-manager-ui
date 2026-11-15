@@ -3,9 +3,17 @@ import { onUnmounted, ref } from 'vue'
 /**
  * A pane's width, dragged by a handle and remembered per pane in
  * localStorage. `start(e)` goes on the handle's pointerdown; the width
- * follows the pointer until it is released, within [min, max].
+ * follows the pointer until it is released, within [min, max]. A pane
+ * whose handle is on its left edge (`edge: 'left'`) grows as the pointer
+ * moves left.
  */
-export function useResizable(key: string, initial: number, min = 180, max = 720) {
+export function useResizable(
+  key: string,
+  initial: number,
+  min = 180,
+  max = 720,
+  edge: 'right' | 'left' = 'right',
+) {
   const stored = Number(localStorage.getItem(`pane-width:${key}`))
   const width = ref(Number.isFinite(stored) && stored >= min && stored <= max ? stored : initial)
   let from = 0
@@ -13,7 +21,8 @@ export function useResizable(key: string, initial: number, min = 180, max = 720)
   let dragging = false
   function onMove(e: PointerEvent) {
     if (!dragging) return
-    width.value = Math.min(max, Math.max(min, from + (e.clientX - startX)))
+    const moved = e.clientX - startX
+    width.value = Math.min(max, Math.max(min, from + (edge === 'left' ? -moved : moved)))
   }
   function onUp() {
     if (!dragging) return

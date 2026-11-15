@@ -46,6 +46,28 @@ input[type='checkbox'] {
   }
 }
 
+/* Markdown in a pane narrower than what it holds (the chat, the flow
+   beside it): a long word or address breaks, a table or a block of code
+   scrolls inside itself, and the pane keeps its width. A table's words
+   stay whole, and its headings on one line, so it scrolls rather than
+   folding into columns a letter wide. */
+.md-fit {
+  overflow-wrap: anywhere;
+}
+.md-fit table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-wrap: normal;
+}
+.md-fit th {
+  white-space: nowrap;
+}
+.md-fit pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
 /* Dark palette: VS Code's Dark+ rather than Tailwind's blue-tinted slate.
    Components keep using slate-* and blue-* classes; in dark mode those
    utilities resolve to these variables instead, so one table restyles the

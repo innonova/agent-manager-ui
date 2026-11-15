@@ -166,6 +166,42 @@ export interface AccountUsageRow {
 }
 
 /** An image sent with a turn: base64 with its media type. */
+/**
+ * One message of the chat between the people and an agent: a record the
+ * manager keeps beside the transcript, which neither side stops for.
+ */
+export interface ChatMessage {
+  id: number
+  agentId: string
+  from: 'agent' | 'person'
+  /** A person's name, `agent-<name>` for another agent, the agent's own name for its own. */
+  author: string
+  kind: 'message' | 'decision' | 'question'
+  important: boolean
+  text: string
+  /** The message this one answers, with enough of it to read the answer alone. */
+  re: { id: number; kind: ChatMessage['kind']; excerpt: string } | null
+  /** How a person's message travelled: left beside the work, started a turn, or steered the turn. */
+  via: 'aside' | 'turn' | 'steer' | null
+  /** Images that travelled with it; they are in the transcript, not here. */
+  images: number
+  at: number
+  /** A person's message: when the agent got it. */
+  readAt: number | null
+  /** A question: when it stopped being open, and how. */
+  closedAt: number | null
+  closedBy: 'answer' | 'person' | 'agent' | null
+}
+
+export interface ChatSummary {
+  /** People's messages the agent has not read yet. */
+  unread: number
+  /** The agent's questions still open. */
+  questions: number
+  /** The newest message's id. */
+  last: number
+}
+
 export interface TurnImage {
   mediaType: string
   data: string
@@ -230,6 +266,14 @@ export type EventFrame =
   | { type: 'agent.reset'; agentId: string }
   | { type: 'feature.changed'; projectId: string; feature: Feature }
   | { type: 'notes.changed'; projectId: string; notes: Notes }
+  /** Messages of an agent's chat that are new or changed (read, a question closed), and its summary after them. */
+  | {
+      type: 'chat.changed'
+      agentId: string
+      projectId: string
+      messages: ChatMessage[]
+      summary: ChatSummary
+    }
   | {
       type: 'agent.session'
       agentId: string

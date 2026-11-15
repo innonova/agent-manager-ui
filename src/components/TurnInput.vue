@@ -9,21 +9,27 @@ const props = defineProps<{
   disabled?: boolean
   /** Messages the manager holds for the next turn. */
   queued?: number
+  /** The agent's open question this message answers, when the person chose to answer one. */
+  reply?: { id: number; excerpt: string } | null
 }>()
 /**
- * While the agent works, a message steers the turn (the manager delivers
- * it mid-turn or queues it); while it starts or waits on a permission,
- * nothing can be sent.
+ * The composer of the agent's chat. Outside a turn a message starts one.
+ * During a turn it is left beside the work: the agent is told a message
+ * waits and reads it when it chooses, so nothing is interrupted; "steer"
+ * puts it into the turn instead, which is the way to interrupt. An image
+ * travels with a turn or a steer only.
  */
-const busy = computed(
-  () => props.disabled || props.state === 'starting' || props.state === 'waiting-permission',
+const inTurn = computed(
+  () =>
+    props.state === 'working' || props.state === 'starting' || props.state === 'waiting-permission',
 )
-const steering = computed(() => props.state === 'working')
+const steerable = computed(() => props.state === 'working')
 const emit = defineEmits<{
-  send: [text: string, images: TurnImage[]]
+  send: [text: string, images: TurnImage[], steer: boolean]
   interrupt: []
   typing: []
   stoppedTyping: []
+  cancelReply: []
 }>()
 
 /** Images pasted or dropped into the box, shown as thumbnails until sent. Not part of the draft. */
@@ -148,14 +154,25 @@ function onPick(e: Event) {
   input.value = ''
 }
 
-function send() {
+/** Why the plain send is off, when it is: said on the button. */
+const blocked = computed(() =>
+  inTurn.value && attachments.value.length > 0
+    ? steerable.value
+      ? 'an image cannot wait beside the work: steer with it, or send it when the turn has ended'
+      : 'an image cannot wait beside the work: send it when the turn has ended'
+    : null,
+)
+const empty = computed(() => !text.value.trim() && attachments.value.length === 0)
+function send(steer = false) {
   const t = text.value.trim()
-  if ((!t && attachments.value.length === 0) || busy.value || reading.value > 0) return
-  // the parent clears the draft and the attachments once the manager accepted the turn
+  if (empty.value || props.disabled || reading.value > 0) return
+  if (steer ? !steerable.value : blocked.value) return
+  // the parent clears the draft and the attachments once the manager accepted the message
   emit(
     'send',
     t || '(image)',
     attachments.value.map((a) => ({ mediaType: a.mediaType, data: a.data })),
+    steer,
   )
   emit('stoppedTyping')
 }
@@ -164,23 +181,41 @@ function send() {
  * Ctrl+Enter (or Cmd+Enter) sends; a bare Enter is a newline, as in any
  * editor. Turns here are more often several lines than one, and a chat
  * tool's Enter-to-send lost too many of them to a slipped finger; one rule
- * also means nothing has to guess what kind of device this is.
+ * also means nothing has to guess what kind of device this is. With
+ * Shift as well, while the agent works, the message steers.
  */
 function onKey(e: KeyboardEvent) {
   if (e.key !== 'Enter' || e.isComposing || !(e.ctrlKey || e.metaKey)) return
   e.preventDefault()
-  send()
+  send(e.shiftKey && steerable.value)
 }
 </script>
 
 <template>
   <form
     class="flex flex-col gap-2 border-t border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900"
-    @submit.prevent="send"
+    @submit.prevent="send()"
     @dragover.prevent
     @drop="onDrop"
   >
     <div class="mx-auto flex w-full max-w-3xl flex-col gap-2">
+      <div
+        v-if="reply"
+        class="flex items-baseline gap-2 rounded border-l-2 border-amber-500 bg-amber-50 px-2 py-1 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-100"
+        data-test="reply-chip"
+      >
+        <span class="shrink-0">answering</span>
+        <span class="min-w-0 grow truncate italic">{{ reply.excerpt }}</span>
+        <button
+          type="button"
+          class="shrink-0 hover:underline"
+          title="not an answer after all: an ordinary message"
+          data-test="reply-cancel"
+          @click="emit('cancelReply')"
+        >
+          cancel
+        </button>
+      </div>
       <div
         v-if="attachments.length || attachError"
         class="flex flex-wrap items-center gap-2"
@@ -215,12 +250,12 @@ function onKey(e: KeyboardEvent) {
           rows="2"
           class="max-h-72 grow basis-full resize-none overflow-y-auto rounded border border-slate-300 px-3 py-2 text-base focus:border-blue-500 focus:outline-none md:min-w-[12rem] md:basis-0 dark:border-slate-700 max-md:pointer-coarse:py-3"
           :placeholder="
-            state === 'exited'
-              ? 'Send a message to resume the agent…'
-              : state === 'waiting-permission'
-                ? 'The agent is waiting for your answer above.'
-                : state === 'working'
-                  ? `Steer the agent…${hint}`
+            reply
+              ? `Your answer…${hint}`
+              : state === 'exited'
+                ? 'Send a message to resume the agent…'
+                : inTurn
+                  ? `Say something beside its work…${hint}`
                   : `Message the agent…${hint}`
           "
           :disabled="disabled"
@@ -258,17 +293,30 @@ function onKey(e: KeyboardEvent) {
           📷
         </button>
         <button
+          v-if="steerable"
+          type="button"
+          class="ml-auto rounded border border-blue-600 px-3 py-2 text-base text-blue-700 hover:bg-blue-50 disabled:opacity-50 md:ml-0 dark:text-blue-300 dark:hover:bg-blue-950 max-md:pointer-coarse:py-3"
+          :disabled="disabled || reading > 0 || empty"
+          data-test="steer"
+          title="Into the turn now, as an instruction the agent acts on at its next step: for when you mean to interrupt (Ctrl+Shift+Enter)"
+          @click="send(true)"
+        >
+          steer
+        </button>
+        <button
           type="submit"
-          class="ml-auto rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50 md:ml-0 max-md:pointer-coarse:px-5 max-md:pointer-coarse:py-3"
-          :disabled="busy || reading > 0 || (!text.trim() && attachments.length === 0)"
+          class="rounded bg-blue-600 px-4 py-2 text-base text-white hover:bg-blue-700 disabled:opacity-50 max-md:pointer-coarse:px-5 max-md:pointer-coarse:py-3"
+          :class="steerable ? '' : 'ml-auto md:ml-0'"
+          :disabled="disabled || reading > 0 || empty || !!blocked"
           data-test="send"
           :title="
-            steering
-              ? 'Delivered during the turn, at the agent\'s next step; or held for the next turn where the vendor cannot take one'
-              : undefined
+            blocked ??
+            (inTurn
+              ? 'Left beside its work: the agent is told a message waits and reads it when it chooses; nothing is interrupted'
+              : undefined)
           "
         >
-          {{ steering ? 'steer' : 'send' }}
+          send
         </button>
         <span
           v-if="queued"

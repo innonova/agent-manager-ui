@@ -115,7 +115,11 @@ async function follow() {
 const highlighted = ref(-1)
 async function goToTarget(): Promise<void> {
   const target = props.scrollTo
-  if (target == null || target === highlighted.value) return
+  if (target == null) {
+    highlighted.value = -1 // cleared: the same place asked for again is a new request
+    return
+  }
+  if (target === highlighted.value) return
   await nextTick()
   const e = el.value
   const row = e?.querySelector<HTMLElement>(`[data-index="${target}"]`)

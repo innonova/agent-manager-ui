@@ -37,15 +37,16 @@ end-to-end against a manager running with the fake adapter.
 /                               project list: name, repositories, agent counts by state; new/edit project form with repo rows
 /users                          accounts: create (password shown once), rename yourself, reset, remove
 /projects/:id                   project: agents sidebar, no agent selected
-/projects/:id/agents/:agentId   the selected agent's transcript and composer
+/projects/:id/agents/:agentId   the selected agent: the flow of its work, the chat beside it, the composer
 /projects/:id/files?path=       file tree + Monaco, read-only; the open file is in the URL
 /projects/:id/changes?repo=&feature=&agent=   the project's commits, with a diff; filters in the URL
 /projects/:id/features          features grouped by status; done, block, reopen, edit, respond; new feature form
 ```
 
 Project view layout: left column lists agents with a state badge; main
-column shows the selected agent's transcript with a turn input at the
-bottom; header shows project name and a "new agent" action. A project is
+column shows the selected agent as two panes, the flow of its work (the
+transcript) and the chat with the composer under it (see "The chat
+beside the flow"); header shows project name and a "new agent" action. A project is
 an ordered set of repositories (the first is primary, see the manager's
 design doc); the project form edits them as rows of name + absolute path,
 and the new-agent form picks the working repository when there is more
@@ -441,15 +442,82 @@ leaving it; sending waits for a paste still being read. Pasted images
 are not part of the draft: they are lost on navigation, unlike the
 text.
 
-## Steering a working agent
+## The chat beside the flow
 
-While an agent works, the composer stays open and its button reads
-"steer": the message goes to the manager with `steer: true`, which
-delivers it into the running turn where the vendor can take one
-(Claude, Codex) and otherwise holds it for the next turn; a held
-message shows as "N queued" beside the button and a toast says so.
-Starting and waiting on a permission still block sending. Interrupt is
-unchanged.
+A person and an agent talk without either stopping for the other. The
+manager keeps the chat as its own record per agent (its design doc,
+"Chat"); this is how it is shown.
+
+**Two panes.** The agent's view is a grid: the flow on the left (the
+transcript, complete, with the activity line over its foot), the chat
+on the right with the composer under it. The divider between them is
+dragged and remembered (`pane-width:agent-chat`, the chat's width, 520
+px to start with; a drag starts from the width the chat has, which in
+a small window is less than the one remembered), and the flow keeps 18
+rem however far it goes. "hide flow" in the header folds the flow to
+one line above the chat (`FlowStrip`: what the agent is doing and for
+how long, a click opens the flow again), remembered in
+`agent-flow-collapsed`; the chat then takes the width. The section is
+a Tailwind container, so the layout follows the room the view has, not
+the window: under 48 rem (`@3xl`; a phone, a small window, a wide
+tree) the panes are tabs, the chat first, with the composer under
+both, and the chat's tab carries the count of open questions. Sizes
+are in rem, so they follow the font-size preference.
+
+**What is in it.** What people said to the agent, however it was sent,
+and what the agent chose to say: messages, decisions, questions. The
+agent's last words of a turn are not copied into it: they are the last
+thing in the flow, beside it. An agent's message is Markdown; a
+decision carries the word, one marked important is red, an open
+question is amber. Every open question is also pinned at the top of
+the pane, however much was said since, with "answer" (the composer
+takes it: a chip names the question, the placeholder says "Your
+answer…", and what is sent goes with `replyTo`, which closes it) and
+"dismiss" (it needs no answer). A closed question says how it closed:
+answered, dismissed, or no longer needed by the agent. A person's
+message says how it reached the agent: "sent as a turn", "steered",
+"not read yet" (amber), "read 14:02".
+
+**The composer.** Outside a turn a message starts one, as before.
+While the agent is in a turn (working, starting, waiting on a
+permission) "send" leaves the message beside the work: the manager
+tells the agent a message waits, and the agent reads it when it
+chooses, or gets it as its next turn if the turn ends first. "steer",
+shown only while the agent works (Ctrl+Shift+Enter), puts it into the
+running turn as an instruction, where the vendor can take one; where
+it cannot, it stays an aside and a toast says so. An image goes with a
+turn or a steer, not with an aside, and the composer says so instead
+of sending. Interrupt is unchanged. Everything goes through
+`POST /api/agents/:id/chat`.
+
+**Its place in the flow.** A message's time is a link once the agent
+has it: it scrolls the flow to the agent's call that said it, the turn
+or steer where a person's message arrived, or the call with which the
+agent read an aside, unfolding the flow or switching to its tab first.
+The two records share a clock and nothing else, so the place is found
+by time, and a message handed over as written is matched by its text
+among the person's items near that time.
+
+**Where a question shows.** On the agent in the sidebar ("1 ?", beside
+its state badge: an agent with an open question is usually still
+working, which is the point), on a folded project in the tree as the
+sum, in the agent's header, on the chat's tab, in the attention badge,
+and as a notification. The sidebar's counts come from
+`GET /api/projects/:id/chat` once per listed project, and again after
+a reconnect; after that from `chat.changed` frames, which carry the
+changed messages themselves, so the open chat merges them by id
+without a fetch. A fetch that started before a frame about the same
+agent is asked again rather than trusted (`stores/chat.ts`).
+
+Markdown in either pane fits the pane (`.md-fit` in `main.css`): a
+long word or address breaks, a table or a block of code scrolls inside
+itself, and a table's words stay whole instead of folding into columns
+a letter wide.
+
+Known limits: an open question older than the newest 200 messages of
+its chat is counted everywhere but pinned only once the earlier
+messages are loaded; with the flow's tab open on a phone, someone
+else's "is typing" line is out of sight (it floats over the chat).
 
 The header's actions are stop, restart, archive and delete. Archive
 ends the session and takes the agent off the list; its transcript
@@ -606,9 +674,11 @@ gains a camera button that opens the photo roll into the same
 attachments a desktop pastes into; a note gets an edit button where
 double-click is not a thing. The composer's field grows with its text
 up to its cap on every pointer, and on a phone takes its whole row with
-the buttons under it. A permission waiting for an answer is also, below
-`md`, a bar above the composer with its options as big buttons, until
-answered, since that is what a thumb reaches for first. Everything
+the buttons under it. A permission waiting for an answer is also,
+wherever the flow and its card may be out of sight (the panes as tabs,
+or the flow folded to its line), a bar above the composer with its
+options as big buttons, until answered, since that is what a thumb
+reaches for first. Everything
 tappable has `touch-action: manipulation`, so a double tap does not
 zoom.
 
@@ -618,7 +688,9 @@ Below Tailwind's `md` (768 px) the panes give way to one thing at a
 time. On the agent view the tree is a drawer: hidden while an agent is
 open (☰ in the agent's header line opens it over the transcript, a tap
 beside it or choosing an agent closes it), and the page itself when no
-agent is chosen. The transcript takes the width, the agent header line
+agent is chosen. The chat and the flow are tabs, the chat first (so a
+notification about a question lands on the question), each taking the
+width; the agent header line
 wraps, the composer's field keeps a minimum width so the buttons wrap
 under it rather than squeeze it. The files and changes views stack
 their panes top to bottom instead of left to right. The page itself
@@ -694,7 +766,8 @@ toast.
 The tab title gets a count and the favicon a red badge with it, for the
 tab that is open but not looked at: agents in error or waiting for input
 or a permission across all projects (from the project counts the manager
-broadcasts), plus agents that finished a turn while this tab was hidden,
+broadcasts), the questions agents have open in their chats (of the
+projects the sidebar lists), plus agents that finished a turn while this tab was hidden,
 which clear when the tab is looked at again. The badge is drawn on a
 canvas over the SVG favicon; nothing else changes.
 
@@ -712,7 +785,11 @@ comes at its end; Codex and Copilot just deliver the output, so a
 "finished its background work" notification is sent instead, a few
 seconds after the count drops to zero and only if no turn started
 meanwhile. One notification per agent at a time;
-clicking it brings the window up on that agent.
+clicking it brings the window up on that agent. A question an agent
+asks in its chat, and anything it marks important, notifies under the
+same conditions, with the text as the body and each on its own (a
+question is not replaced by the next): the agent carries on, so no
+state change would say it.
 
 ## Testing
 
@@ -720,7 +797,10 @@ clicking it brings the window up on that agent.
   agent created (added only where the project's list is loaded, idempotent
   for the creating tab's own frame) and archived (dropped from the list)
   (`src/stores/agents.spec.ts`); the changes store's commit list, filters,
-  refresh-on-idle and marker move (`src/stores/changes.spec.ts`).
+  refresh-on-idle and marker move (`src/stores/changes.spec.ts`); the
+  chat store's merge by id, a frame arriving during a fetch, paging,
+  the per-project summaries and what is offered for a notification
+  (`src/stores/chat.spec.ts`).
 - End-to-end: Playwright against a real daemon (fake profile) and
   manager. The file is stateful and ordered: one manager serves the
   whole run, tests build on what earlier ones created (the "Demo"
@@ -735,7 +815,15 @@ clicking it brings the window up on that agent.
   and the changes view (the commit list and a commit diff, the working
   tree, the marker moving on leave, a commit appearing in another
   tab without a reload, and a commit made by a turn linking to that turn
-  in the transcript). There is no test for
+  in the transcript). `e2e/chat.spec.ts` covers the chat with its own
+  project: the two panes, an aside waiting unread and handed over at
+  the turn's end, a message's place in the flow, the agent's messages,
+  decisions and questions (spoken with the fake agent's own token, which
+  it says when asked), a question pinned, counted, answered, dismissed
+  and withdrawn, the divider and the folded flow and their memory, the
+  page's and the panes' overflow at widths from 1600 to 640 px with a
+  table, an address and a line of code wider than any pane, the
+  notification, and the tabs on a phone. There is no test for
   a dropped socket; the store's reconnect refetch is covered by the unit
   test.
 

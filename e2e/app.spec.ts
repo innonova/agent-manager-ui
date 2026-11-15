@@ -1,29 +1,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { execFileSync } from 'node:child_process'
-import { expect, test, type Page } from '@playwright/test'
-import { ADMIN_PASSWORD, E2E_ROOT, PROJECT_DIR, SECOND_DIR } from './constants'
-
-/** The agent header's facts fold away under the name; open them when a test needs one. */
-async function details(page: Page) {
-  if ((await page.getByTestId('agent-details').count()) === 0)
-    await page.getByTestId('agent-details-toggle').click()
-}
-
-/** How far the shell's main area overflows, in px: the page never scrolls as a whole. */
-const pageOverflow = (page: Page) =>
-  page
-    .locator('main')
-    .evaluate((m) => Math.max(m.scrollHeight - m.clientHeight, m.scrollWidth - m.clientWidth))
-
-async function login(page: Page) {
-  await page.goto('/')
-  await expect(page).toHaveURL(/\/login/)
-  await page.getByTestId('login-name').fill('admin')
-  await page.getByTestId('login-password').fill(ADMIN_PASSWORD)
-  await page.getByTestId('login-submit').click()
-  await expect(page).toHaveURL('/')
-}
+import { expect, test } from '@playwright/test'
+import { E2E_ROOT, PROJECT_DIR, SECOND_DIR } from './constants'
+import { details, login, pageOverflow } from './helpers'
 
 test('wrong password shows an error', async ({ page }) => {
   await page.goto('/login')
@@ -328,10 +308,19 @@ test.describe('phone', () => {
     await expect(page.getByTestId('new-project')).toBeVisible() // the projects page
     await page.goBack()
     await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
-    // a turn still works at this width
+    // one pane at a time at this width, the chat first: a turn is started from it
+    await expect(page.getByTestId('pane-tab-chat')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByTestId('flow-pane')).toBeHidden()
     await page.getByTestId('turn-input').fill('hello')
     await page.getByTestId('send').click()
+    await expect(page.getByTestId('chat-message').last()).toContainText('hello')
+    // the flow is the other tab, under the same composer
+    await page.getByTestId('pane-tab-flow').click()
     await expect(page.locator('[data-item="text"]').last()).toContainText('You said: hello')
+    await expect(page.locator('[data-item="text"]').last()).toBeVisible()
+    await expect(page.getByTestId('chat-pane')).toBeHidden()
+    await expect(page.getByTestId('turn-input')).toBeVisible()
+    expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
     // touch: the camera button shows, the placeholder has no modifier hint
     await expect(page.getByTestId('attach')).toBeVisible()
     await expect(page.getByTestId('turn-input')).toHaveAttribute(
@@ -521,11 +510,10 @@ test('an agent in ask mode waits for a permission; allow and deny answer it', as
   const card = page.locator('[data-item="permission"]').last()
   await expect(card).toContainText('Remove the build directory')
   await expect(card).toContainText('rm -rf dist')
-  await expect(page.getByTestId('turn-input')).toHaveAttribute(
-    'placeholder',
-    /waiting for your answer/,
-  )
-  await expect(page.getByTestId('send')).toBeDisabled()
+  // the composer stays open while it waits: what is written now is left beside the work
+  await expect(page.getByTestId('turn-input')).toHaveAttribute('placeholder', /beside its work/)
+  await expect(page.getByTestId('steer')).toHaveCount(0) // nothing to steer: it waits for the answer
+  await expect(page.getByTestId('permission-bar')).toBeHidden() // the card is in sight: no second set of buttons
   await card.getByTestId('permission-allow').click()
   await expect(card).toHaveAttribute('data-decision', 'allow')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
@@ -910,9 +898,7 @@ test('edit a project from inside it; save and restart resumes its idle agents', 
   await expect(page.getByRole('status')).toContainText(/restarted \d+ agent/)
 })
 
-test('a message while the agent works steers the turn instead of being refused', async ({
-  page,
-}) => {
+test('a message while the agent works can be steered into the turn', async ({ page }) => {
   await login(page)
   await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
   await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
@@ -920,14 +906,17 @@ test('a message while the agent works steers the turn instead of being refused',
   await page.getByTestId('turn-input').fill('slow please')
   await page.getByTestId('turn-input').press('Control+Enter')
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
-  await expect(page.getByTestId('send')).toHaveText('steer')
+  // send would leave it beside the work; steer puts it into the turn, as an instruction
   await page.getByTestId('turn-input').fill('and this')
-  await page.getByTestId('send').click()
+  await page.getByTestId('steer').click()
+  const steered = page.getByTestId('chat-message').filter({ hasText: 'and this' })
+  await expect(steered).toHaveAttribute('data-via', 'steer')
+  await expect(steered.getByTestId('chat-read')).toHaveText('steered')
   await expect(page.locator('[data-item="text"]').last()).toContainText('Also noted: and this', {
     timeout: 20000,
   })
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
-  await expect(page.getByTestId('send')).toHaveText('send')
+  await expect(page.getByTestId('steer')).toHaveCount(0) // only while it works
 })
 
 test('the left panes resize by their handle and remember the width', async ({ page }) => {

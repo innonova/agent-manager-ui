@@ -100,7 +100,7 @@ const cost = computed(() =>
       >
       <span>{{ time }}</span>
     </div>
-    <div class="whitespace-pre-wrap">{{ item.text }}</div>
+    <div class="wrap-anywhere whitespace-pre-wrap">{{ item.text }}</div>
     <!-- the last message sent: it can be taken back from here, where it is -->
     <div v-if="withdraw !== undefined" class="mt-1 flex justify-end">
       <button
@@ -135,7 +135,7 @@ const cost = computed(() =>
 
   <div
     v-else-if="item.kind === 'text'"
-    class="prose dark:prose-invert max-w-none"
+    class="md-fit prose dark:prose-invert max-w-none"
     :data-item="item.streaming ? 'text-streaming' : 'text'"
   >
     <div v-html="html" />

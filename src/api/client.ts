@@ -2,6 +2,8 @@ import type {
   AccountUsageRow,
   HostStatus,
   Notes,
+  ChatMessage,
+  ChatSummary,
   TurnImage,
   FileDiff,
   RepoChanges,
@@ -142,6 +144,37 @@ export const api = {
       ...(steer ? { steer: true } : {}),
       ...(images.length ? { images } : {}),
     }),
+  /** The agent's chat, oldest first: the newest messages, or the page before `before`. */
+  chat: (id: string, query: { before?: number; limit?: number } = {}) => {
+    const q = Object.entries(query)
+      .filter(([, v]) => v !== undefined)
+      .map(([k, v]) => `${k}=${v}`)
+      .join('&')
+    return call<{ messages: ChatMessage[]; summary: ChatSummary }>(
+      'GET',
+      `/api/agents/${id}/chat${q ? `?${q}` : ''}`,
+    )
+  },
+  /**
+   * Says something to the agent. `mode` is how it travelled: a turn when
+   * the agent was not in one, else left beside its work (`aside`) for it
+   * to read when it chooses, or put into the turn with `steer`.
+   */
+  chatSay: (
+    id: string,
+    body: { text: string; replyTo?: number; steer?: boolean; images?: TurnImage[] },
+  ) =>
+    call<{ message: ChatMessage; mode: 'aside' | 'turn' | 'steer' }>(
+      'POST',
+      `/api/agents/${id}/chat`,
+      body,
+    ),
+  /** Dismisses an open question of the agent's. */
+  chatClose: (id: string, messageId: number) =>
+    call<{ message: ChatMessage }>('POST', `/api/agents/${id}/chat/${messageId}/close`, {}),
+  /** Per agent of the project that has a chat: unread, open questions, the newest message. */
+  projectChat: (projectId: string) =>
+    call<({ agentId: string } & ChatSummary)[]>('GET', `/api/projects/${projectId}/chat`),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),
   /** Withdraws the last message sent to the agent; 409 with a code when it cannot be. */
   undo: (id: string) => call<{ withdrawn: number }>('POST', `/api/agents/${id}/undo`, {}),

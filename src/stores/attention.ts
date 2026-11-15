@@ -1,15 +1,18 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useProjectsStore } from '@/stores/projects'
+import { useChatStore } from '@/stores/chat'
 
 /**
  * What the tab shows when it is not being looked at: a count in the title
  * and a badge on the favicon. Counted: agents in error or waiting for
- * input or a permission, in every project, plus agents that finished a
- * turn while this tab was hidden ("ready", until the tab is looked at).
+ * input or a permission, in every project, the questions agents have open
+ * in their chats, plus agents that finished a turn while this tab was
+ * hidden ("ready", until the tab is looked at).
  */
 export const useAttentionStore = defineStore('attention', () => {
   const projects = useProjectsStore()
+  const chat = useChatStore()
   /** Agents that went idle after working while the tab was hidden. */
   const finishedAway = ref(new Set<string>())
 
@@ -19,7 +22,7 @@ export const useAttentionStore = defineStore('attention', () => {
       const c = row.agentCounts
       n += (c.error ?? 0) + (c['waiting-input'] ?? 0) + (c['waiting-permission'] ?? 0)
     }
-    return n
+    return n + chat.questions
   })
   const count = computed(() => needing.value + finishedAway.value.size)
 

@@ -8,6 +8,7 @@ import { when } from '@/time'
 import { useAgentsStore } from '@/stores/agents'
 import { useNotificationsStore } from '@/stores/notifications'
 import { useAttentionStore } from '@/stores/attention'
+import { useChatStore } from '@/stores/chat'
 import { useHostsStore } from '@/stores/hosts'
 import { useProjectsStore } from '@/stores/projects'
 import AgentCountBadges from './AgentCountBadges.vue'
@@ -24,6 +25,7 @@ const emit = defineEmits<{ newAgent: [projectId: string] }>()
 const projects = useProjectsStore()
 const agents = useAgentsStore()
 const attention = useAttentionStore()
+const chat = useChatStore()
 const hosts = useHostsStore()
 
 /**
@@ -89,6 +91,8 @@ watch(
   { immediate: true },
 )
 const rows = computed(() => projects.rows)
+// which agents have a question open is part of the list, collapsed projects included
+watch(rows, (list) => list.forEach((r) => chat.ensureProject(r.project.id)), { immediate: true })
 const agentsOf = (id: string) => agents.byProject.get(id) ?? []
 
 /** Archived agents, fetched when a project's "archived" row is opened; refetched when one is forgotten. */
@@ -192,6 +196,13 @@ events.on((f) => {
             >{{ r.project.host }}</span
           >
         </RouterLink>
+        <span
+          v-if="!isOpen(r.project.id) && chat.questionsIn(r.project.id)"
+          class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-sm font-normal text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+          :title="`${chat.questionsIn(r.project.id)} open question(s) from agents here`"
+          data-test="tree-project-questions"
+          >{{ chat.questionsIn(r.project.id) }} ?</span
+        >
         <AgentCountBadges v-if="!isOpen(r.project.id)" :counts="r.agentCounts" class="shrink-0" />
         <button
           v-else
@@ -217,6 +228,14 @@ events.on((f) => {
             />
             <span class="truncate">{{ a.agent.name }}</span>
             <span class="grow" />
+            <!-- its own state beside the other: the agent asked something and is still working -->
+            <span
+              v-if="chat.questionsOf(a.agent.id)"
+              class="shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-sm font-normal text-amber-900 dark:bg-amber-900 dark:text-amber-100"
+              :title="`${chat.questionsOf(a.agent.id)} open question(s) in its chat; it carries on meanwhile`"
+              data-test="agent-row-questions"
+              >{{ chat.questionsOf(a.agent.id) }} ?</span
+            >
             <StateBadge
               :state="a.status.state"
               :background="a.status.background"
