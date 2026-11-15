@@ -453,6 +453,14 @@ same. It is disabled with no model set: there is nothing to add it to,
 and Claude Code's own settings decide. Like the model it applies at the
 next restart.
 
+The header's actions have "compact" for an agent whose CLI the manager
+can ask (`compacts` on its profile; Claude today), after a confirm
+that says what it does: the context is replaced by a summary of
+itself and the dialog is handed back word for word, weighed first if
+it has grown. Disabled while the agent is in a turn, with the reason
+in its title. A compaction was something to put off; with the dialog
+handed back it is a way to renew a window that has drifted.
+
 A compaction shows twice: while it runs the activity line says
 "compacting the context" with the elapsed time and no token count (the
 count would be the turn's from before it), and when it is done the

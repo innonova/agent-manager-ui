@@ -192,6 +192,8 @@ export const api = {
   stop: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/stop`, {}),
   /** Stops and resumes one agent with the current settings; the manager refuses (409) while it is busy. */
   restart: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/restart`, {}),
+  /** Compacts the agent's context now: its dialog is weighed first when that is not fresh, then the vendor's own compaction is asked for. */
+  compact: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/compact`, {}),
   archive: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/archive`, {}),
   /** Forgets the agent for good: process, daemon logs, cache and rows; the vendor's own store stays. */
   remove: (id: string) => call<{ ok: true }>('DELETE', `/api/agents/${id}`),

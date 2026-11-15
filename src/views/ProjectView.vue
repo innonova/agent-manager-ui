@@ -309,6 +309,8 @@ const form = ref({
 const error = ref<string | null>(null)
 const busy = ref(false)
 const profiles = ref<Profile[]>([])
+/** The profiles whose CLI the manager can ask to compact; the form's list above changes with its host, this one is the project's. */
+const compacts = ref(new Set<string>())
 
 let loadGen = 0
 async function loadProject() {
@@ -327,6 +329,7 @@ async function loadProject() {
   ).profiles.filter((p) => p.supported)
   if (gen !== loadGen) return
   profiles.value = fetched
+  compacts.value = new Set(fetched.filter((p) => p.compacts).map((p) => p.name))
   form.value.host = ''
   form.value.profile = project.value?.defaultProfile ?? profiles.value[0]?.name ?? ''
   form.value.cwd = project.value?.repos[0]?.name ?? ''
@@ -608,6 +611,26 @@ async function restart() {
       .catch((e) => notifications.push('error', String(e.message ?? e)))
 }
 
+/**
+ * Compacts the agent's context on the person's word. Worth a button
+ * since the dialog is handed back afterwards: a window that was filled
+ * before there was a hand-back, or that has drifted, is traded for a
+ * fresh summary plus what was said, word for word.
+ */
+async function compact() {
+  if (
+    !props.agentId ||
+    !confirm(
+      "Compact this agent's context now? What it holds is replaced by a summary of it, and its dialog with you is handed back to it word for word. The dialog is weighed first if it has grown since the last time, which takes minutes; the flow says how it goes.",
+    )
+  )
+    return
+  await api
+    .compact(props.agentId)
+    .then(() => notifications.push('info', 'compaction asked for'))
+    .catch((e) => notifications.push('error', String(e.message ?? e)))
+}
+
 async function remove() {
   if (
     !props.agentId ||
@@ -841,6 +864,20 @@ async function archive() {
                 @click="restart"
               >
                 restart
+              </button>
+              <button
+                v-if="compacts.has(current.agent.profile)"
+                class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-transparent dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
+                :disabled="!['idle', 'exited'].includes(current.status.state)"
+                :title="
+                  ['idle', 'exited'].includes(current.status.state)
+                    ? 'replace what the agent holds in its context by a summary of it, and hand its dialog with you back to it word for word'
+                    : 'the agent is in a turn; compact it when the turn has ended'
+                "
+                data-test="compact"
+                @click="compact"
+              >
+                compact
               </button>
               <button
                 class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"

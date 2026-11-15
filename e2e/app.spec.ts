@@ -1175,6 +1175,35 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('learning').first()).toContainText('run-idle e2e')
 })
 
+test("compact, on the person's word: the agent is asked to compact its context, and not while it works", async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  page.once('dialog', (d) => {
+    expect(d.message()).toContain('handed back to it word for word')
+    void d.accept()
+  })
+  await page.getByTestId('compact').click()
+  // the vendor's command goes as a message of the person's; the fake agent answers it like any other
+  await expect(
+    page.getByTestId('transcript').locator('[data-item="user"]').filter({ hasText: '/compact' }),
+  ).toBeVisible({ timeout: 20000 })
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle', {
+    timeout: 20000,
+  })
+  await page.getByTestId('turn-input').fill('linger')
+  await page.getByTestId('turn-input').press('Control+Enter')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
+  await expect(page.getByTestId('compact')).toBeDisabled()
+  await page.getByTestId('interrupt').click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle', {
+    timeout: 20000,
+  })
+})
+
 test('an agent reporting its account usage shows a chip in its header and a block on the projects page', async ({
   page,
 }) => {

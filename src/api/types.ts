@@ -245,6 +245,8 @@ export interface Profile {
   name: string
   description?: string
   supported: boolean
+  /** Whether the manager can ask this profile's CLI to compact its context. */
+  compacts?: boolean
 }
 
 export type EventFrame =
