@@ -76,13 +76,11 @@ test('a message beside the work waits unread, and is handed over when the turn e
   const a = await newAgent(page, projectId, 'talker')
   await page.goto(`/projects/${projectId}/agents/${a.id}`)
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
-  // two panes: the flow of its work on the left, the chat on the right, the composer under the chat
+  // two panes: the flow of its work on the left, the chat on the right
   const flow = (await page.getByTestId('flow-pane').boundingBox())!
   const chat = (await page.getByTestId('chat-pane').boundingBox())!
   expect(flow.x + flow.width).toBeLessThanOrEqual(chat.x + 1)
   expect(chat.width).toBeGreaterThan(400)
-  const input = (await page.getByTestId('turn-input').boundingBox())!
-  expect(input.x).toBeGreaterThanOrEqual(chat.x)
   await expect(page.getByTestId('pane-tabs')).toBeHidden()
   // what a person said is in the chat however it was sent; what the agent answered is in the flow
   await expect(page.getByTestId('chat-message')).toHaveCount(1)
@@ -352,7 +350,7 @@ test('the flow folds to a line and the divider drags, both remembered; nothing o
   await page.setViewportSize({ width: 1280, height: 720 })
 
   // the flow folded: one line of what the agent is doing, the chat takes the width
-  await page.getByTestId('flow-toggle').click()
+  await page.getByTestId('panes-chat').click()
   await expect(flowPane).toBeHidden()
   await expect(page.getByTestId('flow-strip')).toBeVisible()
   await expect(page.getByTestId('agent-panes').getByTestId('resize-handle')).toHaveCount(0)
@@ -375,10 +373,86 @@ test('the flow folds to a line and the divider drags, both remembered; nothing o
   await message(page, 'this needs permission').getByTestId('chat-locate').click()
   await expect(flowPane).toBeVisible()
   await expect(flowPane.locator('[data-index].ring-2')).toContainText('this needs permission')
-  await page.getByTestId('flow-toggle').click()
+  await page.getByTestId('panes-chat').click()
   await page.getByTestId('flow-strip').click() // and so does the line itself
   await expect(flowPane).toBeVisible()
   await expect(page.getByTestId('flow-strip')).toHaveCount(0)
+  await a.own.dispose()
+})
+
+test('the chat is not in the way: one composer under both panes, and the flow alone is the conversation as it was', async ({
+  page,
+}) => {
+  await login(page)
+  const projectId = await chatProject(page)
+  const a = await newAgent(page, projectId, 'direct')
+  await page.goto(`/projects/${projectId}/agents/${a.id}`)
+  const chatPane = page.getByTestId('chat-pane')
+  const flowPane = page.getByTestId('flow-pane')
+  const composer = page.getByTestId('composer')
+  const input = page.getByTestId('turn-input')
+  const news = page.getByTestId('panes-chat').locator('span')
+  const edges = async (l: typeof composer) => {
+    const b = (await l.boundingBox())!
+    return { left: Math.round(b.x), right: Math.round(b.x + b.width), bottom: b.y + b.height }
+  }
+  // side by side, the composer belongs to neither pane: it runs under both
+  await expect(page.getByTestId('panes-both')).toHaveAttribute('aria-pressed', 'true')
+  await expect(chatPane).toBeVisible()
+  expect((await edges(composer)).left).toBe((await edges(flowPane)).left)
+  expect((await edges(composer)).right).toBe((await edges(chatPane)).right)
+  expect((await edges(chatPane)).bottom).toBeCloseTo((await edges(flowPane)).bottom, 0)
+  // a turn is a conversation in the flow: asked under it, answered in it
+  await input.fill('hello there')
+  await input.press('Control+Enter')
+  await expect(flowPane).toContainText('You said: hello there')
+  await page.screenshot({ path: 'test-results/chat-composer-under-both.png' })
+
+  // the flow alone: the chat is put away, and the view is the one there was before it
+  await page.getByTestId('panes-flow').click()
+  await expect(chatPane).toBeHidden()
+  await expect(page.getByTestId('pane-tabs')).toBeHidden()
+  await expect(page.getByTestId('agent-panes').getByTestId('resize-handle')).toHaveCount(0)
+  expect(await edges(composer)).toMatchObject({
+    left: (await edges(flowPane)).left,
+    right: (await edges(flowPane)).right,
+  })
+  await input.fill('and again')
+  await input.press('Control+Enter')
+  await expect(flowPane).toContainText('You said: and again')
+  expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
+  await page.reload() // remembered
+  await expect(flowPane).toContainText('You said: and again')
+  await expect(chatPane).toBeHidden()
+  await expect(page.getByTestId('panes-flow')).toHaveAttribute('aria-pressed', 'true')
+
+  // what the agent says meanwhile is not missed: counted on the way back to the chat
+  await expect(news).toHaveCount(0)
+  await say(a, { text: 'Chose the smaller change.', kind: 'decision' })
+  await expect(news).toHaveText('1 new')
+  await say(a, { text: 'Keep the old name?', kind: 'question' })
+  await expect(news).toHaveText(['1 ?', '1 new'])
+  await page.screenshot({ path: 'test-results/chat-put-away.png' })
+  // the question in the header brings the chat back, beside the flow
+  await page.getByTestId('agent-questions').click()
+  await expect(page.getByTestId('chat-question')).toContainText('Keep the old name?')
+  await expect(flowPane).toBeVisible()
+  await expect(page.getByTestId('panes-both')).toHaveAttribute('aria-pressed', 'true')
+  await expect(news).toHaveCount(0)
+  await page.getByTestId('chat-dismiss').click()
+
+  // something written while it works, with the chat away, is in neither pane yet: the switch says it waits
+  await page.getByTestId('panes-flow').click()
+  await expect(news).toHaveCount(0) // nothing new since the chat was last in sight
+  await input.fill('linger')
+  await input.press('Control+Enter')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
+  await input.fill('a thought meanwhile')
+  await input.press('Control+Enter')
+  await expect(page.getByTestId('panes-chat-waiting')).toHaveText('1 waiting')
+  await page.getByTestId('interrupt').click()
+  await expect(flowPane).toContainText('You said: a thought meanwhile') // handed over when the turn ended
+  await expect(news).toHaveCount(0)
   await a.own.dispose()
 })
 
@@ -446,7 +520,7 @@ test.describe('phone', () => {
     await expect(page.getByTestId('chat-pinned')).toBeInViewport()
     await expect(page.getByTestId('chat-pinned')).toContainText('Is the smaller layout fine')
     await expect(page.getByTestId('flow-pane')).toBeHidden()
-    await expect(page.getByTestId('flow-toggle')).toBeHidden() // folding is for two panes
+    await expect(page.getByTestId('panes')).toBeHidden() // choosing panes is for where two fit
     expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
     await page.screenshot({ path: 'test-results/chat-phone.png' })
     // answered where it is
@@ -469,6 +543,11 @@ test.describe('phone', () => {
     expect(await pageOverflow(page)).toBeLessThanOrEqual(1)
     await page.getByTestId('pane-tab-chat').click()
     await expect(message(page, 'Going with the smaller')).toBeVisible()
+    // someone who put the chat away gets the flow in front here too
+    await page.evaluate(() => localStorage.setItem('agent-panes', 'flow'))
+    await page.reload()
+    await expect(page.getByTestId('pane-tab-flow')).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByTestId('flow-pane')).toContainText('good as it is')
     await a.own.dispose()
   })
 })

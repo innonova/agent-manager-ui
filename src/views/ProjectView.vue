@@ -51,9 +51,11 @@ const showDetails = ref(false)
 const treePane = useResizable('project-tree', 288)
 /**
  * The agent's view is two panes: the flow of its work on the left and the
- * chat on the right, whose width is the one dragged and remembered. The
- * flow folds to a line above the chat. Where the view is too narrow for
- * two panes (a phone, a small window) they are tabs, the chat first.
+ * chat on the right, whose width is the one dragged and remembered, with
+ * one composer under both. Either pane can be put away: the flow alone is
+ * the conversation as it was before there was a chat, the chat alone has
+ * the flow folded to a line above it. Where the view is too narrow for
+ * two panes (a phone, a small window) they are tabs.
  */
 const chatPane = useResizable('agent-chat', 520, 320, 1400, 'left')
 const chatEl = ref<HTMLElement | null>(null)
@@ -63,15 +65,88 @@ function startChatDrag(e: PointerEvent) {
   if (shown) chatPane.width.value = Math.round(shown)
   chatPane.start(e)
 }
-const FLOW_KEY = 'agent-flow-collapsed'
-const flowCollapsed = ref(localStorage.getItem(FLOW_KEY) === '1')
-function setFlowCollapsed(v: boolean) {
-  flowCollapsed.value = v
-  localStorage.setItem(FLOW_KEY, v ? '1' : '0')
+const LAYOUTS = ['flow', 'both', 'chat'] as const
+type Layout = (typeof LAYOUTS)[number]
+const LAYOUT_KEY = 'agent-panes'
+const LAYOUT_TITLE: Record<Layout, string> = {
+  flow: 'the flow alone, the conversation as it was: the chat is put away, and what the agent asks or says in it is counted here',
+  both: 'the flow and the chat side by side',
+  chat: 'the chat alone, the flow folded to one line above it',
 }
-const tab = ref<'chat' | 'flow'>('chat')
+const layout = ref<Layout>(
+  LAYOUTS.find((l) => l === localStorage.getItem(LAYOUT_KEY)) ??
+    // what "hide flow" used to remember
+    (localStorage.getItem('agent-flow-collapsed') === '1' ? 'chat' : 'both'),
+)
+function setLayout(l: Layout) {
+  layout.value = l
+  localStorage.setItem(LAYOUT_KEY, l)
+}
+/** As tabs, the one in front is the pane the layout keeps: the chat, unless it was put away. */
+const firstTab = () => (layout.value === 'flow' ? 'flow' : 'chat')
+const tab = ref<'chat' | 'flow'>(firstTab())
 const messages = computed(() => (props.agentId ? chat.of(props.agentId) : []))
 const openQuestions = computed(() => (props.agentId ? chat.questionsOf(props.agentId) : 0))
+/**
+ * What the agent said while the chat was put away: counted on the way
+ * back to it, so a decision is not missed for not having been looked at.
+ * Per tab and from when the chat was last in sight; nothing is kept.
+ */
+const seenUpTo = ref(new Map<string, number>())
+watch(
+  [() => props.agentId, () => messages.value[messages.value.length - 1]?.id, layout],
+  ([id, last]) => {
+    if (!id || last === undefined) return
+    if (layout.value !== 'flow' || !seenUpTo.value.has(id))
+      seenUpTo.value = new Map(seenUpTo.value).set(id, last)
+  },
+  { immediate: true },
+)
+const unseen = computed(() => {
+  const upTo = props.agentId ? seenUpTo.value.get(props.agentId) : undefined
+  if (upTo === undefined || layout.value !== 'flow') return 0
+  // an open question is counted as that, not twice
+  return messages.value.filter(
+    (m) => m.from === 'agent' && m.id > upTo && !(m.kind === 'question' && !m.closedAt),
+  ).length
+})
+/** What was left beside the agent's work and it has not read: with the chat put away, the only sign of where a message went. */
+const waiting = computed(
+  () => messages.value.filter((m) => m.from === 'person' && m.via === 'aside' && !m.readAt).length,
+)
+/** On the switch's "chat" while the chat is put away: what is in it that the flow does not show. */
+const chatNews = computed(() =>
+  layout.value !== 'flow'
+    ? []
+    : [
+        {
+          key: 'questions',
+          n: openQuestions.value,
+          text: `${openQuestions.value} ?`,
+          tone: 'bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100',
+          title: 'the agent has a question open in the chat',
+        },
+        {
+          key: 'new',
+          n: unseen.value,
+          text: `${unseen.value} new`,
+          tone: 'bg-blue-100 text-blue-900 dark:bg-blue-900 dark:text-blue-100',
+          title: 'said by the agent in the chat since you put it away',
+        },
+        {
+          key: 'waiting',
+          n: waiting.value,
+          text: `${waiting.value} waiting`,
+          tone: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+          title:
+            'left beside its work and not read yet: the agent has been told a message waits, and gets it as its next turn if this one ends first',
+        },
+      ].filter((c) => c.n > 0),
+)
+function showChat() {
+  if (layout.value === 'flow') setLayout('both')
+  tab.value = 'chat'
+}
 /** The agent's open question the composer is answering. */
 const replyTo = ref<ChatMessage | null>(null)
 const items = computed(() => (props.agentId ? (agents.items.get(props.agentId) ?? []) : []))
@@ -119,7 +194,7 @@ watch(
   () => {
     drawer.value = false
     replyTo.value = null
-    tab.value = 'chat'
+    tab.value = firstTab()
   },
 )
 watch(
@@ -444,7 +519,7 @@ async function locate(m: ChatMessage) {
     notifications.push('info', 'that moment is not in the flow')
     return
   }
-  setFlowCollapsed(false)
+  if (layout.value === 'chat') setLayout('both')
   tab.value = 'flow'
   scrollTarget.value = null // the same place again is still a request to go there
   await nextTick()
@@ -575,13 +650,16 @@ async function archive() {
               :background="current.status.background"
               data-test="agent-state"
             />
-            <span
+            <button
               v-if="openQuestions"
-              class="rounded bg-amber-100 px-1.5 py-0.5 text-sm text-amber-900 dark:bg-amber-900 dark:text-amber-100"
-              title="asked in the chat and not answered yet; the agent carries on meanwhile"
+              type="button"
+              class="rounded bg-amber-100 px-1.5 py-0.5 text-sm text-amber-900 hover:bg-amber-200 dark:bg-amber-900 dark:text-amber-100 dark:hover:bg-amber-800"
+              title="asked in the chat and not answered yet; the agent carries on meanwhile. Click to see it"
               data-test="agent-questions"
-              >{{ openQuestions }} open question{{ openQuestions === 1 ? '' : 's' }}</span
+              @click="showChat"
             >
+              {{ openQuestions }} open question{{ openQuestions === 1 ? '' : 's' }}
+            </button>
             <span
               v-if="current.status.model"
               class="font-mono text-sm text-slate-500 dark:text-slate-400"
@@ -623,19 +701,42 @@ async function archive() {
             >
               {{ othersHere.map((u) => `${u.name} is here`).join(' · ') }}
             </span>
-            <button
-              type="button"
-              class="hidden rounded border border-slate-300 px-2 py-0.5 text-sm text-slate-600 hover:bg-slate-100 @3xl:block dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-              :title="
-                flowCollapsed
-                  ? 'show the flow beside the chat: everything the agent does, as it does it'
-                  : 'fold the flow to one line above the chat'
-              "
-              data-test="flow-toggle"
-              @click="setFlowCollapsed(!flowCollapsed)"
+            <!-- which panes: the flow, the chat, or both; as tabs (too narrow for two) there is nothing to choose -->
+            <div
+              class="hidden items-center overflow-hidden rounded border border-slate-300 text-sm @3xl:flex dark:border-slate-700"
+              role="group"
+              aria-label="panes shown"
+              data-test="panes"
             >
-              {{ flowCollapsed ? 'show flow' : 'hide flow' }}
-            </button>
+              <button
+                v-for="l in LAYOUTS"
+                :key="l"
+                type="button"
+                class="border-slate-300 px-2 py-0.5 not-first:border-l dark:border-slate-700"
+                :class="
+                  layout === l
+                    ? 'bg-slate-200 font-medium text-slate-900 dark:bg-slate-700 dark:text-slate-100'
+                    : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                "
+                :title="LAYOUT_TITLE[l]"
+                :aria-pressed="layout === l"
+                :data-test="`panes-${l}`"
+                @click="setLayout(l)"
+              >
+                {{ l }}
+                <template v-if="l === 'chat'">
+                  <span
+                    v-for="c in chatNews"
+                    :key="c.key"
+                    class="ml-0.5 rounded px-1"
+                    :class="c.tone"
+                    :title="c.title"
+                    :data-test="`panes-chat-${c.key}`"
+                    >{{ c.text }}</span
+                  >
+                </template>
+              </button>
+            </div>
             <div
               class="flex items-center overflow-hidden rounded border border-slate-300 text-sm dark:border-slate-700 max-md:pointer-coarse:text-base"
               data-test="agent-actions"
@@ -724,7 +825,7 @@ async function archive() {
             </button>
           </div>
         </div>
-        <!-- too narrow for two panes: tabs, the chat first -->
+        <!-- too narrow for two panes: tabs, the chat first unless it was put away -->
         <div
           class="flex border-b border-slate-200 bg-white text-base @3xl:hidden dark:border-slate-800 dark:bg-slate-900"
           data-test="pane-tabs"
@@ -753,7 +854,9 @@ async function archive() {
         </div>
         <div
           class="grid min-h-0 grow grid-cols-1 grid-rows-[minmax(0,1fr)_auto_auto]"
-          :class="flowCollapsed ? '' : '@3xl:grid-cols-[minmax(18rem,1fr)_minmax(0,var(--chat-w))]'"
+          :class="
+            layout === 'both' ? '@3xl:grid-cols-[minmax(18rem,1fr)_minmax(0,var(--chat-w))]' : ''
+          "
           :style="{ '--chat-w': `${chatPane.width.value}px` }"
           data-test="agent-panes"
         >
@@ -761,9 +864,7 @@ async function archive() {
             class="relative min-h-0 min-w-0"
             :class="[
               tab === 'flow' ? 'block' : 'hidden',
-              flowCollapsed
-                ? '@3xl:hidden'
-                : '@3xl:col-start-1 @3xl:row-span-3 @3xl:row-start-1 @3xl:block',
+              layout === 'chat' ? '@3xl:hidden' : '@3xl:col-start-1 @3xl:row-start-1 @3xl:block',
             ]"
             data-test="flow-pane"
           >
@@ -789,19 +890,23 @@ async function archive() {
           </div>
           <div
             ref="chatEl"
-            class="relative min-h-0 min-w-0 flex-col border-slate-200 @3xl:flex dark:border-slate-800"
+            class="min-h-0 min-w-0 flex-col border-slate-200 dark:border-slate-800"
             :class="[
               tab === 'chat' ? 'flex' : 'hidden',
-              flowCollapsed ? '' : '@3xl:col-start-2 @3xl:row-start-1 @3xl:border-l',
+              layout === 'flow'
+                ? '@3xl:hidden'
+                : layout === 'both'
+                  ? '@3xl:col-start-2 @3xl:row-start-1 @3xl:flex @3xl:border-l'
+                  : '@3xl:flex',
             ]"
             data-test="chat-pane"
           >
-            <div v-if="flowCollapsed" class="hidden shrink-0 @3xl:block">
+            <div v-if="layout === 'chat'" class="hidden shrink-0 @3xl:block">
               <FlowStrip
                 :state="current.status.state"
                 :activity="effectiveActivity"
                 :tool-name="activeToolName"
-                @open="setFlowCollapsed(false)"
+                @open="setLayout('both')"
               />
             </div>
             <ChatPane
@@ -813,22 +918,11 @@ async function archive() {
               @locate="locate"
               @load-earlier="chat.loadEarlier(current.agent.id)"
             />
-            <!-- typing floats over the bottom of the chat, right above the
-                 input, without moving anything -->
-            <div
-              v-if="othersTyping.length"
-              class="pointer-events-none absolute bottom-2 left-4 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
-              data-test="presence-typing"
-            >
-              <span class="animate-pulse">{{
-                othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
-              }}</span>
-            </div>
           </div>
-          <!-- the divider between the panes, on the chat's left edge down to the composer -->
+          <!-- the divider between the panes, on the chat's left edge -->
           <div
-            v-if="!flowCollapsed"
-            class="z-10 hidden justify-self-start @3xl:col-start-2 @3xl:row-span-3 @3xl:row-start-1 @3xl:flex"
+            v-if="layout === 'both'"
+            class="z-10 hidden justify-self-start @3xl:col-start-2 @3xl:row-start-1 @3xl:flex"
           >
             <ResizeHandle @start="startChatDrag" />
           </div>
@@ -837,7 +931,7 @@ async function archive() {
           <div
             v-if="pendingPermission"
             class="flex items-center gap-2 border-t border-amber-400 bg-amber-50 px-3 py-2 dark:border-amber-600 dark:bg-amber-950"
-            :class="flowCollapsed ? '' : '@3xl:hidden'"
+            :class="layout === 'chat' ? '' : '@3xl:hidden'"
             data-test="permission-bar"
           >
             <span class="min-w-0 grow truncate text-sm text-amber-900 dark:text-amber-100"
@@ -859,20 +953,37 @@ async function archive() {
               {{ o.label }}
             </button>
           </div>
-          <TurnInput
-            ref="turnInput"
-            :key="current.agent.id"
-            :class="flowCollapsed ? '' : '@3xl:col-start-2 @3xl:row-start-3 @3xl:border-l'"
-            :agent-id="current.agent.id"
-            :state="current.status.state"
-            :queued="current.status.queued"
-            :reply="replyTo ? { id: replyTo.id, excerpt: replyTo.text } : null"
-            @send="send"
-            @interrupt="interrupt"
-            @typing="presence.typed()"
-            @stopped-typing="presence.stoppedTyping()"
-            @cancel-reply="replyTo = null"
-          />
+          <!-- one composer for the agent, under whichever panes are shown: what is written goes
+               to the flow as a turn or beside it as an aside, and the manager decides which -->
+          <div
+            class="relative min-w-0"
+            :class="layout === 'both' ? '@3xl:col-span-2' : ''"
+            data-test="composer"
+          >
+            <!-- typing floats right above the input, without moving anything -->
+            <div
+              v-if="othersTyping.length"
+              class="pointer-events-none absolute bottom-full left-4 mb-2 rounded bg-white/90 px-2 py-0.5 text-sm text-violet-700 shadow-sm dark:bg-slate-900/90 dark:text-violet-300"
+              data-test="presence-typing"
+            >
+              <span class="animate-pulse">{{
+                othersTyping.map((u) => `${u.name} is typing…`).join(' · ')
+              }}</span>
+            </div>
+            <TurnInput
+              ref="turnInput"
+              :key="current.agent.id"
+              :agent-id="current.agent.id"
+              :state="current.status.state"
+              :queued="current.status.queued"
+              :reply="replyTo ? { id: replyTo.id, excerpt: replyTo.text } : null"
+              @send="send"
+              @interrupt="interrupt"
+              @typing="presence.typed()"
+              @stopped-typing="presence.stoppedTyping()"
+              @cancel-reply="replyTo = null"
+            />
+          </div>
         </div>
       </section>
       <section

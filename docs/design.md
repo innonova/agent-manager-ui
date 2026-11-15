@@ -45,7 +45,7 @@ end-to-end against a manager running with the fake adapter.
 
 Project view layout: left column lists agents with a state badge; main
 column shows the selected agent as two panes, the flow of its work (the
-transcript) and the chat with the composer under it (see "The chat
+transcript) and the chat, with the composer under both (see "The chat
 beside the flow"); header shows project name and a "new agent" action. A project is
 an ordered set of repositories (the first is primary, see the manager's
 design doc); the project form edits them as rows of name + absolute path,
@@ -448,21 +448,36 @@ A person and an agent talk without either stopping for the other. The
 manager keeps the chat as its own record per agent (its design doc,
 "Chat"); this is how it is shown.
 
-**Two panes.** The agent's view is a grid: the flow on the left (the
-transcript, complete, with the activity line over its foot), the chat
-on the right with the composer under it. The divider between them is
+**Two panes, either of which can be put away.** The agent's view is a
+grid: the flow on the left (the transcript, complete, with the activity
+line over its foot), the chat on the right, and one composer under
+both. The composer belongs to the agent, not to a pane: outside a turn
+what is written is a turn, a conversation in the flow, asked under it
+and answered in it; under the chat alone it made that conversation
+feel like writing somewhere else. The divider between the panes is
 dragged and remembered (`pane-width:agent-chat`, the chat's width, 520
 px to start with; a drag starts from the width the chat has, which in
 a small window is less than the one remembered), and the flow keeps 18
-rem however far it goes. "hide flow" in the header folds the flow to
-one line above the chat (`FlowStrip`: what the agent is doing and for
-how long, a click opens the flow again), remembered in
-`agent-flow-collapsed`; the chat then takes the width. The section is
-a Tailwind container, so the layout follows the room the view has, not
-the window: under 48 rem (`@3xl`; a phone, a small window, a wide
-tree) the panes are tabs, the chat first, with the composer under
-both, and the chat's tab carries the count of open questions. Sizes
-are in rem, so they follow the font-size preference.
+rem however far it goes.
+
+A switch in the header, "flow · both · chat", says which panes are
+shown, remembered in `agent-panes`. **The chat is not enforced**:
+"flow" puts it away and leaves the view there was before it, the
+transcript with the composer under it. What the chat holds meanwhile
+that the flow does not show is counted on the switch's "chat": open
+questions ("1 ?"), what the agent said since the chat was last in
+sight ("2 new", per tab, kept nowhere), and what was written beside
+its work and it has not read ("1 waiting"). The header's "N open
+questions" brings the chat back. "chat" folds the flow to one line
+above the chat (`FlowStrip`: what the agent is doing and for how long,
+a click opens the flow again).
+
+The section is a Tailwind container, so the layout follows the room
+the view has, not the window: under 48 rem (`@3xl`; a phone, a small
+window, a wide tree) the panes are tabs with the composer under both,
+the chat in front unless it was put away, and the chat's tab carries
+the count of open questions. Sizes are in rem, so they follow the
+font-size preference.
 
 **What is in it.** What people said to the agent, however it was sent,
 and what the agent chose to say: messages, decisions, questions. The
@@ -516,8 +531,7 @@ a letter wide.
 
 Known limits: an open question older than the newest 200 messages of
 its chat is counted everywhere but pinned only once the earlier
-messages are loaded; with the flow's tab open on a phone, someone
-else's "is typing" line is out of sight (it floats over the chat).
+messages are loaded.
 
 The header's actions are stop, restart, archive and delete. Archive
 ends the session and takes the agent off the list; its transcript
@@ -676,7 +690,7 @@ double-click is not a thing. The composer's field grows with its text
 up to its cap on every pointer, and on a phone takes its whole row with
 the buttons under it. A permission waiting for an answer is also,
 wherever the flow and its card may be out of sight (the panes as tabs,
-or the flow folded to its line), a bar above the composer with its
+or the chat alone with the flow folded to its line), a bar above the composer with its
 options as big buttons, until answered, since that is what a thumb
 reaches for first. Everything
 tappable has `touch-action: manipulation`, so a double tap does not
@@ -820,7 +834,9 @@ state change would say it.
   the turn's end, a message's place in the flow, the agent's messages,
   decisions and questions (spoken with the fake agent's own token, which
   it says when asked), a question pinned, counted, answered, dismissed
-  and withdrawn, the divider and the folded flow and their memory, the
+  and withdrawn, the divider, the switch between the panes and their
+memory, the composer under both panes, the chat put away (the view as
+it was, and what is counted on the switch meanwhile), the
   page's and the panes' overflow at widths from 1600 to 640 px with a
   table, an address and a line of code wider than any pane, the
   notification, and the tabs on a phone. There is no test for
