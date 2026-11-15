@@ -34,6 +34,8 @@ const text = computed(() => {
       return toolPhrase(props.toolName)
     case 'waiting':
       return 'waiting for your answer'
+    case 'compacting':
+      return 'compacting the context'
     default:
       return props.state
   }

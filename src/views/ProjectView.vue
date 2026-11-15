@@ -13,6 +13,7 @@ import ModalForm from '@/components/ModalForm.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
 import UsageChip from '@/components/UsageChip.vue'
+import { hasLongWindow, windowSize, withLongWindow } from '@/model'
 import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
@@ -232,6 +233,18 @@ watch(
 function onTreeClick(e: MouseEvent) {
   if ((e.target as HTMLElement | null)?.closest('[data-test=agent-row]')) drawer.value = false
 }
+/** The current agent's context window, for the header: how full, and of what size. */
+const context = computed(() => {
+  const c = current.value?.status.usage?.context
+  if (!c) return null
+  return {
+    percent: Math.round((100 * c.used) / Math.max(1, c.size)),
+    size: windowSize(c.size),
+    title: `context window: ${c.used.toLocaleString()} of ${c.size.toLocaleString()} tokens in use. When it fills, the conversation is compacted: replaced by a summary of itself.`,
+  }
+})
+const LONG_WINDOW_TITLE =
+  "Claude's 1M window is asked for by [1m] at the end of the model name; without it the window is the model's default, 200K for some. With no model set, Claude Code's own settings decide. The agent's header shows the window it got."
 /** The edit form for the current agent: name at once, the rest at its next restart. */
 const editing = ref<{
   name: string
@@ -717,6 +730,19 @@ async function archive() {
               data-test="agent-model-chip"
               >{{ current.status.model }}</span
             >
+            <!-- beside the model, not among the facts: which window the agent got is not seen in the name -->
+            <span
+              v-if="context"
+              class="font-mono text-sm whitespace-nowrap"
+              :class="
+                context.percent >= 80
+                  ? 'text-amber-600/80 dark:text-amber-400/80'
+                  : 'text-slate-400 dark:text-slate-500'
+              "
+              :title="context.title"
+              data-test="agent-context"
+              >ctx {{ context.percent }}% of {{ context.size }}</span
+            >
             <span
               v-if="current.agent.createdBy && current.agent.createdBy.startsWith('agent-')"
               class="text-sm text-slate-500 dark:text-slate-400"
@@ -1113,16 +1139,37 @@ async function archive() {
         />
       </label>
       <div class="grid grid-cols-2 gap-3">
-        <label class="text-base">
-          <span class="text-slate-600 dark:text-slate-300">Model</span>
-          <input
-            v-model="editing.model"
-            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
-            placeholder="vendor default"
-            title="The vendor's model name, passed as is at the next session start."
-            data-test="edit-agent-model"
-          />
-        </label>
+        <div>
+          <label class="text-base">
+            <span class="text-slate-600 dark:text-slate-300">Model</span>
+            <input
+              v-model="editing.model"
+              class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
+              placeholder="vendor default"
+              title="The vendor's model name, passed as is at the next session start."
+              data-test="edit-agent-model"
+            />
+          </label>
+          <label
+            v-if="current.agent.profile === 'claude'"
+            class="mt-1.5 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+            :title="LONG_WINDOW_TITLE"
+          >
+            <input
+              type="checkbox"
+              :checked="hasLongWindow(editing.model)"
+              :disabled="!editing.model.trim()"
+              data-test="edit-agent-1m"
+              @change="
+                editing.model = withLongWindow(
+                  editing.model,
+                  ($event.target as HTMLInputElement).checked,
+                )
+              "
+            />
+            1M context window
+          </label>
+        </div>
         <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">Effort</span>
           <select
@@ -1204,16 +1251,34 @@ async function archive() {
         </select>
       </label>
       <div class="grid grid-cols-2 gap-3">
-        <label class="text-base">
-          <span class="text-slate-600 dark:text-slate-300">Model</span>
-          <input
-            v-model="form.model"
-            class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
-            placeholder="vendor default"
-            title="The vendor's model name, passed as is: claude-opus-5, gpt-6, … The vendor rejects a bad one at start."
-            data-test="agent-model"
-          />
-        </label>
+        <div>
+          <label class="text-base">
+            <span class="text-slate-600 dark:text-slate-300">Model</span>
+            <input
+              v-model="form.model"
+              class="mt-1 w-full rounded border border-slate-300 px-3 py-2 font-mono text-sm dark:border-slate-700"
+              placeholder="vendor default"
+              title="The vendor's model name, passed as is: claude-opus-5, gpt-6, … The vendor rejects a bad one at start."
+              data-test="agent-model"
+            />
+          </label>
+          <label
+            v-if="form.profile === 'claude'"
+            class="mt-1.5 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+            :title="LONG_WINDOW_TITLE"
+          >
+            <input
+              type="checkbox"
+              :checked="hasLongWindow(form.model)"
+              :disabled="!form.model.trim()"
+              data-test="agent-1m"
+              @change="
+                form.model = withLongWindow(form.model, ($event.target as HTMLInputElement).checked)
+              "
+            />
+            1M context window
+          </label>
+        </div>
         <label class="text-base">
           <span class="text-slate-600 dark:text-slate-300">Effort</span>
           <select

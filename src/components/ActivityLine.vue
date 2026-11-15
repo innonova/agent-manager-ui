@@ -93,12 +93,13 @@ onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
 
-/** requesting, thinking and tool are open-ended enough to want elapsed time and a token count; writing and waiting already show themselves. */
+/** requesting, thinking, tool and compacting are open-ended enough to want elapsed time; writing and waiting already show themselves. */
 const timed = computed(
   () =>
     props.activity?.kind === 'requesting' ||
     props.activity?.kind === 'thinking' ||
-    props.activity?.kind === 'tool',
+    props.activity?.kind === 'tool' ||
+    props.activity?.kind === 'compacting',
 )
 
 const durationText = computed(() => {
@@ -123,6 +124,9 @@ const stateText = computed(() => {
       return toolPhrase(props.toolName)
     case 'waiting':
       return 'waiting for your answer'
+    case 'compacting':
+      // Claude Code is summarising the conversation to make room: a minute or two
+      return 'compacting the context'
     default:
       return ''
   }
@@ -130,7 +134,8 @@ const stateText = computed(() => {
 /** The turn's count so far, beside the elapsed time on the right, when the vendor has given one and the kind carries it. */
 const tokensText = computed(() => {
   const a = props.activity
-  if (!a || a.tokens == null || !timed.value) return ''
+  // a compaction produces none of the turn's output: the count would be the turn's from before it
+  if (!a || a.tokens == null || !timed.value || a.kind === 'compacting') return ''
   return `${a.tokens.toLocaleString('en-US')} tokens`
 })
 

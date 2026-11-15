@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { AccountUsage } from '@/api/types'
+import { windowSize } from '@/model'
 import { when } from '@/time'
 
 /** The account's rolling windows as "5h 33% · 7d 41%", coloured by how close to the limit they are. */
@@ -22,9 +23,10 @@ const spendLine = (s: NonNullable<AccountUsage['spend']>) =>
   `${s.turns} turn${s.turns === 1 ? '' : 's'}, ${tokens(s.inputTokens)} in / ${tokens(s.outputTokens)} out${s.costUsd !== undefined ? `, $${s.costUsd.toFixed(2)}` : ''}`
 const text = computed(() => {
   const parts = props.usage.windows.map((w) => `${w.name} ${w.usedPercent}%`)
+  // the size beside the share: 16% of 1M and 16% of 200k are different days
   if (props.usage.context)
     parts.push(
-      `ctx ${Math.round((100 * props.usage.context.used) / Math.max(1, props.usage.context.size))}%`,
+      `ctx ${Math.round((100 * props.usage.context.used) / Math.max(1, props.usage.context.size))}% of ${windowSize(props.usage.context.size)}`,
     )
   // no windows (Bedrock, Vertex, Copilot): the agent's spend is what there is
   if (spent.value && props.usage.windows.length === 0)

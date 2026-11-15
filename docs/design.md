@@ -430,6 +430,35 @@ block with the latest report per machine and vendor from `/api/usage`,
 refreshed half a second after any agent reports new usage. Only what
 agents report while working: nothing polls the vendors.
 
+### The context window
+
+Beside the model in the header's first line, always there once the
+manager knows it: "ctx 16% of 1M", how full the session's context
+window is and of what size, amber from 80%, the token counts in the
+tooltip. It is with the model and not among the facts behind the
+expander because the size is the part of the model choice nobody sees:
+a Claude model name asks for the 1M window with `[1m]` at its end and
+gets the model's default without, 200K for some, and an agent restarted
+on a name without the suffix ran a day on a fifth of its window and
+compacted nine times before anyone looked (learnings #232). The usage
+chip says the same with the size ("ctx 16% of 1M"), for the vendors
+that report it. A Claude session on a name without the suffix shows it
+from its first turn's end, when Claude first states the size.
+
+The two agent forms (new, edit) offer the suffix as a checkbox under
+the model field, "1M context window", for the `claude` profile: it
+reads its state off the name and adds or removes `[1m]` there, so the
+name stays the one thing that is sent and typing the suffix does the
+same. It is disabled with no model set: there is nothing to add it to,
+and Claude Code's own settings decide. Like the model it applies at the
+next restart.
+
+A compaction shows twice: while it runs the activity line says
+"compacting the context" with the elapsed time and no token count (the
+count would be the turn's from before it), and when it is done the
+flow has the manager's line, "context compacted automatically: 966k →
+13k tokens, 108 s".
+
 ## Uploads and new folders
 
 The files tree can take files. Its toolbar, a row under the mode tabs

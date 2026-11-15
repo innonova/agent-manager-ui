@@ -1184,9 +1184,12 @@ test('an agent reporting its account usage shows a chip in its header and a bloc
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
   await page.getByTestId('turn-input').fill('usage 85')
   await page.getByTestId('turn-input').press('Control+Enter')
+  // the context window is beside the model, without opening the facts: how full, of what size
+  await expect(page.getByTestId('agent-context')).toHaveText('ctx 43% of 200k', { timeout: 20000 })
   await details(page)
   await expect(page.getByTestId('usage-chip').first()).toContainText('5h 85%', { timeout: 20000 })
   await expect(page.getByTestId('usage-chip').first()).toContainText('7d 43%')
+  await expect(page.getByTestId('usage-chip').first()).toContainText('ctx 43% of 200k')
   await page.getByRole('link', { name: 'agent-manager' }).click()
   await expect(page.getByTestId('usage-line')).toContainText('fake') // one quiet line on the projects page
   await page.goto('/machine')

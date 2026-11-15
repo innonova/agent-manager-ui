@@ -86,7 +86,7 @@ export interface PermissionOption {
   label: string
 }
 
-export type ActivityKind = 'requesting' | 'thinking' | 'writing' | 'tool' | 'waiting'
+export type ActivityKind = 'requesting' | 'thinking' | 'writing' | 'tool' | 'waiting' | 'compacting'
 
 export interface ActivityInfo {
   kind: ActivityKind
