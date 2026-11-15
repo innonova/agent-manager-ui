@@ -176,8 +176,19 @@ export const api = {
   projectChat: (projectId: string) =>
     call<({ agentId: string } & ChatSummary)[]>('GET', `/api/projects/${projectId}/chat`),
   interrupt: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/interrupt`, {}),
-  /** Withdraws the last message sent to the agent; 409 with a code when it cannot be. */
-  undo: (id: string) => call<{ withdrawn: number }>('POST', `/api/agents/${id}/undo`, {}),
+  /**
+   * Takes back the last message sent to the agent (the one at `index`:
+   * 409 when another was sent since), stopping its turn first. `text` is
+   * the message, to edit and send again; `forgotten` whether the agent
+   * lost its memory of it (Claude) or still has it; `left` what its reply
+   * did that stays.
+   */
+  undo: (id: string, index: number) =>
+    call<{ withdrawn: number; text: string; forgotten: boolean; left: string[] }>(
+      'POST',
+      `/api/agents/${id}/undo`,
+      { index },
+    ),
   stop: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/stop`, {}),
   /** Stops and resumes one agent with the current settings; the manager refuses (409) while it is busy. */
   restart: (id: string) => call<{ ok: true }>('POST', `/api/agents/${id}/restart`, {}),

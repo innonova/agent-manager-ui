@@ -409,35 +409,57 @@ const lastPromptIndex = computed((): number | null => {
   return null
 })
 /**
- * Why the last message cannot be taken back right now, or null when it can:
- * shown on the message itself, disabled with the reason when off, so nobody
- * has to guess. Whether the reply left changed files behind is the manager's
- * to decide from the repositories' state; it refuses with the list.
+ * The last message can be taken back to be edited and sent again: "that
+ * was nonsense: stop, edit, go". The manager stops the turn if one runs
+ * and hands the text back; a Claude agent also forgets the message and
+ * its reply (the others keep their conversation out of reach). What the
+ * reply did on disk stays, and the line left in the flow says what.
  */
-const withdrawReason = computed((): string | null => {
+const takingBack = ref(false)
+const withdrawal = computed(() => {
   const row = current.value
-  if (!row) return 'no agent'
-  if (row.agent.profile !== 'claude')
-    return `only for Claude agents (this one is ${row.agent.profile})`
-  if (row.status.state !== 'idle' && row.status.state !== 'exited')
-    return `the agent is ${row.status.state}; interrupt it first`
-  const from = lastPromptIndex.value
-  if (from === null) return 'no message to take back'
-  for (const s of items.value) {
-    if (!s || s.index <= from) continue
-    if (s.item.kind === 'system' && s.item.text.startsWith('committed'))
-      return 'the reply committed; that cannot be taken back'
+  const claude = row?.agent.profile === 'claude'
+  return {
+    reason: !row ? 'no agent' : row.status.state === 'starting' ? 'the agent is starting' : null,
+    title:
+      'take this message back to edit it: the agent is stopped if it still works on it, and the text returns to the input below. ' +
+      (claude
+        ? 'The agent forgets the message and its reply; what the reply changed on disk stays.'
+        : `The agent still has the message (${row?.agent.profile} keeps its conversation out of reach).`),
+    busy: takingBack.value,
   }
-  return null
 })
+/** A message sent this recently is taken back at once: that is the slip being corrected. An older one has a reply that may be worth keeping, and asks first. */
+const SLIP_MS = 2 * 60_000
 async function withdraw() {
-  if (!props.agentId) return
-  if (!confirm('Take back your last message? The agent will have no memory of it or of its reply.'))
-    return
+  const row = current.value
+  const index = lastPromptIndex.value
+  if (!props.agentId || !row || index === null || takingBack.value) return
+  const agentId = props.agentId
+  const sent = items.value.find((s) => s?.index === index)
+  if (!sent || sent.item.kind !== 'user') return
+  const claude = row.agent.profile === 'claude'
+  const working = row.status.state !== 'idle' && row.status.state !== 'exited'
+  const minutes = Math.round((Date.now() - sent.at) / 60_000)
+  if (Date.now() - sent.at > SLIP_MS && (claude || working)) {
+    const ask =
+      `This message was sent ${minutes} min ago. Take it back to edit it? ` +
+      (working ? 'The agent is stopped. ' : '') +
+      (claude
+        ? 'It will have no memory of the message or of anything it did since; what it changed on disk stays.'
+        : '')
+    if (!confirm(ask.trim())) return
+  }
+  takingBack.value = true
   try {
-    await api.undo(props.agentId)
+    const { text } = await api.undo(agentId, index)
+    const draft = drafts.get(agentId)
+    drafts.set(agentId, draft.trim() ? `${text}\n\n${draft}` : text)
+    if (props.agentId === agentId) flowInput.value?.restore(sent.item.images)
   } catch (e) {
     notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  } finally {
+    takingBack.value = false
   }
 }
 /** The permission waiting for an answer, for the phone's bar above the composer: the one place a thumb needs to reach first. */
@@ -780,11 +802,11 @@ async function archive() {
               <button
                 v-if="current.status.state !== 'exited'"
                 class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
-                title="end the session; the next message resumes it"
-                data-test="stop"
+                title="end the session: its process exits; the next message resumes it with the conversation intact"
+                data-test="end-session"
                 @click="stop"
               >
-                stop
+                end session
               </button>
               <button
                 class="border-l border-slate-300 px-2 py-0.5 text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-2"
@@ -903,7 +925,7 @@ async function archive() {
               :activity-height="activityHeight"
               :scroll-to="scrollTarget"
               :withdraw-index="lastPromptIndex"
-              :withdraw-reason="withdrawReason"
+              :withdraw="withdrawal"
               @decide="decide"
               @withdraw="withdraw"
               @load-earlier="props.agentId && agents.loadEarlier(props.agentId)"

@@ -13,7 +13,7 @@ const props = defineProps<{
   chat?: boolean
   /** The agent's open question this message answers, when the person chose to answer one. */
   reply?: { id: number; excerpt: string } | null
-  /** On the interrupt button: the chat's input has one only where the flow's is out of sight. */
+  /** On the stop button: the chat's input has one only where the flow's is out of sight. */
   interruptClass?: string
 }>()
 /**
@@ -123,7 +123,25 @@ function clearAttachments() {
   attachError.value = null
 }
 onUnmounted(clearAttachments)
-defineExpose({ clearAttachments })
+/** A message taken back to be edited: its images are attached again, and the caret is where the writing goes on. */
+function restore(images: TurnImage[] = []) {
+  clearAttachments()
+  for (const [i, img] of images.entries())
+    attachments.value.push({
+      ...img,
+      size: Math.floor((img.data.length * 3) / 4),
+      url: `data:${img.mediaType};base64,${img.data}`,
+      name: `image ${i + 1}`,
+    })
+  void nextTick(() => {
+    const el = box.value
+    if (!el) return
+    el.focus()
+    el.setSelectionRange(el.value.length, el.value.length)
+    el.scrollTop = el.scrollHeight
+  })
+}
+defineExpose({ clearAttachments, restore })
 const drafts = useDraftsStore()
 /** The draft is kept in the store, keyed by agent and input, so it survives navigation and reloads. */
 const draft = computed(() => (props.chat ? `${props.agentId}:chat` : props.agentId))
@@ -289,10 +307,11 @@ function onKey(e: KeyboardEvent) {
           type="button"
           class="rounded border border-amber-400 px-3 py-2 text-base text-amber-900 hover:bg-amber-50 dark:border-amber-600 dark:text-amber-100 dark:hover:bg-amber-950 max-md:pointer-coarse:py-3"
           :class="interruptClass"
+          title="stop the turn where it is; the agent stays, and takes your next message"
           :data-test="name('interrupt')"
           @click="emit('interrupt')"
         >
-          interrupt
+          stop
         </button>
         <input
           ref="picker"

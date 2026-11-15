@@ -10,11 +10,11 @@ const props = defineProps<{
   item: Item
   at?: number
   /**
-   * On the last message sent: the withdrawal's availability, null when it
-   * can be taken back, else why not (the button shows disabled with it).
-   * Undefined on every other item.
+   * On the last message sent, which can be taken back to edit: why not
+   * right now (the button shows disabled with it) or null, what the button
+   * says it does, and whether it is being done. Undefined on every other item.
    */
-  withdraw?: string | null
+  withdraw?: { reason: string | null; title: string; busy: boolean }
 }>()
 const time = computed(() => (props.at ? when(props.at) : ''))
 const emit = defineEmits<{ decide: [requestId: string, option: string]; withdraw: [] }>()
@@ -99,23 +99,20 @@ const cost = computed(() =>
         >{{ item.by }}</span
       >
       <span>{{ time }}</span>
-    </div>
-    <div class="wrap-anywhere whitespace-pre-wrap">{{ item.text }}</div>
-    <!-- the last message sent: it can be taken back from here, where it is -->
-    <div v-if="withdraw !== undefined" class="mt-1 flex justify-end">
+      <!-- the last message sent: it can be taken back from here, where it is -->
       <button
-        class="text-sm text-slate-500 hover:text-slate-900 hover:underline disabled:opacity-40 disabled:hover:no-underline dark:text-slate-400 dark:hover:text-slate-100"
-        :disabled="withdraw !== null"
-        :title="
-          withdraw ??
-          'take back this message: the agent will have no memory of it or of its reply (refused when the reply committed or left changed files)'
-        "
+        v-if="withdraw"
+        type="button"
+        class="ml-auto rounded border border-slate-300 bg-white px-2 text-slate-700 hover:border-blue-500 hover:text-blue-700 disabled:opacity-50 disabled:hover:border-slate-300 disabled:hover:text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-blue-400 dark:hover:text-blue-300 max-md:pointer-coarse:px-3 max-md:pointer-coarse:py-1"
+        :disabled="withdraw.busy || withdraw.reason !== null"
+        :title="withdraw.reason ?? withdraw.title"
         data-test="withdraw"
         @click="emit('withdraw')"
       >
-        withdraw
+        {{ withdraw.busy ? 'taking it back…' : 'edit' }}
       </button>
     </div>
+    <div class="wrap-anywhere whitespace-pre-wrap">{{ item.text }}</div>
     <div v-if="item.images?.length" class="mt-2 flex flex-wrap gap-2" data-test="user-images">
       <a
         v-for="(img, i) in item.images"

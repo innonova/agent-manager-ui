@@ -15,7 +15,7 @@ const props = defineProps<{
   scrollTo?: number | null
   /** The last message sent, by index, and whether it can be taken back (null) or why not. */
   withdrawIndex?: number | null
-  withdrawReason?: string | null
+  withdraw?: { reason: string | null; title: string; busy: boolean }
 }>()
 const emit = defineEmits<{
   decide: [requestId: string, option: string]
@@ -34,15 +34,19 @@ type Row =
  * is folded under the call that produced it rather than listed after it.
  * Results whose call is not in the transcript stay as plain items.
  */
-/** Indexes of items a withdrawal took out of the agent's context: from each marker's `withdrawnFrom` up to the marker, system lines aside. */
+/**
+ * Indexes of items a withdrawal folds away: from each marker's
+ * `withdrawnFrom` up to the marker. That is what it took out of the
+ * agent's context, and the lines of the taking back itself (the stop, the
+ * session ended and resumed): one click leaves one line, the marker.
+ */
 const withdrawn = computed(() => {
   const out = new Set<number>()
   for (const s of props.items) {
     const it = s?.item // the array can have holes while history is paged in
     if (!it || it.kind !== 'system' || it.withdrawnFrom === undefined) continue
     for (const t of props.items)
-      if (t && t.index >= it.withdrawnFrom && t.index < s.index && t.item.kind !== 'system')
-        out.add(t.index)
+      if (t && t.index >= it.withdrawnFrom && t.index < s.index) out.add(t.index)
   }
   return out
 })
@@ -208,7 +212,7 @@ onMounted(follow)
               :item="r.item"
               :at="r.at"
               :data-index="r.key"
-              :withdraw="r.key === withdrawIndex ? (withdrawReason ?? null) : undefined"
+              :withdraw="r.key === withdrawIndex ? withdraw : undefined"
               @decide="(id, o) => emit('decide', id, o)"
               @withdraw="emit('withdraw')"
             />

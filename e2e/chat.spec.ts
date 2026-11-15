@@ -486,6 +486,53 @@ test('each pane has its own input: under the flow the direct conversation, under
   await a.own.dispose()
 })
 
+test('stop, edit, go: the last message is taken back into the input, the turn it started stopped', async ({
+  page,
+}) => {
+  await login(page)
+  const projectId = await chatProject(page)
+  const a = await newAgent(page, projectId, 'slips')
+  await page.goto(`/projects/${projectId}/agents/${a.id}`)
+  const flowPane = page.getByTestId('flow-pane')
+  const flowInput = page.getByTestId('turn-input')
+  const edit = page.getByTestId('withdraw')
+  const dialogs: string[] = []
+  page.on('dialog', (d) => {
+    dialogs.push(d.message())
+    void d.accept()
+  })
+
+  // one edit, on the last message sent; the turn's button says what it does
+  await expect(edit).toHaveCount(1)
+  await expect(flowPane.locator('[data-item="user"]').last()).toContainText('token please')
+  await flowInput.fill('linger on the wrnog thing')
+  await flowInput.press('Control+Enter')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'working')
+  await expect(page.getByTestId('interrupt')).toHaveText('stop')
+  await expect(flowInput).toHaveValue('')
+  await expect(edit).toHaveCount(1)
+  await expect(flowPane.locator('[data-item="user"]').last().getByTestId('withdraw')).toBeEnabled()
+
+  // while it works: one click stops the turn and the text is back where it is written
+  await flowInput.fill('and this too')
+  await edit.click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect(flowInput).toHaveValue('linger on the wrnog thing\n\nand this too')
+  await expect(flowInput).toBeFocused()
+  await expect(flowPane.locator('[data-item="system"]').last()).toContainText('taken back to edit')
+  expect(dialogs).toEqual([]) // a slip is corrected at once, without being asked about
+  await page.screenshot({ path: 'test-results/chat-edit.png' })
+
+  // edited and sent: an ordinary turn
+  await flowInput.fill('the right thing')
+  await flowInput.press('Control+Enter')
+  await expect(flowPane).toContainText('You said: the right thing')
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle')
+  await expect(edit).toHaveCount(1)
+  await expect(flowPane.locator('[data-item="user"]').last().getByTestId('withdraw')).toBeVisible()
+  await a.own.dispose()
+})
+
 test('a question, and an important decision, notify the page that is open and not looked at', async ({
   page,
   context,

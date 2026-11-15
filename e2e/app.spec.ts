@@ -131,8 +131,8 @@ test('project, agent, streamed turn, error state, counts', async ({ page }) => {
   await expect(page.locator('[data-item="user"]')).toHaveCount(2)
   await expect(page.locator('[data-item="error"]')).toHaveCount(1)
 
-  // stop ends the session; the next turn resumes it
-  await page.getByTestId('stop').click()
+  // ending the session; the next turn resumes it
+  await page.getByTestId('end-session').click()
   await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'exited')
   await page.getByTestId('turn-input').fill('back')
   await page.getByTestId('send').click()

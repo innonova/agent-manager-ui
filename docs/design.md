@@ -171,20 +171,42 @@ restart" while the agent is idle, and a plain save on a running agent
 says which settings wait. Profile and working directory are not
 editable: they are what the agent is.
 
-## Withdrawing a message
+## Taking a message back to edit it
 
-"withdraw", at the bottom right of the last message sent, takes it
-back from a Claude agent (the manager's design doc, Withdrawing a
-message): the action sits on the thing it is about. It is always there
-on that message, disabled with the reason in its tooltip when it cannot
-be used (the agent busy, the last message
-already withdrawn, a commit after it); whether the reply left changed
-files behind is the manager's to decide from the repositories' state,
-and its refusal names them. A confirm says what it does. The
-withdrawn items are hidden: the marker the manager appends is one
-line, "withdrawn: …", with a show/hide toggle for the record, since the
-daemon's log keeps them and they say what the agent did. Shown, they
-are at reduced opacity and titled as no longer in the agent's context.
+"That was nonsense: stop, edit, go." The last message sent carries an
+"edit" button in its header line, on every profile and whether the
+agent works on it or has answered: the action sits on the thing it is
+about, and looks like a button, since as a faint link under the text it
+was not seen to do anything. One click and the manager stops the turn if
+one runs, and hands the text back (the manager's design doc, Withdrawing
+a message); the text returns to the flow's input, ahead of a draft that
+was there, with its images attached again and the caret at its end. The
+button says "taking it back…" meanwhile, and a refusal is a toast.
+
+What it does to the agent depends on the profile, and the button's
+tooltip says which: a Claude agent forgets the message and its reply,
+the others still have it (their conversation is out of the manager's
+reach) and are only stopped. What the reply did on disk stays in either
+case; the line the manager leaves in the flow says what that was.
+
+A message sent in the last two minutes is taken back at once: that is
+the slip being corrected, and a question in the way of it is the wrong
+kind of care. An older one is asked about first where taking it back
+costs something (the agent's memory of the reply, or a turn that is
+still running), and the question says how old it is. The button is
+disabled only while the agent starts.
+
+The items a Claude agent forgot are hidden, and with them the lines of
+the taking back itself (the stop, the session ended and resumed), so one
+click leaves one line: the marker the manager appends, "withdrawn: …",
+with a show/hide toggle for the record, since the daemon's log keeps
+them and they say what the agent did. Shown, they are at reduced
+opacity and titled as no longer in the agent's context.
+
+Two buttons used to be named for the wrong thing. The one on the input
+that ends the turn and keeps the agent was "interrupt" and is "stop";
+the one in the header that ends the agent's process was "stop" and is
+"end session". The manager's API and `am` keep their names.
 
 ## Dialogs
 
@@ -511,11 +533,12 @@ Under the chat a message is said beside the work: while the agent is
 in a turn (working, starting, waiting on a permission) the manager
 tells it a message waits, and it reads it when it chooses, or gets it
 as its next turn if the turn ends first; an agent that is not in a
-turn is woken with it, as a turn. No steer here: to interrupt, write
-under the flow. An image cannot wait beside the work, and the input
-says so instead of sending. Through `POST /api/agents/:id/chat`.
-Interrupt is on the flow's input, and on the chat's where the flow's
-is out of sight (the chat alone, or as tabs).
+turn is woken with it, as a turn. No steer here: to say something into
+the turn, write under the flow. An image cannot wait beside the work,
+and the input says so instead of sending. Through `POST
+/api/agents/:id/chat`. "stop" (the turn's interrupt) is on the flow's
+input, and on the chat's where the flow's is out of sight (the chat
+alone, or as tabs).
 
 **Its place in the flow.** A message's time is a link once the agent
 has it: it scrolls the flow to the agent's call that said it, the turn
@@ -556,8 +579,8 @@ frame drops it from every tab. Restart stops and
 resumes that one agent with the current settings (a repository added
 to the project, a changed harness note), conversation intact; the
 manager refuses it while the agent works, waits on a permission or has
-background jobs, and the refusal shows as a toast, so interrupt first
-when that is meant. An exited agent is simply started. A session frame
+background jobs, and the refusal shows as a toast, so stop the turn
+first when that is meant. An exited agent is simply started. A session frame
 makes the store refetch the agent's record, since a new session changes
 it (the session id, the harness note it was given).
 
@@ -849,8 +872,9 @@ state change would say it.
   and withdrawn, the divider, the switch between the panes and their
 memory, an input under each pane (a turn under the flow that the chat
 does not list, a draft each, steer on one and an aside from the other,
-the interrupt on the chat's when it is alone), the chat put away (the
-view as it was, and what is counted on the switch meanwhile), the
+the stop on the chat's when it is alone), the chat put away (the
+view as it was, and what is counted on the switch meanwhile), a message
+taken back to edit while the agent works on it, the
   page's and the panes' overflow at widths from 1600 to 640 px with a
   table, an address and a line of code wider than any pane, the
   notification, and the tabs on a phone. There is no test for
