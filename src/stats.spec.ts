@@ -68,7 +68,10 @@ describe('statistics in words', () => {
     )
     expect(rows.cost).toBe('$3,412')
     expect(rows['started by']).toBe('a person 310 (4 d) · itself 120 (1 d)')
-    expect(rows["since aek's last message"]).toMatch(/^12 min of work, 4\.5k tokens out; written /)
+    // a turn is under way: its output is not in the count yet, and the row says so
+    expect(rows["since aek's last message"]).toMatch(
+      /^12 min of work, 4\.5k tokens out in the turns that have ended; written /,
+    )
     expect(rows.runs).toMatch(/^274 · median 6 min · longest 9 h \(/)
     expect(rows.unattended).toBe(
       '2 d, 32% of the runtime; 41 runs went on unattended, median 48 min, longest 9 h',
