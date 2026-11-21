@@ -433,16 +433,45 @@ agents report while working: nothing polls the vendors.
 ### Statistics
 
 Among an agent's facts (behind the expander) a "statistics" link opens
-a dialog that says how the agent has been run: its runtime and turns,
-the tokens, the cost, who started the turns, the work since a person
-last wrote, the runs between messages, and how much went on
-unattended. Each figure has its definition under it in small print,
-because several are not obvious: runtime is turn time and not time
-since creation, the cache-read figure is requests times context, and
-"unattended" is an estimate (work more than thirty minutes after
-anyone last wrote). It is fetched when opened, with "reading the
-transcript…" meanwhile: the first reading of a long transcript takes
-seconds. The wording is in `src/stats.ts`, and `am stats` has a copy.
+a dialog that says how the agent has been run (`AgentStatsDialog`). It
+is laid out to be read at a glance, not as sentences (the first
+version was a list of sentences in the narrow form dialog, which was
+hard to scan and ran off a low screen):
+
+- four tiles with the headline figures: runtime, turns, tokens out,
+  cost;
+- since a person's last message: the work, the turns begun, the output;
+- unattended: the share as a meter with its figures beside it;
+- who started the turns: one thin bar split in parts, and under it a
+  table that names each part with its turns, runtime and share;
+- the runs between messages: count, median, longest, and the five
+  longest in a table;
+- the tokens in a table, since four figures three orders of magnitude
+  apart do not make a chart.
+
+Each section carries its definition in small print, because several
+figures are not obvious: runtime is turn time and not time since
+creation, the cache-read figure is requests times context, and
+"unattended" is an estimate.
+
+Colour only tells the parts of the split bar apart: the four starters
+take the first four hues of the chart palette in a fixed order, the
+light and the dark steps each checked for colour-blind separation
+against the dialog's surface, and every part is named beside its
+figures, so nothing is read from colour alone. Numbers and labels stay
+in the text colours. The meter's track is a lighter step of its fill's
+own blue.
+
+The dialog is never taller or wider than the screen: its body scrolls
+between a fixed title and a fixed close button, the tiles go from four
+across to two on a phone, and the tables keep to its width. Clicking
+beside it or Escape closes it, unlike the form dialogs: there is
+nothing typed to lose. It is fetched when opened, with "reading the
+transcript…" meanwhile. `am stats` prints the same figures as rows.
+
+The form dialogs (`ModalForm`) got the same bound at the same time: a
+form taller than the screen scrolls inside the screen, where before
+its buttons could be out of reach on a low display.
 
 ### The context window
 

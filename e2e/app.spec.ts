@@ -1193,10 +1193,13 @@ test('statistics: how long an agent has worked, and how much of it since a perso
   await details(page)
   await page.getByTestId('stats-link').click()
   const stats = page.getByTestId('stats')
-  await expect(stats.locator('[data-stat="runtime"]')).toContainText(/in \d+ turns?, since /)
-  await expect(stats.locator('[data-stat="started by"]')).toContainText('a person')
-  await expect(stats.locator('[data-stat="since admin\'s last message"]')).toContainText('of work')
-  await expect(stats.locator('[data-stat="unattended"]')).toContainText('none')
+  await expect(stats.locator('[data-stat="runtime"]')).toContainText(/\d+ (s|min)/)
+  await expect(stats.locator('[data-stat="turns"]')).toContainText(/\d+/)
+  await expect(stats.locator('[data-stat="started by"]')).toContainText('A person')
+  await expect(stats.locator('[data-stat="since"]')).toContainText("Since admin's last message")
+  await expect(stats.locator('[data-stat="unattended"]')).toContainText('0%')
+  await page.getByTestId('stats-close').click()
+  await expect(page.getByTestId('stats-dialog')).toHaveCount(0)
 })
 
 test("compact, on the person's word: the agent is asked to compact its context, and not while it works", async ({

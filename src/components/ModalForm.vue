@@ -29,9 +29,10 @@ function onKey(e: KeyboardEvent) {
 
 <template>
   <!-- the backdrop is inert: see onKey -->
-  <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40">
+  <!-- never taller than the screen: on a small one the form scrolls, its buttons within reach -->
+  <div class="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-3">
     <form
-      class="w-full max-w-md rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900"
+      class="max-h-full w-full max-w-md overflow-y-auto rounded-lg bg-white p-5 shadow-xl dark:bg-slate-900"
       tabindex="-1"
       data-test="modal-form"
       @submit.prevent="emit('submit')"

@@ -4,7 +4,7 @@ import ResizeHandle from '@/components/ResizeHandle.vue'
 import { useResizable } from '@/composables/useResizable'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { ApiError, api } from '@/api/client'
-import type { ChatMessage, Profile, TurnImage } from '@/api/types'
+import type { AgentStats, ChatMessage, Profile, TurnImage } from '@/api/types'
 import ActivityLine from '@/components/ActivityLine.vue'
 import AppShell from '@/components/AppShell.vue'
 import ChatPane from '@/components/ChatPane.vue'
@@ -12,9 +12,9 @@ import FlowStrip from '@/components/FlowStrip.vue'
 import ModalForm from '@/components/ModalForm.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
+import AgentStatsDialog from '@/components/AgentStatsDialog.vue'
 import UsageChip from '@/components/UsageChip.vue'
 import { hasLongWindow, windowSize, withLongWindow } from '@/model'
-import { statRows } from '@/stats'
 import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
@@ -50,14 +50,14 @@ const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
 const showNote = ref(false)
 /** The agent's statistics, fetched when asked for: reading a long transcript takes a moment. */
-const stats = ref<{ rows: ReturnType<typeof statRows> | null; error: string | null } | null>(null)
+const stats = ref<{ data: AgentStats | null; error: string | null } | null>(null)
 async function showStats() {
   if (!props.agentId) return
-  stats.value = { rows: null, error: null }
+  stats.value = { data: null, error: null }
   try {
-    stats.value = { rows: statRows(await api.stats(props.agentId)), error: null }
+    stats.value = { data: await api.stats(props.agentId), error: null }
   } catch (e) {
-    stats.value = { rows: null, error: e instanceof ApiError ? e.message : String(e) }
+    stats.value = { data: null, error: e instanceof ApiError ? e.message : String(e) }
   }
 }
 const showDetails = ref(false)
@@ -1161,25 +1161,13 @@ async function archive() {
       </section>
     </div>
 
-    <ModalForm
+    <AgentStatsDialog
       v-if="stats && current"
-      :title="`How ${current.agent.name} has been run`"
+      :name="current.agent.name"
+      :stats="stats.data"
       :error="stats.error"
-      submit-label="close"
       @close="stats = null"
-      @submit="stats = null"
-    >
-      <p v-if="!stats.rows && !stats.error" class="text-base text-slate-500 dark:text-slate-400">
-        reading the transcript…
-      </p>
-      <dl v-if="stats.rows" class="flex flex-col gap-3 text-base" data-test="stats">
-        <div v-for="r in stats.rows" :key="r.label" :data-stat="r.label">
-          <dt class="text-sm text-slate-500 dark:text-slate-400">{{ r.label }}</dt>
-          <dd>{{ r.text }}</dd>
-          <dd v-if="r.note" class="text-sm text-slate-500 dark:text-slate-400">{{ r.note }}</dd>
-        </div>
-      </dl>
-    </ModalForm>
+    />
     <ModalForm
       v-if="showNote && current?.agent.harnessNote"
       title="What the agent was told"
