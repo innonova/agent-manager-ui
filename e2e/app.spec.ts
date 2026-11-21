@@ -1196,7 +1196,9 @@ test('statistics: how long an agent has worked, and how much of it since a perso
   await expect(stats.locator('[data-stat="runtime"]')).toContainText(/\d+ (s|min)/)
   await expect(stats.locator('[data-stat="turns"]')).toContainText(/\d+/)
   await expect(stats.locator('[data-stat="started by"]')).toContainText('A person')
-  await expect(stats.locator('[data-stat="since"]')).toContainText("Since admin's last message")
+  await expect(stats.locator('[data-stat="since"]')).toContainText(
+    "Since admin's last direct message",
+  )
   await expect(stats.locator('[data-stat="unattended"]')).toContainText('0%')
   await page.getByTestId('stats-close').click()
   await expect(page.getByTestId('stats-dialog')).toHaveCount(0)

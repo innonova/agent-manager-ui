@@ -124,7 +124,7 @@ const unattendedPercent = computed(() =>
           <!-- since a person last wrote -->
           <section v-if="stats.sinceLastMessage" data-stat="since">
             <h3 class="text-base font-medium">
-              Since {{ stats.sinceLastMessage.by }}'s last message
+              Since {{ stats.sinceLastMessage.by }}'s last direct message
               <span class="font-normal text-slate-500 dark:text-slate-400"
                 >· {{ moment(stats.sinceLastMessage.at) }}</span
               >
@@ -186,8 +186,9 @@ const unattendedPercent = computed(() =>
               </div>
             </dl>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              Work done more than {{ span(stats.unattended.afterMs) }} after a person last wrote. An
-              estimate from the messages: nobody records who was looking.
+              Work done more than {{ span(stats.unattended.afterMs) }} after a person last wrote
+              anything, in the flow or the chat. An estimate from the messages: nobody records who
+              was looking.
             </p>
           </section>
 
@@ -237,7 +238,7 @@ const unattendedPercent = computed(() =>
 
           <!-- the runs between messages -->
           <section v-if="stats.runs.count" data-stat="runs">
-            <h3 class="text-base font-medium">Runs between messages</h3>
+            <h3 class="text-base font-medium">Runs between direct messages</h3>
             <dl class="mt-1 grid grid-cols-3 gap-2">
               <div>
                 <dd class="text-xl font-semibold">{{ stats.runs.count.toLocaleString() }}</dd>
@@ -269,7 +270,8 @@ const unattendedPercent = computed(() =>
               </tbody>
             </table>
             <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              A run is the agent's work between one message from a person and the next.
+              A run is the agent's work between one direct message and the next. What is said in the
+              chat is beside the work and ends no run.
             </p>
           </section>
 

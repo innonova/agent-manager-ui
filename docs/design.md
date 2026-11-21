@@ -440,12 +440,13 @@ hard to scan and ran off a low screen):
 
 - four tiles with the headline figures: runtime, turns, tokens out,
   cost;
-- since a person's last message: the work, the turns begun, the output;
+- since a person's last direct message: the work, the turns begun,
+  the output;
 - unattended: the share as a meter with its figures beside it;
 - who started the turns: one thin bar split in parts, and under it a
   table that names each part with its turns, runtime and share;
-- the runs between messages: count, median, longest, and the five
-  longest in a table;
+- the runs between direct messages: count, median, longest, and the
+  five longest in a table (what is said in the chat ends no run);
 - the tokens in a table, since four figures three orders of magnitude
   apart do not make a chart.
 
@@ -950,11 +951,11 @@ state change would say it.
   decisions and questions (spoken with the fake agent's own token, which
   it says when asked), a question pinned, counted, answered, dismissed
   and withdrawn, the divider, the switch between the panes and their
-memory, an input under each pane (a turn under the flow that the chat
-does not list, a draft each, steer on one and an aside from the other,
-the stop on the chat's when it is alone), the chat put away (the
-view as it was, and what is counted on the switch meanwhile), a message
-taken back to edit while the agent works on it, the
+  memory, an input under each pane (a turn under the flow that the chat
+  does not list, a draft each, steer on one and an aside from the other,
+  the stop on the chat's when it is alone), the chat put away (the
+  view as it was, and what is counted on the switch meanwhile), a message
+  taken back to edit while the agent works on it, the
   page's and the panes' overflow at widths from 1600 to 640 px with a
   table, an address and a line of code wider than any pane, the
   notification, and the tabs on a phone. There is no test for
