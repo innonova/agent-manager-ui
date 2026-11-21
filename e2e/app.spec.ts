@@ -1175,6 +1175,30 @@ test('the harness note is edited on the projects page and reaches an agent at it
   await expect(page.getByTestId('learning').first()).toContainText('run-idle e2e')
 })
 
+test('statistics: how long an agent has worked, and how much of it since a person last wrote', async ({
+  page,
+}) => {
+  await login(page)
+  await page.getByTestId('project-row').filter({ hasText: 'Demo' }).first().click()
+  await page.getByTestId('agent-row').filter({ hasText: 'worker' }).first().click()
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', /idle|exited/)
+  await page.getByTestId('turn-input').fill('count this one')
+  await page.getByTestId('turn-input').press('Control+Enter')
+  await expect(page.getByTestId('transcript')).toContainText('You said: count this one', {
+    timeout: 20000,
+  })
+  await expect(page.getByTestId('agent-state')).toHaveAttribute('data-state', 'idle', {
+    timeout: 20000,
+  })
+  await details(page)
+  await page.getByTestId('stats-link').click()
+  const stats = page.getByTestId('stats')
+  await expect(stats.locator('[data-stat="runtime"]')).toContainText(/in \d+ turns?, since /)
+  await expect(stats.locator('[data-stat="started by"]')).toContainText('a person')
+  await expect(stats.locator('[data-stat="since admin\'s last message"]')).toContainText('of work')
+  await expect(stats.locator('[data-stat="unattended"]')).toContainText('none')
+})
+
 test("compact, on the person's word: the agent is asked to compact its context, and not while it works", async ({
   page,
 }) => {

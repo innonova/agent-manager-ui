@@ -14,6 +14,7 @@ import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
 import UsageChip from '@/components/UsageChip.vue'
 import { hasLongWindow, windowSize, withLongWindow } from '@/model'
+import { statRows } from '@/stats'
 import ProjectTree from '@/components/ProjectTree.vue'
 import TranscriptView from '@/components/TranscriptView.vue'
 import TurnInput from '@/components/TurnInput.vue'
@@ -48,6 +49,17 @@ const project = computed(() => projects.byId.get(props.id)?.project)
 const rows = computed(() => agents.byProject.get(props.id) ?? [])
 const current = computed(() => (props.agentId ? agents.byId.get(props.agentId) : undefined))
 const showNote = ref(false)
+/** The agent's statistics, fetched when asked for: reading a long transcript takes a moment. */
+const stats = ref<{ rows: ReturnType<typeof statRows> | null; error: string | null } | null>(null)
+async function showStats() {
+  if (!props.agentId) return
+  stats.value = { rows: null, error: null }
+  try {
+    stats.value = { rows: statRows(await api.stats(props.agentId)), error: null }
+  } catch (e) {
+    stats.value = { rows: null, error: e instanceof ApiError ? e.message : String(e) }
+  }
+}
 const showDetails = ref(false)
 const treePane = useResizable('project-tree', 288)
 /**
@@ -927,6 +939,15 @@ async function archive() {
             >
             <UsageChip v-if="current.status.usage" :usage="current.status.usage" />
             <button
+              type="button"
+              class="text-blue-700 hover:underline dark:text-blue-300"
+              title="how long it has worked and on how many tokens, the work since a person last wrote, and how much went on unattended"
+              data-test="stats-link"
+              @click="showStats"
+            >
+              statistics
+            </button>
+            <button
               v-if="current.agent.harnessNote"
               type="button"
               class="text-blue-700 hover:underline dark:text-blue-300"
@@ -1140,6 +1161,25 @@ async function archive() {
       </section>
     </div>
 
+    <ModalForm
+      v-if="stats && current"
+      :title="`How ${current.agent.name} has been run`"
+      :error="stats.error"
+      submit-label="close"
+      @close="stats = null"
+      @submit="stats = null"
+    >
+      <p v-if="!stats.rows && !stats.error" class="text-base text-slate-500 dark:text-slate-400">
+        reading the transcript…
+      </p>
+      <dl v-if="stats.rows" class="flex flex-col gap-3 text-base" data-test="stats">
+        <div v-for="r in stats.rows" :key="r.label" :data-stat="r.label">
+          <dt class="text-sm text-slate-500 dark:text-slate-400">{{ r.label }}</dt>
+          <dd>{{ r.text }}</dd>
+          <dd v-if="r.note" class="text-sm text-slate-500 dark:text-slate-400">{{ r.note }}</dd>
+        </div>
+      </dl>
+    </ModalForm>
     <ModalForm
       v-if="showNote && current?.agent.harnessNote"
       title="What the agent was told"

@@ -430,6 +430,20 @@ block with the latest report per machine and vendor from `/api/usage`,
 refreshed half a second after any agent reports new usage. Only what
 agents report while working: nothing polls the vendors.
 
+### Statistics
+
+Among an agent's facts (behind the expander) a "statistics" link opens
+a dialog that says how the agent has been run: its runtime and turns,
+the tokens, the cost, who started the turns, the work since a person
+last wrote, the runs between messages, and how much went on
+unattended. Each figure has its definition under it in small print,
+because several are not obvious: runtime is turn time and not time
+since creation, the cache-read figure is requests times context, and
+"unattended" is an estimate (work more than thirty minutes after
+anyone last wrote). It is fetched when opened, with "reading the
+transcript…" meanwhile: the first reading of a long transcript takes
+seconds. The wording is in `src/stats.ts`, and `am stats` has a copy.
+
 ### The context window
 
 Beside the model in the header's first line, always there once the
