@@ -61,6 +61,15 @@ test('an agent set to be asked when it stops: the notice over the input says wha
   expect(n!.x).toBeLessThanOrEqual(i!.x)
   expect(n!.x + n!.width).toBeGreaterThanOrEqual(i!.x + i!.width)
   await page.screenshot({ path: 'test-results/nudge-notice.png' })
+  // on a phone the panes are tabs: under the flow's, the notice still says all of it, button included
+  await page.setViewportSize({ width: 390, height: 760 })
+  await page.getByTestId('pane-tab-flow').click()
+  await expect(notice).toBeInViewport()
+  await expect(page.getByTestId('nudge-hold')).toBeInViewport()
+  expect(await notice.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1)
+  expect(await notice.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1)
+  await page.screenshot({ path: 'test-results/nudge-notice-phone.png' })
+  await page.setViewportSize({ width: 1280, height: 720 })
 
   // the person steps in: the question is off, said in the flow, and the input is theirs
   await page.getByTestId('nudge-hold').click()
