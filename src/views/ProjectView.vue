@@ -13,6 +13,7 @@ import ModalForm from '@/components/ModalForm.vue'
 import ProjectHeader from '@/components/ProjectHeader.vue'
 import StateBadge from '@/components/StateBadge.vue'
 import AgentStatsDialog from '@/components/AgentStatsDialog.vue'
+import NudgeNotice from '@/components/NudgeNotice.vue'
 import UsageChip from '@/components/UsageChip.vue'
 import { hasLongWindow, windowSize, withLongWindow } from '@/model'
 import ProjectTree from '@/components/ProjectTree.vue'
@@ -263,6 +264,7 @@ const editing = ref<{
   model: string
   effort: string
   permissions: 'bypass' | 'ask'
+  nudge: boolean
 } | null>(null)
 function startEditAgent() {
   const a = current.value?.agent
@@ -272,6 +274,7 @@ function startEditAgent() {
     model: a.model ?? '',
     effort: a.effort ?? '',
     permissions: a.permissions,
+    nudge: a.nudge ?? false,
   }
 }
 /** Saves; with `andRestart`, restarts afterwards so model, effort and permissions take effect now. */
@@ -287,6 +290,7 @@ async function saveAgent(andRestart = false) {
       model: e.model.trim() || null,
       effort: e.effort || null,
       permissions: e.permissions,
+      nudge: e.nudge,
     })
     const row = agents.byId.get(a.id)
     if (row) row.agent = r.agent
@@ -641,6 +645,20 @@ async function compact() {
     .compact(props.agentId)
     .then(() => notifications.push('info', 'compaction asked for'))
     .catch((e) => notifications.push('error', String(e.message ?? e)))
+}
+
+/** Calls the manager's pending question off: the person is here and will write. The notice goes when the status says so. */
+const holding = ref(false)
+async function holdNudge() {
+  if (!props.agentId) return
+  holding.value = true
+  try {
+    await api.nudgeHold(props.agentId)
+  } catch (e) {
+    notifications.push('error', e instanceof ApiError ? e.message : String(e))
+  } finally {
+    holding.value = false
+  }
 }
 
 async function remove() {
@@ -1111,17 +1129,27 @@ async function archive() {
                 layout === 'chat' ? '@3xl:hidden' : '@3xl:block',
               ]"
             >
-              <TurnInput
-                ref="flowInput"
-                :key="current.agent.id"
-                :agent-id="current.agent.id"
-                :state="current.status.state"
-                :queued="current.status.queued"
-                @send="send"
-                @interrupt="interrupt"
-                @typing="presence.typed()"
-                @stopped-typing="presence.stoppedTyping()"
-              />
+              <!-- the notice lies over the input: to type, the person calls the manager's question off first -->
+              <div class="relative">
+                <TurnInput
+                  ref="flowInput"
+                  :key="current.agent.id"
+                  :agent-id="current.agent.id"
+                  :state="current.status.state"
+                  :queued="current.status.queued"
+                  :disabled="!!current.status.nudge"
+                  @send="send"
+                  @interrupt="interrupt"
+                  @typing="presence.typed()"
+                  @stopped-typing="presence.stoppedTyping()"
+                />
+                <NudgeNotice
+                  v-if="current.status.nudge"
+                  :nudge="current.status.nudge"
+                  :busy="holding"
+                  @hold="holdNudge"
+                />
+              </div>
             </div>
             <div
               class="min-w-0 border-slate-200 dark:border-slate-800"
@@ -1260,9 +1288,27 @@ async function archive() {
           <option value="ask">ask — gated tools wait for your answer here</option>
         </select>
       </label>
+      <label
+        class="flex items-start gap-2 text-base"
+        title="For an agent on a long job. When a turn ends, a model reads its last message: if it needs you, you are paged; if it has work left, the manager asks it a few minutes later whether it can go on, needs you, or is done. A question, not an order, and not asked again until it has worked half an hour more."
+      >
+        <input
+          v-model="editing.nudge"
+          type="checkbox"
+          class="mt-1.5"
+          data-test="edit-agent-nudge"
+        />
+        <span>
+          When it stops, ask it whether it can go on
+          <span class="block text-sm text-slate-500 dark:text-slate-400"
+            >and page me if it needs me</span
+          >
+        </span>
+      </label>
       <p class="text-sm text-slate-500 dark:text-slate-400">
-        The name applies at once. Model, effort and permissions are session settings: they take
-        effect at the next restart, which "save and restart" does now while the agent is idle.
+        The name and the question on stopping apply at once. Model, effort and permissions are
+        session settings: they take effect at the next restart, which "save and restart" does now
+        while the agent is idle.
       </p>
     </ModalForm>
     <ModalForm

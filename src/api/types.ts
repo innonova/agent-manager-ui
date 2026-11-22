@@ -54,6 +54,8 @@ export interface Agent {
   archivedAt: number | null
   /** `ask`: gated tools wait for the human; `bypass`: the agent acts freely. */
   permissions: 'bypass' | 'ask'
+  /** When it stops, the manager asks it whether it can go on (agent-manager's "Nudge"). */
+  nudge?: boolean
   /** Vendor model and effort names passed at session start; null is the vendor's default. */
   model: string | null
   effort: string | null
@@ -119,6 +121,8 @@ export interface AgentStatus {
   activity: Activity
   /** Until when the agent said its background wait is expected (the manager's poke waits for it); null when it said nothing. */
   holdUntil?: number | null
+  /** The manager is reading the stopped agent's last message, or waiting to ask it at `at` whether it can go on. */
+  nudge?: { state: 'reading' | 'waiting'; at: number | null } | null
 }
 
 export interface AccountUsage {

@@ -430,6 +430,23 @@ block with the latest report per machine and vendor from `/api/usage`,
 refreshed half a second after any agent reports new usage. Only what
 agents report while working: nothing polls the vendors.
 
+### Asking a stopped agent whether it can go on
+
+The agent's edit form has the setting as a checkbox, in words that say
+what it does: "When it stops, ask it whether it can go on, and page me
+if it needs me" (agent-manager's design, "Nudge"). It applies at once.
+
+While the manager reads the stopped agent's last message, and while it
+waits to ask, a notice lies over the flow's input (`NudgeNotice`): "It
+stopped with work left. The manager asks it in 4 min whether it can go
+on or needs you.", with one button, "I'll write instead". The input
+under it is disabled. To type there the person presses the button,
+which calls the question off; the flow says who did. So the person's
+message and the manager's cannot cross, and nobody has to wonder which
+of the two the agent gets next. The chat's input is left alone: a
+message there wakes the agent as a turn, which drops the question on
+the manager's side.
+
 ### Statistics
 
 Among an agent's facts (behind the expander) a "statistics" link opens

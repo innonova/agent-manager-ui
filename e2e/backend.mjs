@@ -105,6 +105,12 @@ const manager = spawn(process.execPath, [MANAGER_MAIN], {
     AGENT_MANAGER_FRAMING_FILE: path.join(E2E_ROOT, 'framing.md'),
     AGENT_MANAGER_WORKSPACES_DIR: path.join(E2E_ROOT, 'workspaces'), // nor a workspace file beside a real repository
     AGENT_MANAGER_DIALOG_CLASSIFIER: 'off', // nor a model call on their account
+    // the reader of last messages is a script, and the wait before a nudge long enough to see and to call off
+    AGENT_MANAGER_NUDGE_READER: JSON.stringify([
+      process.execPath,
+      path.join(path.dirname(fileURLToPath(import.meta.url)), 'nudge-reader.mjs'),
+    ]),
+    AGENT_MANAGER_NUDGE_DELAY_MS: '20000',
   },
   stdio: ['ignore', 'pipe', 'pipe'],
 })
